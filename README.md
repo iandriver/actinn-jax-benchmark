@@ -15,6 +15,9 @@ reports **no runtime or memory**; the classic one that did
 predates foundation models. This repo measures both, across three method tiers, and
 reports an **accuracy × runtime Pareto** view.
 
+See [docs/METHODS_SURVEY.md](docs/METHODS_SURVEY.md) for a cited, adversarially-verified
+survey of the method landscape that motivates the shortlist.
+
 ## Design
 
 - **Subprocess isolation** — each method runs via `benchmark.runner` in its own
