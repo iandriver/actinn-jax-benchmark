@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from ..prep import counts_adata, lognorm
+from ..prep import counts_adata, lognorm, select_hvg
 from .base import AnnotationMethod, Predictions, register
 
 
@@ -12,6 +12,9 @@ class CellTypistMethod(AnnotationMethod):
     tier = "classical"
     device = "cpu"
 
+    def __init__(self, n_hvg=3000):
+        self.n_hvg = n_hvg
+
     def _prep(self, adata):
         # CellTypist expects log1p of CP10k-normalized counts, genes in var_names.
         return lognorm(counts_adata(adata))
@@ -19,8 +22,15 @@ class CellTypistMethod(AnnotationMethod):
     def fit(self, ref, label_key):
         import celltypist
         a = self._prep(ref)
+        # Restrict to HVGs and train a single SGD round. CellTypist's built-in
+        # feature_selection re-trains an SGD over *all* ~25k genes, which is single-
+        # threaded and pathologically slow on atlas references; pre-selecting HVGs
+        # (as the SVM/kNN adapters do) bounds it to seconds with comparable accuracy.
+        self.genes = select_hvg(a, self.n_hvg)
+        a = a[:, self.genes].copy()
         self.model = celltypist.train(
-            a, labels=label_key, feature_selection=True, check_expression=False
+            a, labels=label_key, use_SGD=True, feature_selection=False,
+            check_expression=False,
         )
 
     def predict(self, query):

@@ -74,14 +74,37 @@ def run(config_path):
     out_dir = _expand(cfg.get("output", "results/run"))
     os.makedirs(out_dir, exist_ok=True)
 
+    # By default every method gets the full machine and we report wall-clock there.
+    # Optionally cap threads (set `threads:` in the config) for stricter reproducibility;
+    # note this can *slow* methods whose parallelism is across one-vs-rest class fits.
+    base_env = dict(os.environ)
+    if cfg.get("threads"):
+        for var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+                    "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+            base_env[var] = str(cfg["threads"])
+
     anc = None
     if cfg.get("ontology_obo"):
         anc = metrics.load_cl_ancestors(_expand(cfg["ontology_obo"]))
 
+    results_csv = os.path.join(out_dir, "results.csv")
     rows = []
+
+    def flush_results():
+        """Persist accumulated rows after each dataset so a later failure can't wipe them."""
+        df = pd.DataFrame(rows)
+        df.to_csv(results_csv, index=False)
+        return df
+
     for ds in cfg["datasets"]:
         print(f"\n=== dataset: {ds['name']} ({ds['type']}) ===", flush=True)
-        ref, query = build_pair(ds, label)
+        try:
+            ref, query = build_pair(ds, label)
+        except Exception as e:
+            print(f"  SKIP dataset {ds['name']}: {type(e).__name__}: {e}", flush=True)
+            rows.append({"dataset": ds["name"], "error": f"{type(e).__name__}: {e}"})
+            flush_results()
+            continue
         truth = np.asarray(query.obs[label].values)
         # Optional ontology mapping for cross-vocabulary concordance.
         truth_cl = pred_cl_map = None
@@ -105,7 +128,8 @@ def run(config_path):
                            "--method", name, "--ref", ref_p, "--query", qry_p,
                            "--label", label, "--out", preds_p, "--metrics", met_p]
                     print(f"  run {name} (rep {rep})", flush=True)
-                    r = subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True)
+                    r = subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True,
+                                       text=True, env=base_env)
                     if r.returncode != 0:
                         print(f"    FAILED: {r.stderr.strip().splitlines()[-1:]}", flush=True)
                         rows.append({"dataset": ds["name"], "method": name, "repeat": rep,
@@ -122,9 +146,9 @@ def run(config_path):
                         unassigned=preds["unassigned"].to_numpy() if "unassigned" in preds else None,
                         ontology=anc, truth_cl=truth_cl, pred_cl=pred_cl)
                     rows.append({"dataset": ds["name"], "repeat": rep, **meta, **acc})
+        flush_results()  # persist after each dataset
 
-    results = pd.DataFrame(rows)
-    results.to_csv(os.path.join(out_dir, "results.csv"), index=False)
+    results = flush_results()
     try:
         results.to_parquet(os.path.join(out_dir, "results.parquet"))
     except Exception:

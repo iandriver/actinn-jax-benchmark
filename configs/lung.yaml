@@ -3,21 +3,22 @@
 # OBO for lineage-aware concordance.
 output: results/lung
 label: cell_type
-repeats: 3
+repeats: 1   # first real-data pass; bump to 3 for final timing stats
 ontology_obo: /tmp/cl-basic.obo   # download: http://purl.obolibrary.org/obo/cl/cl-basic.obo
 
 datasets:
   - name: krasnow_intra
     type: intra
     path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
-    subsample_per_label: 1500
+    subsample_per_label: 600     # first pass; raise for final run
     test_frac: 0.25
 
   - name: hcla_to_krasnow
     type: cross
-    ref_path: ~/Downloads/Sikkema_HCLA.h5ad
+    ref_path: ~/Downloads/Sikkama_HCLA.h5ad
     query_path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
-    ref_subsample_per_label: 500
+    ref_subsample_per_label: 300
+    query_subsample_per_label: 1000   # bound query for fast first pass
 
 methods:
   - name: actinn-jax

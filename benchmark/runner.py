@@ -9,6 +9,17 @@ method can live in its own environment). It writes predictions (parquet) and tim
         --out preds.parquet --metrics metrics.json
 """
 
+import os
+
+# Cap math-library threads BEFORE numpy/scanpy import. On macOS, Apple Accelerate
+# oversubscribes worker threads in this subprocess context, causing pathological,
+# nondeterministic slowdowns (many threads parked in cvwait at ~1 core of useful
+# work). A modest fixed cap removes the thrash and makes timing reproducible. A
+# config-driven cap from the driver still wins via setdefault.
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+           "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    os.environ.setdefault(_v, "4")
+
 import argparse
 import json
 
