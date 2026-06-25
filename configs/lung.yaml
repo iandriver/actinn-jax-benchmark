@@ -1,0 +1,26 @@
+# Lung atlas benchmark: within-dataset CV + cross-atlas reference mapping.
+# Requires the two h5ad files locally (paths below) and an optional Cell Ontology
+# OBO for lineage-aware concordance.
+output: results/lung
+label: cell_type
+repeats: 3
+ontology_obo: /tmp/cl-basic.obo   # download: http://purl.obolibrary.org/obo/cl/cl-basic.obo
+
+datasets:
+  - name: krasnow_intra
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 1500
+    test_frac: 0.25
+
+  - name: hcla_to_krasnow
+    type: cross
+    ref_path: ~/Downloads/Sikkema_HCLA.h5ad
+    query_path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    ref_subsample_per_label: 500
+
+methods:
+  - name: actinn-jax
+  - name: celltypist
+  - name: svm
+  - name: knn

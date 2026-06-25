@@ -1,0 +1,17 @@
+# Cheap end-to-end smoke test on synthetic data (no external files needed).
+output: results/smoke
+label: cell_type
+repeats: 1
+
+datasets:
+  - name: synthetic
+    type: synthetic
+    n_per_type: 300
+    n_genes: 1200
+    n_types: 6
+
+methods:
+  - name: actinn-jax
+  - name: celltypist
+  - name: svm
+  - name: knn

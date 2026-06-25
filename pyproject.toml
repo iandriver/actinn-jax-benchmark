@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "actinn-jax-benchmark"
+version = "0.1.0"
+description = "Accuracy x runtime benchmark of reference-based single-cell cell-type annotation methods"
+readme = "README.md"
+authors = [{name = "Ian Driver", email = "driver.ian@gmail.com"}]
+license = {text = "MIT"}
+requires-python = ">=3.10"
+
+# Core driver / Tier-1 (classical) dependencies. Heavier tiers (deep, foundation)
+# install into their own isolated environments under envs/ — see envs/README.md.
+dependencies = [
+    "numpy>=1.23",
+    "scipy>=1.9",
+    "pandas>=1.5",
+    "pyarrow>=12",
+    "pyyaml>=6",
+    "psutil>=5.9",
+    "scikit-learn>=1.2,<1.7",   # CellTypist passes multi_class=, removed in sklearn 1.7
+    "scanpy>=1.9",
+    "anndata>=0.9",
+    "celltypist>=1.6",
+    "pronto>=2.5",
+    "actinn-jax",
+]
+
+[project.optional-dependencies]
+plot = ["matplotlib>=3.6", "seaborn>=0.12"]
+
+[tool.setuptools]
+packages = ["benchmark", "benchmark.adapters"]

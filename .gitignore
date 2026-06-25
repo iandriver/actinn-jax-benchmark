@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Environments
+.venv/
+.venv-*/
+venv/
+env/
+
+# Tooling / OS
+.pytest_cache/
+.DS_Store
+
+# Benchmark outputs and data
+results/
+*.h5ad
+*.parquet
+*.obo
