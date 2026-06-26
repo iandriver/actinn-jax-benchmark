@@ -14,6 +14,7 @@ from . import svm_adapter  # noqa: F401,E402
 from . import knn_adapter  # noqa: F401,E402
 from . import actinn_orig_adapter  # noqa: F401,E402  (lazy TF import; runs in .venv-tf)
 from . import r_adapter  # noqa: F401,E402  (SingleR/scmap/scPred; shell out to Rscript)
+from . import scvi_adapter  # noqa: F401,E402  (scANVI/scArches; lazy scvi import, runs in .venv-scvi)
 
 
 def get(name, **kwargs):

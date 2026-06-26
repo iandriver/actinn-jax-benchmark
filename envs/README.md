@@ -28,10 +28,29 @@ methods:
     python: .venv-tf/bin/python
 ```
 
+### R classical methods — SingleR, scmap (project R library `.Rlib`)
+System R (4.6) + a project-local library so system R stays clean:
+```
+mkdir -p .Rlib
+R_LIBS_USER=$PWD/.Rlib Rscript -e '.libPaths(Sys.getenv("R_LIBS_USER")); \
+  if(!requireNamespace("BiocManager",quietly=TRUE)) install.packages("BiocManager"); \
+  BiocManager::install(c("SingleR","SingleCellExperiment","scuttle","scmap"), \
+    update=FALSE, ask=FALSE, lib=Sys.getenv("R_LIBS_USER"))'
+```
+The Python adapters (`benchmark/adapters/r_adapter.py`) export counts as `.mtx` and
+shell out to `benchmark/r/run_r_method.R`. No config `python:` needed — they run from
+the core env and call `Rscript` (set `R_LIBS` if `.Rlib` isn't at the repo root).
+
+**scPred is currently NOT installable** here: it is GitHub-only and calls
+`harmony::HarmonyMatrix`, which modern harmony (>=1.0) no longer exports, so it fails
+to load. Pinning harmony 0.1.1 did not resolve it cleanly. Left as a known gap.
+
 ## Tier 2 — deep reference mapping
-- `scvi`: `scvi-tools` (scANVI, scArches) — `pip install scvi-tools` (MPS/CPU).
-- `r-bioc`: R + Seurat + Azimuth + Symphony + SingleR + scmap + scPred
-  (e.g. via conda `r-base`, `bioconductor-*`). Adapters shell out via the runner.
+- `.venv-scvi`: `scvi-tools` (scANVI, scArches) — `uv pip install scvi-tools scanpy
+  anndata pyarrow pyyaml psutil`. Uses Apple **MPS** when available. Point the methods
+  at it via `python: .venv-scvi/bin/python` in the config.
+- `r-bioc` (`.Rlib`): Symphony + Azimuth (Seurat) for the remaining deep methods —
+  same R bridge pattern. (Not yet wired.)
 
 ## Tier 3 — foundation models
 - `foundation`: PyTorch + scGPT / scBERT / scDeepSort / TOSICA, plus pretrained
