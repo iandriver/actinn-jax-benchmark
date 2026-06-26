@@ -20,3 +20,6 @@ results/
 *.h5ad
 *.parquet
 *.obo
+
+# R
+.Rlib/
