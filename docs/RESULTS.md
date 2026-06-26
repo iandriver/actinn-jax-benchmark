@@ -59,6 +59,41 @@ CellTypist clearly leads on rare-type macro-F1; kNN collapses on the rare types.
 This matches the survey's expectation that immune subtypes stress methods that
 lung's broad types do not.
 
+## All tiers — PBMC (classical + R + deep), pbmc3k within-CV (mean of 2 reps)
+
+The full method roster across three tiers (deep methods on Apple **MPS**), sorted by
+macro-F1. Raw table: [results_pbmc_all.csv](results_pbmc_all.csv).
+
+| method | tier | accuracy | macro-F1 | fit (s) | predict (s) | mem (MB) |
+|---|---|---|---|---|---|---|
+| singler       | classical (R) | 0.925 | **0.884** | 0.1 | 4.4 | 1,353 |
+| scarches      | deep (MPS) | **0.936** | 0.880 | 24.0 | 3.6 | 997 |
+| celltypist    | classical | 0.916 | 0.874 | 2.3 | 0.5 | 612 |
+| scanvi        | deep (MPS) | 0.919 | 0.872 | 0.0 | 24.2 | 1,053 |
+| svm           | classical | 0.906 | 0.844 | 2.2 | 0.03 | 561 |
+| actinn-jax    | classical | 0.913 | 0.795 | 5.8 | 0.10 | 885 |
+| scmap-cluster | classical (R) | 0.871 | 0.778 | 0.1 | 4.6 | 2,826 |
+| knn           | classical | 0.907 | 0.739 | 1.9 | 0.05 | 561 |
+
+Reading:
+- **Deep methods (scArches/scANVI) take the top accuracy (0.936/0.919)** but cost
+  ~24 s (scArches fit / scANVI predict) vs sub-second for the classical classifiers —
+  the central accuracy×runtime tradeoff. Runtime spans ~3 orders of magnitude
+  (0.03 s → 24 s) for ≤ 0.16 accuracy difference.
+- **SingleR is the standout classical method** on PBMC (0.925 accuracy, best macro-F1
+  0.884, ~4 s) — correlation-to-reference works very well on clean immune types.
+- scANVI vs scArches: scANVI is transductive (work in `predict`); scArches trains the
+  reference once (`fit`) then maps queries by surgery in ~3.6 s — the right shape for
+  repeated reference mapping.
+
+### Method/tooling notes
+- R methods (SingleR, scmap) run via a `.mtx` → `Rscript` bridge against a project R
+  library; **scPred is excluded** — it is GitHub-only and calls the removed
+  `harmony::HarmonyMatrix`, so it no longer installs (see `envs/README.md`).
+- Deep methods use scvi-tools on Apple MPS in `.venv-scvi`; modest epochs
+  (SCVI 40 / SCANVI 20 / query 40) for tractable laptop timing — not tuned for max
+  accuracy. A CUDA run (see `docs/AWS_GPU.md`) would speed these up substantially.
+
 ## Memory: effect of the actinn-jax optimization
 
 The sparse-preprocessing + per-minibatch-densification rewrite (see the actinn-jax

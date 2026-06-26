@@ -1,0 +1,23 @@
+# All working methods on PBMC/immune (pbmc3k) — classical + R + deep.
+# Small dataset so the deep VAE method (scANVI) is tractable on Apple MPS.
+output: results/pbmc_all
+label: cell_type
+repeats: 2
+
+datasets:
+  - name: pbmc3k_intra
+    type: builtin
+    builtin: pbmc3k
+    test_frac: 0.25
+
+methods:
+  - name: actinn-jax
+  - name: celltypist
+  - name: svm
+  - name: knn
+  - name: singler        # R bridge (Rscript + .Rlib)
+  - name: scmap-cluster  # R bridge
+  - name: scanvi         # scvi-tools on Apple MPS
+    python: .venv-scvi/bin/python
+  - name: scarches       # scvi-tools reference surgery (Apple MPS)
+    python: .venv-scvi/bin/python
