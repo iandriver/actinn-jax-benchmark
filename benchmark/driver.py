@@ -54,6 +54,9 @@ def build_pair(ds, label):
             ds.get("n_per_type", 300), ds.get("n_genes", 1200),
             ds.get("n_types", 6), seed=2)
         return ref, query
+    if kind == "builtin":
+        adata = datasets.BUILTIN[ds["builtin"]]()
+        return datasets.intra_split(adata, label, ds.get("test_frac", 0.25))
     if kind == "intra":
         adata = _load_maybe_subsampled(ds["path"], label, ds.get("subsample_per_label"))
         return datasets.intra_split(adata, label, ds.get("test_frac", 0.25))

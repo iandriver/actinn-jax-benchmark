@@ -34,6 +34,25 @@ def make_synthetic(n_per_type=300, n_genes=1200, n_types=6, seed=0):
     )
 
 
+def make_pbmc3k():
+    """Reproducible PBMC immune dataset: pbmc3k raw counts + its cell-type labels.
+
+    scanpy's ``pbmc3k`` provides raw counts; ``pbmc3k_processed`` provides named
+    cell types in ``obs['louvain']`` (CD4/CD8 T, B, NK, CD14+/FCGR3A+ monocytes,
+    dendritic, megakaryocytes). We attach the labels to the raw counts, aligned by
+    barcode. Counts live in ``.X`` (no ``.raw``), which the adapters use directly.
+    """
+    raw = sc.datasets.pbmc3k()
+    proc = sc.datasets.pbmc3k_processed()
+    raw = raw[proc.obs_names].copy()
+    raw.obs["cell_type"] = proc.obs["louvain"].astype(str).values
+    raw.var_names_make_unique()
+    return raw
+
+
+BUILTIN = {"pbmc3k": make_pbmc3k}
+
+
 def stratified_subsample(labels, max_per_label, seed=0):
     rng = np.random.default_rng(seed)
     keep = []

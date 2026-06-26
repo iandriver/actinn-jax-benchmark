@@ -1,0 +1,18 @@
+# PBMC / immune benchmark: within-dataset CV on scanpy's pbmc3k (2,638 cells,
+# 8 immune cell types, raw counts). Downloads automatically on first run.
+output: results/pbmc
+label: cell_type
+repeats: 3
+ontology_obo: null   # pbmc3k labels are free-text (louvain), no CL ids
+
+datasets:
+  - name: pbmc3k_intra
+    type: builtin
+    builtin: pbmc3k
+    test_frac: 0.25
+
+methods:
+  - name: actinn-jax
+  - name: celltypist
+  - name: svm
+  - name: knn
