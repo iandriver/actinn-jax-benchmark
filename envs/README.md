@@ -14,6 +14,20 @@ methods:
 Installed by `pip install -e .` at the repo root: actinn-jax, CellTypist, scikit-learn
 (SVM, kNN). R-based classical methods (SingleR, scmap, scPred) use the R env below.
 
+### `actinn-orig` — original TensorFlow ACTINN (the baseline actinn-jax replaced)
+Vendored under `benchmark/vendor/actinn_original/`. Runs in its own TF env:
+```
+uv venv --python 3.11 .venv-tf
+uv pip install --python .venv-tf/bin/python "tensorflow==2.15.*" scanpy anndata pandas scipy h5py pyarrow pyyaml psutil
+```
+**Pin TF 2.15** — the original uses `tf.compat.v1` graph mode + multiple `Session`s,
+which **deadlocks (hangs at 0% CPU)** on TF 2.21. Point the method at it in the config:
+```yaml
+methods:
+  - name: actinn-orig
+    python: .venv-tf/bin/python
+```
+
 ## Tier 2 — deep reference mapping
 - `scvi`: `scvi-tools` (scANVI, scArches) — `pip install scvi-tools` (MPS/CPU).
 - `r-bioc`: R + Seurat + Azimuth + Symphony + SingleR + scmap + scPred

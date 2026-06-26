@@ -1,0 +1,17 @@
+# Head-to-head: actinn-jax vs the ORIGINAL TensorFlow ACTINN it replaced.
+# Original runs in the pinned TF 2.15 env (.venv-tf) — see envs/README.md.
+output: results/lung_orig
+label: cell_type
+repeats: 1
+
+datasets:
+  - name: krasnow_intra
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 600
+    test_frac: 0.25
+
+methods:
+  - name: actinn-jax
+  - name: actinn-orig
+    python: .venv-tf/bin/python   # original needs TensorFlow 2.15

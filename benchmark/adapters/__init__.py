@@ -12,6 +12,7 @@ from . import actinn_jax_adapter  # noqa: F401,E402
 from . import celltypist_adapter  # noqa: F401,E402
 from . import svm_adapter  # noqa: F401,E402
 from . import knn_adapter  # noqa: F401,E402
+from . import actinn_orig_adapter  # noqa: F401,E402  (lazy TF import; runs in .venv-tf)
 
 
 def get(name, **kwargs):
