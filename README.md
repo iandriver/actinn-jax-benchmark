@@ -60,9 +60,15 @@ Subclass `AnnotationMethod`, implement `fit`/`predict`, and `@register` it
 (see [`benchmark/adapters/svm_adapter.py`](benchmark/adapters/svm_adapter.py)).
 Heavier methods get their own environment under [`envs/`](envs).
 
-## Status
+## Results
 
-Phase 0 (harness + Tier-1 skeleton) — see the full
+- **[docs/RESULTS.md](docs/RESULTS.md)** — final Tier-1 numbers on lung (krasnow CV +
+  HCLA→krasnow cross-atlas) and PBMC/immune (pbmc3k), mean of 3 repeats.
+- **[docs/RESULTS_actinn_orig.md](docs/RESULTS_actinn_orig.md)** — actinn-jax vs the
+  original TensorFlow ACTINN (3.3× faster, 3.5× less memory single-run).
+- **[docs/METHODS_SURVEY.md](docs/METHODS_SURVEY.md)** — cited methods landscape.
+
+Tier-1 (classical) complete; deep + foundation tiers next. See the full
 [benchmark plan](https://github.com/iandriver/actinn-jax/blob/main/BENCHMARK_PLAN.md).
 
 ## License
