@@ -23,3 +23,8 @@ results/
 
 # R
 .Rlib/
+
+# scPRINT / lamindb artifacts
+.scprint_lamin/
+*.ckpt
+.venv-scprint/
