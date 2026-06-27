@@ -30,6 +30,19 @@ Raw tables: [results_lung_final.csv](results_lung_final.csv),
 kNN has the highest *overall* accuracy but the lowest macro-F1 — it nails the common
 types and misses rare ones (the accuracy-vs-macro-F1 tradeoff).
 
+### R methods on the same split (SingleR, scmap — single run)
+
+| method | accuracy | macro-F1 | fit (s) | predict (s) | mem (MB) |
+|---|---|---|---|---|---|
+| singler       | 0.876 | 0.852 | 1.1 | **165.4** | 3,615 |
+| scmap-cluster | 0.851 | 0.801 | 0.9 | 26.0 | **13,159** |
+
+On the fine-grained 46-type lung data the R methods drop **below** the Python
+classical methods (~0.91) and are much costlier — SingleR's correlation scan is
+165 s on 8k query cells, and scmap's index is memory-heavy (13 GB). This is the
+*opposite* of PBMC (8 broad types), where SingleR led: correlation/projection
+methods degrade on many closely-related fine types.
+
 ## Lung — HCLA → krasnow cross-atlas (22,859 train / 37,688 query)
 
 | method | exact acc | macro-F1 | ontology | fit (s) | predict (s) | mem (MB) |

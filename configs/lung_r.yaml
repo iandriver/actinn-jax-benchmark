@@ -1,0 +1,17 @@
+# R methods on the harder 46-type lung data (krasnow within-CV).
+# Deep methods (scANVI/scArches) are omitted here — too slow on 24k cells for a
+# laptop pass; see docs/AWS_GPU.md for the planned CUDA run.
+output: results/lung_r
+label: cell_type
+repeats: 1
+
+datasets:
+  - name: krasnow_intra
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 1500
+    test_frac: 0.25
+
+methods:
+  - name: singler
+  - name: scmap-cluster
