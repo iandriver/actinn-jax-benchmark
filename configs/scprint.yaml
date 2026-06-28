@@ -1,0 +1,19 @@
+# scPRINT foundation model vs actinn-jax on a small CL-labeled lung subset.
+# scPRINT is zero-shot + slow even on MPS, so the query is kept small. Scoring is by
+# ontology concordance (scPRINT predicts Cell-Ontology ids, not the label vocabulary).
+output: results/scprint
+label: cell_type
+repeats: 1
+ontology_obo: /tmp/cl-basic.obo   # http://purl.obolibrary.org/obo/cl/cl-basic.obo
+
+datasets:
+  - name: krasnow_intra
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 150
+    test_frac: 0.25
+
+methods:
+  - name: actinn-jax
+  - name: scprint
+    python: .venv-scprint/bin/python   # foundation model env (Apple MPS)

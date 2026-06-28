@@ -53,6 +53,8 @@ def main():
         df["probability"] = preds.probabilities
     if preds.unassigned is not None:
         df["unassigned"] = preds.unassigned
+    if preds.label_cl is not None:
+        df["pred_cl"] = preds.label_cl
     df.to_parquet(args.out)
 
     with open(args.metrics, "w") as fh:

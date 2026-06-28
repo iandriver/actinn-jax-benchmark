@@ -19,6 +19,9 @@ class Predictions:
     labels: np.ndarray                      # (n,) predicted label strings
     probabilities: Optional[np.ndarray] = None   # (n,) confidence of the call
     unassigned: Optional[np.ndarray] = None      # (n,) bool, True = rejected
+    label_cl: Optional[np.ndarray] = None        # (n,) predicted Cell-Ontology ids
+    # ^ set by methods (e.g. scPRINT) that predict CL ids directly rather than the
+    #   dataset's label vocabulary; scored against truth CL ids (ontology-aware).
 
 
 class AnnotationMethod:

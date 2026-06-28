@@ -44,6 +44,22 @@ supervised methods (0.79–0.93, see [RESULTS.md](RESULTS.md)). Expected: it's a
 gene-network model, the classifier is untuned/zero-shot, on a small sample with the
 medium checkpoint. Not competitive as a drop-in annotator on this hardware.
 
+### As a formal benchmark method
+
+scPRINT is wired into the harness (`benchmark/adapters/scprint_adapter.py`, runs in
+`.venv-scprint` on MPS; `configs/scprint.yaml`). Because it predicts Cell-Ontology ids
+rather than the dataset's label vocabulary, the harness scores it in CL-id space
+(`Predictions.label_cl`) and ontology concordance is the comparable metric. On a
+1,484-cell CL-labeled krasnow subset ([results_scprint.csv](results_scprint.csv)):
+
+| method | tier | ontology | exact | predict (s) | device |
+|---|---|---|---|---|---|
+| actinn-jax | classical | **0.912** | 0.879 | **0.15** | CPU |
+| scprint    | foundation | 0.218 | 0.026 | 32.7 | MPS |
+
+scPRINT zero-shot is ~200× slower at predict and far less accurate than a small model
+trained on the reference. (exact = exact-label for actinn-jax, exact-CL-id for scPRINT.)
+
 ## 2. Fast CPU classifier from curated atlas data
 
 The better use of the *underlying* curated data: train a lightweight classifier on it.

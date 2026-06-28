@@ -142,12 +142,20 @@ def run(config_path):
                     preds = pd.read_parquet(preds_p).set_index("cell_id").loc[list(query.obs_names)]
                     with open(met_p) as fh:
                         meta = json.load(fh)
-                    pred_cl = (np.array([pred_cl_map.get(str(p), "") for p in preds["pred_label"]])
-                               if pred_cl_map is not None else None)
-                    acc = metrics.compute(
-                        truth, preds["pred_label"].to_numpy(),
-                        unassigned=preds["unassigned"].to_numpy() if "unassigned" in preds else None,
-                        ontology=anc, truth_cl=truth_cl, pred_cl=pred_cl)
+                    if "pred_cl" in preds and truth_cl is not None:
+                        # Method predicts CL ids directly (e.g. scPRINT); score in
+                        # CL-id space so it's comparable via ontology concordance.
+                        pred_cl = preds["pred_cl"].to_numpy()
+                        acc = metrics.compute(truth_cl, pred_cl, ontology=anc,
+                                              truth_cl=truth_cl, pred_cl=pred_cl)
+                    else:
+                        pred_cl = (np.array([pred_cl_map.get(str(p), "")
+                                             for p in preds["pred_label"]])
+                                   if pred_cl_map is not None else None)
+                        acc = metrics.compute(
+                            truth, preds["pred_label"].to_numpy(),
+                            unassigned=preds["unassigned"].to_numpy() if "unassigned" in preds else None,
+                            ontology=anc, truth_cl=truth_cl, pred_cl=pred_cl)
                     rows.append({"dataset": ds["name"], "repeat": rep, **meta, **acc})
         flush_results()  # persist after each dataset
 
