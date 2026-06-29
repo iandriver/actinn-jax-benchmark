@@ -1,10 +1,29 @@
 # actinn-jax-benchmark
 
-A modern, **neutral** benchmark of reference-based single-cell **cell-type
-annotation** methods, comparing **accuracy × runtime × memory** on commodity
-hardware (Apple Silicon, CPU-first). Companion to
-[actinn-jax](https://github.com/iandriver/actinn-jax) — which is included as one
-method among many, not the centerpiece.
+## ⭐ Headline: foundation-model-shaped, CPU-fast cell typing — **[docs/MODEL_FLOW.md](docs/MODEL_FLOW.md)**
+
+A two-stage flow that uses the **scPRINT** foundation model *once, offline, on a GPU*
+to **discover cell-type structure**, then trains a small **[actinn-jax](https://github.com/iandriver/actinn-jax)**
+classifier that annotates new data in **milliseconds on a CPU**.
+
+- **scPRINT-discovered coarse→fine hierarchy beats a flat classifier on all 3 datasets**
+  (lung 46 types, blood+gut 86, multi-organ Tabula Sapiens 83/8 organs), ties an expert
+  biological hierarchy, and beats a random-grouping control.
+- scPRINT's discovered groups **recover biological lineage** (ARI **0.54**), not organ
+  (0.02) — it groups by cell-type identity, which is the point.
+- **Inference is pure CPU, <1 s** for thousands of cells, in ~2 GB RAM — vs scPRINT as a
+  predictor (~1 s/cell on CPU, and weak zero-shot). **Use its embeddings, not its labels.**
+- The GPU step is cached: committed [`data/embeddings/`](data/embeddings) (7–16 MB each)
+  let you reproduce the structure with **no GPU** — `python benchmark/explore/discover_hierarchy.py blood_gut --bio Lineage`.
+
+Read the mini-paper: **[docs/MODEL_FLOW.md](docs/MODEL_FLOW.md)** · details in [docs/TWO_STAGE.md](docs/TWO_STAGE.md).
+
+---
+
+The rest of this repo is a **neutral benchmark** of reference-based single-cell
+cell-type annotation methods, comparing **accuracy × runtime × memory** on commodity
+hardware (Apple Silicon, CPU-first).
+[actinn-jax](https://github.com/iandriver/actinn-jax) is one method among many.
 
 ## Why
 
