@@ -1,0 +1,5 @@
+test,n_genes,n_ref,n_qry,exact_acc,within1_acc,macro_f1
+"A random-split, all genes",20631,8571,2856,0.711,0.991,0.714
+"B random-split, NO landmark genes",20613,8571,2856,0.608,0.969,0.608
+"C held-out samples ['158-NPF1', '158-NPF2'], all genes",20631,8000,3427,0.738,0.994,0.724
+"C held-out samples, NO landmark genes",20613,8000,3427,0.603,0.962,0.583
