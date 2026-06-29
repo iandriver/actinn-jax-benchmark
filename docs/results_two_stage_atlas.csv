@@ -1,0 +1,7 @@
+method,accuracy,macro_f1,ontology,train_s,infer_s,n_ref
+flat-full,0.873,0.862,,28.3,0.36,12769
+random-50,0.817,0.796,,9.5,0.31,4300
+coreset-50,0.81,0.79,,9.3,0.27,4300
+hierarchy-scprint(G8),0.88,0.869,,57.9,1.04,12769
+hierarchy-random(G8),0.84,0.81,,57.5,0.97,12769
+hierarchy-bio(Lineage),0.88,0.869,,55.9,0.77,12769

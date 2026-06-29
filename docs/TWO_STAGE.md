@@ -56,10 +56,45 @@ on CPU. That lifts fine-grained accuracy (macro-F1) above a flat classifier whil
 keeping millisecond CPU inference — and decisively beats both the foundation model
 alone and any use of its query-time predictions.
 
+## Generalization: 86-type multi-tissue atlas (blood + gut)
+
+Repeated on a more diverse atlas (Sanger blood + gut immune/epithelial; 86 fine
+`Final_labels`, ref 12,769 / query 4,100). This atlas ships a real **biological
+hierarchy** (`Lineage`), so we add a third control: the *expert* grouping.
+Raw table: [results_two_stage_atlas.csv](results_two_stage_atlas.csv).
+
+| method | accuracy | macro-F1 | train (s) | infer (s) | n_ref |
+|---|---|---|---|---|---|
+| **hierarchy-scprint** (G8) | **0.880** | **0.869** | 58 | 1.04 | 12,769 |
+| **hierarchy-biological** (`Lineage`) | **0.880** | **0.869** | 56 | 0.77 | 12,769 |
+| flat-full | 0.873 | 0.862 | 28 | 0.36 | 12,769 |
+| hierarchy-random (G8) *(control)* | 0.840 | 0.810 | 58 | 0.97 | 12,769 |
+| random-50/type | 0.817 | 0.796 | 9.5 | 0.31 | 4,300 |
+| coreset-50/type | 0.810 | 0.790 | 9.3 | 0.27 | 4,300 |
+
+The same pattern holds on 2× the label diversity — and the new control sharpens it:
+
+- **scPRINT's discovered hierarchy ties the *real biological* hierarchy** (both
+  0.880 / 0.869), and both beat flat (0.862). scPRINT's embedding geometry recovers
+  the expert `Lineage` grouping well enough to match it — strong evidence it's
+  capturing genuine biological structure, not noise.
+- **Random grouping is again worse than flat** (0.810 vs 0.862): an arbitrary
+  hierarchy hurts; a *meaningful* one (scPRINT or biological) helps.
+- **Coreset ≈ random** once more — no benefit from scPRINT-guided cell selection.
+
+## Bottom line (both datasets)
+
+Across lung (46 types) and a blood+gut atlas (86 types): **a coarse→fine hierarchy
+whose groups come from scPRINT embeddings beats a flat classifier and matches the
+expert biological hierarchy, with pure-CPU inference.** scPRINT-guided coreset
+subsampling does not beat random, and using scPRINT's query-time *predictions*
+(scoping/routing) hurts. **Use scPRINT's embeddings (structure), not its labels.**
+
 ### Caveats / next
-- One dataset (lung, 46 types), one checkpoint (medium-v1.5), G=8 groups, single
-  split. The hierarchy gain is modest (+0.028 macro-F1) — worth confirming on PBMC /
-  Tabula Sapiens, sweeping G, and trying scANVI embeddings as an alternative
-  structure source.
-- The hierarchy trains more models (34 s vs 18 s) for the macro-F1 gain; inference
-  stays sub-second.
+- Two datasets, one checkpoint (medium-v1.5), G=8, single split each; gains are
+  modest (macro-F1 +0.028 lung, +0.007 atlas) but consistent and direction-stable,
+  with the biological-hierarchy match as the strongest signal. Worth: sweeping G,
+  a true multi-organ atlas (Tabula Sapiens, ~25 organs), and scANVI embeddings as a
+  cheaper structure source.
+- Hierarchy trains more models (≈2× train time) for the gain; inference stays
+  sub-second and pure-CPU.
