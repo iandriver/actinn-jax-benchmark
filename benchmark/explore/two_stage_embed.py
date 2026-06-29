@@ -70,15 +70,26 @@ def embed(orig, model):
     pp = Preprocessor(do_postp=False, force_preprocess=True,
                       **({"additional_preprocess": additional_preprocess} if additional_preprocess else {}))
     a = pp(a)
-    emb = Embedder(doclass=DOCLASS, precision="32", dtype=torch.float32, batch_size=32,
-                   num_workers=0, doplot=False, max_len=2000)
-    res = emb(model, a)
-    out = res[0] if isinstance(res, (tuple, list)) else res
+
+    def _run(doclass):
+        aa = a.copy()  # Embedder mutates in place; fresh copy avoids duplicate columns
+        e = Embedder(doclass=doclass, precision="32", dtype=torch.float32, batch_size=32,
+                     num_workers=0, doplot=False, max_len=2000)
+        r = e(model, aa)
+        return r[0] if isinstance(r, (tuple, list)) else r
+
+    try:
+        out = _run(DOCLASS)
+    except Exception as ex:  # e.g. a CL id not in scPRINT's class set
+        print(f"  doclass={DOCLASS} failed ({type(ex).__name__}); retrying embeddings-only", flush=True)
+        out = _run(False)
     assert out.n_obs == orig.n_obs, f"{orig.n_obs}->{out.n_obs}"
     orig.obsm["scprint_emb"] = np.asarray(out.obsm["scprint_emb"])
-    orig.obs["scprint_pred_cl"] = (out.obs["pred_cell_type_ontology_term_id"].astype(str).values
-                                   if DOCLASS and "pred_cell_type_ontology_term_id" in out.obs
-                                   else "unknown")
+    col = "pred_cell_type_ontology_term_id"
+    if col in out.obs and getattr(out.obs[col], "ndim", 1) == 1:
+        orig.obs["scprint_pred_cl"] = np.asarray(out.obs[col].astype(str).values).ravel()
+    else:
+        orig.obs["scprint_pred_cl"] = np.array(["unknown"] * orig.n_obs)
     return orig
 
 

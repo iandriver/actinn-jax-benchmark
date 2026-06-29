@@ -122,8 +122,10 @@ if BIO and BIO in ref.obs:
     type_bio = dict(zip(labels, ref.obs[BIO].astype(str)))  # fine type -> biological group
     run_hierarchy(f"hierarchy-bio({BIO})", {t: type_bio[t] for t in types})
 
-# scprint-alone + scoping + routing (only when CL ids available)
-if has_cl:
+# scprint-alone + scoping + routing (need real CL ids AND real scPRINT query preds)
+has_sp = has_cl and "scprint_pred_cl" in qry.obs and \
+    (qry.obs["scprint_pred_cl"].astype(str) != "unknown").mean() > 0.5
+if has_sp:
     spred_cl = qry.obs["scprint_pred_cl"].astype(str).to_numpy()
     msp = metrics.compute(truth_cl, spred_cl, ontology=anc, truth_cl=truth_cl, pred_cl=spred_cl)
     rows.append({"method": "scprint-alone", "accuracy": round(msp["accuracy"], 3),
