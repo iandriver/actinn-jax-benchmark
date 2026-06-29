@@ -67,6 +67,7 @@ Heavier methods get their own environment under [`envs/`](envs).
 - **[docs/RESULTS_actinn_orig.md](docs/RESULTS_actinn_orig.md)** — actinn-jax vs the
   original TensorFlow ACTINN (3.3× faster, 3.5× less memory single-run).
 - **[docs/METHODS_SURVEY.md](docs/METHODS_SURVEY.md)** — cited methods landscape.
+- **[docs/TWO_STAGE.md](docs/TWO_STAGE.md)** — scPRINT (broad) shaping a fast CPU classifier: a scPRINT-discovered coarse→fine hierarchy beats flat (macro-F1 0.71 vs 0.68), pure-CPU inference.
 
 Tier-1 (classical) complete; deep + foundation tiers next. See the full
 [benchmark plan](https://github.com/iandriver/actinn-jax/blob/main/BENCHMARK_PLAN.md).
