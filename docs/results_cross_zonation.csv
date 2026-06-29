@@ -1,0 +1,3 @@
+transfer,n_ref,n_qry,exact_acc,within1_acc,macro_f1,portal_central_confusion
+GSE158723 -> GSE136103,11427,2108,0.459,0.879,0.457,0.181
+GSE136103 -> GSE158723,2108,11427,0.583,0.916,0.483,0.126

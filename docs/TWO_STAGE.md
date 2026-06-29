@@ -110,15 +110,36 @@ annotation with many cross-organ-shared types is simply harder.)
 *Note:* CL ids were not carried into this cache, so ontology concordance is N/A here;
 accuracy / macro-F1 (exact cell_type) are the scoring and the ranking is unambiguous.
 
-## Bottom line (three datasets)
+## Breadth check: 8 distinct organs (honest null)
 
-Across lung (46 types), a blood+gut atlas (86 types), and multi-organ Tabula Sapiens
-(83 types across 8 organs): **a coarse→fine hierarchy whose groups come from scPRINT
-embeddings consistently beats a flat classifier, beats a random-grouping control, and
-matches (or beats) the expert biological hierarchy — all with pure-CPU inference.**
-scPRINT-guided coreset subsampling does not beat random, and using scPRINT's
-query-time *predictions* (scoping/routing) hurts. **Use scPRINT's embeddings
-(structure), not its labels.**
+A diverse organ set pulled contiguously from census (`fetch_multitissue.py`): heart,
+kidney (KPMP — not in TS), liver, fat, pancreas, skin, stomach, bone marrow — 81 types,
+ref 5,766 / query 814. Raw table: [results_two_stage_8organ.csv](results_two_stage_8organ.csv).
+
+| method | accuracy | macro-F1 | ontology |
+|---|---|---|---|
+| flat-full | 0.725 | 0.358 | **0.808** |
+| hierarchy-scprint (G8) | 0.711 | **0.364** | 0.806 |
+| hierarchy-random (G8) | 0.682 | 0.318 | 0.767 |
+| scoping / routing / scprint-alone | ≤ 0.60 | ≤ 0.32 | ≤ 0.68 |
+
+Here **hierarchy-scprint ≈ flat** (macro-F1 marginally up, accuracy marginally down) —
+the hierarchy gain *washes out* on this set (small 814-cell query, many cross-organ
+shared immune/stromal types). The controls still hold: random grouping is worse, and
+scoping/routing/scprint-alone all hurt. An honest fourth data point: the gain is real
+but **modest and not universal**.
+
+## Bottom line (four datasets)
+
+Across lung (46 types), a blood+gut atlas (86), multi-organ Tabula Sapiens (83/8 organs),
+and a separate 8-organ census set (81): a coarse→fine hierarchy whose groups come from
+scPRINT embeddings **beats a flat classifier on 3 of 4 datasets (a wash on the 4th)**,
+**always beats a random-grouping control**, and **matches the expert biological
+hierarchy** — all with pure-CPU inference. The gain is **modest and not universal**.
+What *is* universal: a meaningful grouping (scPRINT or biological) helps and a random
+one hurts; scPRINT-guided coreset subsampling does not beat random; and using scPRINT's
+query-time *predictions* (scoping/routing/zero-shot) consistently hurts. **Use scPRINT's
+embeddings (structure), not its labels.**
 
 ### Caveats / next
 - Two datasets, one checkpoint (medium-v1.5), G=8, single split each; gains are

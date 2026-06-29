@@ -16,7 +16,13 @@ classifier that annotates new data in **milliseconds on a CPU**.
 - The GPU step is cached: committed [`data/embeddings/`](data/embeddings) (7–16 MB each)
   let you reproduce the structure with **no GPU** — `python benchmark/explore/discover_hierarchy.py blood_gut --bio Lineage`.
 
-Read the mini-paper: **[docs/MODEL_FLOW.md](docs/MODEL_FLOW.md)** · details in [docs/TWO_STAGE.md](docs/TWO_STAGE.md).
+- **Depth, not just breadth:** the same fast CPU model resolves *within*-cell-type
+  structure — **hepatocyte zonation** (portal/mid/central) at ~0.99 within-1-zone,
+  generalizing across donors and even across independent datasets (GSE158723↔GSE136103).
+  See **[docs/ZONATION.md](docs/ZONATION.md)**.
+
+Read the mini-paper: **[docs/MODEL_FLOW.md](docs/MODEL_FLOW.md)** · two-stage details in
+[docs/TWO_STAGE.md](docs/TWO_STAGE.md) · zonation in [docs/ZONATION.md](docs/ZONATION.md).
 
 ---
 

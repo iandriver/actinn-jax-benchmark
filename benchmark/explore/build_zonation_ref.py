@@ -8,11 +8,15 @@ Ensembl var_names (+ symbols), and obs['zone'].
 import glob, os, warnings; warnings.filterwarnings("ignore")
 import numpy as np, pandas as pd, scanpy as sc, anndata as ad, scipy.io as sio, scipy.sparse as sp
 
-SRC = "/tmp/gse158723"
+SRC = os.environ.get("ZON_SRC", "/tmp/gse158723")
+# only keep samples whose name contains ALL of these substrings (e.g. "healthy,cd45-")
+INCLUDE = [s for s in os.environ.get("ZON_INCLUDE", "").split(",") if s]
+OUT = os.environ.get("ZON_OUT", "/tmp/liver_zonation_ref.h5ad")
 CENTRAL = ["GLUL", "CYP2E1", "CYP1A2", "CYP3A4", "ADH1B", "ADH4", "OAT", "CYP2C8"]
 PORTAL = ["ASS1", "ASL", "SDS", "HAL", "CPS1", "PCK1", "ARG1", "AGT", "GLS2", "SLC7A2"]
 
 samples = sorted({f.rsplit("_", 1)[0] for f in glob.glob(f"{SRC}/*_matrix.mtx.gz")})
+samples = [s for s in samples if all(inc.lower() in os.path.basename(s).lower() for inc in INCLUDE)]
 parts = []
 for s in samples:
     M = sio.mmread(f"{s}_matrix.mtx.gz").T.tocsr().astype(np.float32)  # cells x genes
@@ -63,5 +67,5 @@ print(f"central markers used: {cen}\nportal markers used: {por}", flush=True)
 out = ad.AnnData(X=hep.layers["counts"], obs=hep.obs[["sample", "zone", "zonation_score"]].copy())
 out.var_names = adata.var_names.values
 out.var["symbol"] = adata.var["symbol"].values
-out.write_h5ad("/tmp/liver_zonation_ref.h5ad")
+out.write_h5ad(OUT)
 print(f"ZONATION_REF_DONE {out.shape}", flush=True)

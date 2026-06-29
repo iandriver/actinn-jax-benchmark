@@ -40,6 +40,25 @@ Because the labels come from landmark genes, the meaningful tests *remove* that 
   so the classifier learns real spatial biology rather than echoing the 18 genes used
   to define the labels.
 
+## Cross-DATASET transfer (`cross_dataset_zonation.py`)
+
+The hardest test: train zonation on one human-liver study and predict it in a fully
+independent one (different lab, protocol, patients). We use **GSE136103** (Ramachandran
+healthy liver; 6 CD45− samples → 2,108 hepatocytes), zones derived independently the
+same way. Genes aligned by Ensembl id (20,197 shared).
+
+| transfer | exact (3-zone) | within-1-zone | macro-F1 | portal↔central flips |
+|---|---|---|---|---|
+| GSE158723 → GSE136103 | 0.459 | 0.879 | 0.457 | 0.181 |
+| GSE136103 → GSE158723 | 0.583 | 0.916 | 0.483 | 0.126 |
+
+Exact 3-class accuracy drops (vs ~0.72 within-dataset) because each study cuts its
+tertile boundaries on its *own* cell distribution — but **within-1-zone stays
+0.88–0.92** and **portal↔central axis-flips are rare (0.13–0.18)**. So the zonation
+*gradient/direction* transfers across datasets; only the discrete bin boundaries are
+dataset-specific (expected — zonation is a continuum). The model generalizes the
+biology, not the dataset.
+
 ## Why this matters for the model flow
 
 Zonation is the natural **fine level under "hepatocyte"** in the two-stage hierarchy
@@ -51,15 +70,19 @@ type, recovering continuous spatial structure.
 ## Reproduce
 
 ```bash
-# 1. download GSE158723_RAW.tar from GEO -> /tmp/gse158723/ (tar xf)
-python benchmark/explore/build_zonation_ref.py     # -> /tmp/liver_zonation_ref.h5ad
-python benchmark/explore/zonation_classify.py       # -> docs/results_zonation.csv
+# download GSE158723_RAW.tar and GSE136103_RAW.tar from GEO -> /tmp/gse{158723,136103}/ (tar xf)
+python benchmark/explore/build_zonation_ref.py                                   # GSE158723 -> /tmp/liver_zonation_ref.h5ad
+ZON_SRC=/tmp/gse136103 ZON_INCLUDE=healthy,cd45- ZON_OUT=/tmp/gse136103_zonation_ref.h5ad \
+  python benchmark/explore/build_zonation_ref.py                                  # GSE136103 healthy CD45-
+python benchmark/explore/zonation_classify.py        # within-dataset -> docs/results_zonation.csv
+python benchmark/explore/cross_dataset_zonation.py   # cross-dataset  -> docs/results_cross_zonation.csv
 ```
 
 ## Notes / next
 
 - Zones are derived (tertile bins on a continuum); modeling the **continuous zonation
-  score** (regression / ordinal) would be closer to the biology than 3 discrete classes.
+  score** (regression / ordinal) would be closer to the biology than 3 discrete classes
+  and would likely raise cross-dataset *exact* accuracy (boundary-placement is the main
+  loss there).
 - A natural extension: add scPRINT/scANVI embedding features to the zonation model, and
-  test cross-*dataset* transfer (train GSE158723 → predict zonation in Tabula Sapiens or
-  a spatial liver atlas).
+  test transfer into a spatial liver atlas with ground-truth zonation.
