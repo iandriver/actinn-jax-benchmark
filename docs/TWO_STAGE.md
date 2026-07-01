@@ -3,11 +3,13 @@
 > **Where the runnable workflow lives:** this repo holds the *reasoning and comparisons*
 > (ablations, controls, datasets). The productized, importable workflow — `discover_hierarchy`,
 > `build_hierarchical_reference`, `annotate`, `HierarchicalReferenceModel`, the optional
-> `scprint_embed`, and a **pre-trained broad-human reference** (Tabula Sapiens, ~180 cell
-> types) that annotates unknown data on CPU out of the box — ships in
-> [**actinn-jax**](https://github.com/iandriver/actinn-jax) (`actinn_jax.hierarchy`,
-> `examples/`). Build scripts for that reference: `benchmark/explore/fetch_broad_reference.py`,
-> `embed_broad.py`, `build_from_emb.py`.
+> `scprint_embed`, and a **pre-trained broad-human reference** sampled across the whole
+> CELLxGENE census (**~800 cell types / 314 tissues / 440 datasets**, with an abstain
+> threshold for out-of-distribution cells) that annotates unknown data on CPU out of the
+> box — ships in [**actinn-jax**](https://github.com/iandriver/actinn-jax)
+> (`actinn_jax.hierarchy`, `examples/`). Build scripts: `benchmark/explore/fetch_census_wide.py`,
+> `embed_broad.py`, `build_census_model.py` (Tabula-Sapiens-only variant:
+> `fetch_broad_reference.py` + `build_from_emb.py`).
 
 **Question:** can the scPRINT foundation model's broad, all-cell-types knowledge make
 a *fast, non-GPU* classifier better — best of both worlds — rather than being used
