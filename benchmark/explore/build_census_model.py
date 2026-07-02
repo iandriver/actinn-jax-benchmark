@@ -54,7 +54,7 @@ print(f"calibration: {tr.sum()} train / {test.sum()} in-dist test / {is_ood.sum(
       f"({len(ood_types)} OOD types)", flush=True)
 
 cal = aj.build_hierarchical_reference(hvg_subset(ref[tr].copy()), "cell_type",
-                                      hierarchy=grp_ind, print_cost=False)
+                                      hierarchy=grp_ind, ontology_key="cell_type_ontology_term_id", print_cost=False)
 pf_ind = cal.predict_frame(ref[test].copy())[0]
 pf_ood = cal.predict_frame(ref[is_ood].copy())[0]
 p_ind = pf_ind["celltype_probability"].values
@@ -69,7 +69,7 @@ for thr in (0.0, 0.3, 0.5, 0.7, 0.9):
 # ---- ship: full reference, full hierarchy ----
 t = time.time()
 model = aj.build_hierarchical_reference(hvg_subset(ref.copy()), "cell_type",
-                                        hierarchy=grp, print_cost=False)
+                                        hierarchy=grp, ontology_key="cell_type_ontology_term_id", print_cost=False)
 ng = len(set(model.type_to_group.values()))
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 model.save(OUT)
