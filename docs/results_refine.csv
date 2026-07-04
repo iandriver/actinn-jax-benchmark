@@ -1,0 +1,9 @@
+query,method,exact_cl,ontology,coverage,n_classes,precision_vs_oracle,recall_vs_oracle
+"lung (krasnow, 46 types)",baseline (798 types),0.1336541683165301,0.5241235417745423,1.0,798,,
+"lung (krasnow, 46 types)",oracle-mask (ground truth),0.29874204258170634,0.4468337851420913,1.0,46,,
+"lung (krasnow, 46 types)",detected-refine (no ground truth),0.1336541683165301,0.5241540007919344,1.0,460,0.09565217391304348,0.9565217391304348
+"lung (krasnow, 46 types)",oracle-retrain (ground truth + cached ref),0.5220066400657914,0.6678139563217691,1.0,46,,
+liver (12 types incl. zonation),baseline (798 types),0.2863816025871362,0.4606539705353935,1.0,798,,
+liver (12 types incl. zonation),oracle-mask (ground truth),0.3975925260510241,0.4698167445203018,1.0,12,,
+liver (12 types incl. zonation),detected-refine (no ground truth),0.2863816025871362,0.46101329500538984,1.0,200,0.045,0.75
+liver (12 types incl. zonation),oracle-retrain (ground truth + cached ref),0.45292849443047073,0.5053898670499462,1.0,12,,
