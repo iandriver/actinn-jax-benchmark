@@ -22,13 +22,17 @@ regularized-linear (CellTypist), marker/correlation (SingleR, scmap), the origin
 TensorFlow ACTINN, deep probabilistic (scANVI, scArches), and a foundation model
 (scPRINT) — across **six** datasets (within-dataset, cross-dataset, and cross-study;
 8 to 86 cell types) on commodity Apple-Silicon hardware. We measure accuracy, macro-F1,
-ontology-aware concordance, training time, inference time, and peak memory. **[[FILL:
-one-sentence headline result]]** The central finding is that actinn-jax is **Pareto-
-efficient**: it matches the accuracy of the strongest classical methods while being among
-the fastest at inference and the lightest in memory, and — uniquely among the panel — it
-also supports atlas-scale (~800-type) references, a foundation-model-guided two-stage
-hierarchy, and within-cell-type resolution (hepatocyte zonation). It is not the single
-most accurate method on every dataset, and we report where it is not.
+ontology-aware concordance, training time, inference time, and peak memory. **Across the
+six datasets, actinn-jax ties the most accurate methods (mean accuracy 0.752, vs. scANVI
+0.756 and scArches 0.754 — a five-way top cluster within 0.004) while predicting ~195×
+faster than scANVI (0.37 s vs. 73 s per query) and using 3.6× less memory than its own
+TensorFlow predecessor; no benchmarked method dominates it on both accuracy and speed.**
+The central finding is that actinn-jax is **Pareto-efficient**: it matches the accuracy of
+the strongest methods while being in the fastest-inference, lightest cluster, and —
+uniquely among the panel — it also supports atlas-scale (~800-type) references, a
+foundation-model-guided two-stage hierarchy, and within-cell-type resolution (hepatocyte
+zonation). It is not the single most accurate method on every dataset, and we report where
+it is not (small references; very few cells per type).
 
 ## 1. Introduction
 
@@ -130,34 +134,107 @@ practitioner sees it); an optional thread cap is available for stricter reproduc
 
 ![accuracy heatmap](figures/fig_accuracy_heatmap.png)
 
-[[FILL: accuracy + macro-F1 table (methods × datasets), 2-3 sentence readout — where
-actinn-jax ties the leaders, where it wins (richer liver data), where it trails
-(small-n / few cells-per-type).]]
+Mean accuracy across the six datasets (± is std over 3 repeats aggregated):
+
+| method | mean acc | mean macro-F1 | mean ontology |
+|---|---|---|---|
+| scANVI | **0.756** | 0.701 | 0.812 |
+| original ACTINN | 0.754 | 0.691 | **0.815** |
+| scArches | 0.754 | 0.700 | 0.809 |
+| **actinn-jax** | **0.752** | 0.683 | **0.811** |
+| CellTypist | 0.752 | 0.697 | 0.807 |
+| SVM | 0.738 | 0.688 | 0.797 |
+| SingleR | 0.701 | 0.652 | 0.750 |
+| kNN | 0.700 | 0.624 | 0.769 |
+| scmap-cluster | 0.595 | 0.550 | 0.771 |
+
+The top five methods (scANVI, original ACTINN, scArches, actinn-jax, CellTypist) are a
+statistical tie on accuracy — spread of 0.004 — and actinn-jax is joint-top on
+ontology-aware concordance (0.811). Per dataset (accuracy):
+
+| dataset | actinn-jax | best method (acc) |
+|---|---|---|
+| lung_intra (46 types) | 0.894 | scANVI 0.913 |
+| lung_cross (cross-dataset) | 0.358 | scANVI 0.360 (all ~0.35 — hard for every method) |
+| liver_intra (36 types) | **0.802** | scANVI 0.802 (**tied #1**) |
+| liver_cross (cross-study) | 0.686 | original ACTINN 0.695 (actinn-jax #2, top cluster) |
+| blood_gut (86 types) | 0.860 | scANVI 0.880 |
+| pbmc (8 types) | 0.913 | scArches 0.934 |
+
+actinn-jax is tied-#1 on the richer within-dataset liver data and in the top cluster on
+the hard cross-study split; it trails the deep methods by 1–2 points on the high-
+cardinality and small-n sets. Cross-dataset lung (lung_cross) collapses to ~0.35 for
+**every** method — an honest ceiling on naïve cross-dataset transfer without integration,
+not a method-specific failure. scmap-cluster is consistently the weakest (0.24 macro-F1 on
+liver_cross).
 
 ### 3.2 Speed and memory
 
 ![speed and memory](figures/fig_speed_memory.png)
 
-[[FILL: fit/predict/peak-mem readout. Expected: actinn-jax sub-second predict, ~GB memory;
-kNN cheapest fit; CellTypist/SVM slower fit; deep/foundation methods slowest.]]
+The accuracy tie hides a two-order-of-magnitude spread in cost. Mean per query across
+datasets:
+
+| method | fit (s) | **predict (s)** | peak mem (MB) |
+|---|---|---|---|
+| SVM | 24.9 | **0.10** | 1480 |
+| kNN | 2.3 | **0.24** | 1546 |
+| **actinn-jax** | 16.0 | **0.37** | 2145 |
+| CellTypist | 27.0 | **0.63** | 1661 |
+| scmap-cluster | 0.2 | 9.0 | 8550 |
+| scArches | 47.7 | 18.7 | 1783 |
+| SingleR | 0.2 | 42.4 | 3621 |
+| original ACTINN | 0.1* | 54.5 | 7708 |
+| scANVI | 0.0* | 73.1 | 2118 |
+
+(*original ACTINN and scANVI do most work in a single train+predict pass, attributed to
+predict.) The four fast methods — SVM, kNN, actinn-jax, CellTypist — predict in well under
+a second; the deep/correlation/foundation tiers are 25–200× slower. actinn-jax predicts in
+**0.37 s vs. scANVI's 73 s at statistically tied accuracy** (~195×), and is far lighter
+than the memory-heavy tiers (original ACTINN 7.7 GB, scmap 8.5 GB). Of the methods that
+match its accuracy, none matches its speed; of the methods that match its speed (SVM, kNN),
+none matches its accuracy — i.e. actinn-jax is Pareto-non-dominated.
 
 ### 3.3 The accuracy × speed frontier
 
 ![Pareto](figures/fig_pareto_liver_intra.png)
 
-[[FILL: Pareto readout — actinn-jax on the efficient frontier.]]
+Plotting accuracy against total wall time makes the frontier explicit: actinn-jax, SVM,
+kNN, and CellTypist form the efficient (fast) frontier, and among those actinn-jax has the
+highest accuracy on the richer datasets. The deep methods buy ~0.4 accuracy points on
+average (up to ~2 points on the 86-type blood+gut set, zero-to-negative on the liver and
+cross-dataset sets) at 50–200× the inference cost — the trade the frontier is meant to
+expose.
 
 ### 3.4 Scaling
 
 ![scaling](figures/fig_scaling.png)
 
-[[FILL: training time / memory vs #reference cells and vs #cell types.]]
+Training time grows with reference size and with #cell types for all trained methods —
+actinn-jax's fit goes 13 s → 141 s → 254 s as the reference grows 965 → 14.8k → 24k
+cells, comparable to CellTypist (4 s → 75 s → 246 s) and somewhat above SVM (9 s → 55 s →
+80 s); kNN is lazy (fit is trivial but it pays at predict and is the least accurate). The
+decisive result is the other axis: **actinn-jax's predict time stays flat and sub-second
+across the entire range — ~0.3–1.4 s whether the reference has 1k or 24k cells, or 5 or 86
+types.** Inference cost does not grow with reference size or cardinality, and with the
+train-once/map-many cache the fit cost is paid once and the flat predict cost is all that
+recurs — the regime that matters when a reference is reused across many queries. (The
+scaling script's memory column is process-cumulative and not a clean per-size measurement;
+per-method peak memory is reported from the isolated-subprocess matrix in §3.2.)
 
 ### 3.5 actinn-jax vs. the original ACTINN
 
 The `actinn-orig` row isolates the value of the reimplementation itself: same method, same
-data, TensorFlow vs. JAX. [[FILL: side-by-side accuracy (equal) + speed/mem (3×/3.5×).]]
-See [RESULTS_actinn_orig.md](RESULTS_actinn_orig.md).
+data, TensorFlow-2.15 vs. JAX. Mean across the six datasets:
+
+| | accuracy | macro-F1 | predict (s) | peak mem (MB) |
+|---|---|---|---|---|
+| original ACTINN (TF) | 0.754 | 0.691 | 54.5 | 7708 |
+| **actinn-jax** | 0.752 | 0.683 | **0.37** | **2145** |
+
+Equal accuracy (0.752 vs. 0.754, within repeat noise), **~145× faster inference** and
+**3.6× less memory** — the reimplementation is a strict engineering win at no accuracy
+cost. See [RESULTS_actinn_orig.md](RESULTS_actinn_orig.md).
 
 ### 3.6 Beyond flat classification (extensions unique to this pipeline)
 
@@ -175,8 +252,38 @@ These are established elsewhere in the repo and summarized here for completeness
 
 ### 3.7 Rejection / abstain
 
-[[FILL: accuracy-coverage tradeoff for methods supporting rejection (actinn-jax abstain,
-scmap-cluster unassigned, CellTypist prob threshold); OOD-flagging on held-out types.]]
+Holding out 9 of 36 cell types entirely from the HLiCA liver reference (so 1,350 query
+cells are genuinely out-of-distribution), and sweeping a confidence threshold:
+
+| threshold | actinn-jax: acc(kept) / coverage / OOD-flagged | CellTypist: acc(kept) / coverage / OOD-flagged |
+|---|---|---|
+| 0.0 | 0.885 / 1.00 / 0.00 | 0.873 / 1.00 / 0.00 |
+| 0.5 | 0.919 / 0.93 / 0.30 | 0.936 / 0.68 / 0.68 |
+| 0.7 | 0.946 / 0.84 / 0.52 | 0.936 / 0.68 / 0.68 |
+| 0.9 | 0.969 / 0.66 / 0.73 | 0.937 / 0.68 / 0.68 |
+
+actinn-jax's probability gives a **smooth, tunable** abstain curve — accuracy on kept cells
+rises 0.885→0.969 as coverage falls 1.00→0.66 and OOD-flagging climbs 0.00→0.73 — so a user
+can dial the precision/coverage/novel-cell-detection trade-off. CellTypist's probabilities
+are **saturated** (near 0 or 1): the threshold jumps to 68% OOD-flagged at 0.5 and then does
+not move across 0.5–0.9, giving essentially one operating point rather than a tunable curve.
+scmap-cluster offers a single native "unassigned" decision (no sweep). The abstain knob is a
+concrete, practical advantage of actinn-jax's calibrated output.
+
+### 3.8 Foundation-model zero-shot (scPRINT)
+
+scPRINT is run separately as a zero-shot predictor (no training on the reference). The
+result is a cautionary data point. It ran cleanly only on the lung datasets — on
+lung_intra it scored **exact accuracy 0.027 and ontology concordance 0.206 in 321 s per
+query** (vs. actinn-jax's 0.89 accuracy in 0.2 s) — and it **failed outright** on the
+HLiCA liver sets (`ValueError: true label CL:4047054 not in available classes`: its fixed
+pretrained classifier vocabulary cannot represent HLiCA's 2026-era Cell-Ontology terms)
+and on blood+gut (it requires CL ids, which that atlas lacks). So the foundation model as
+a *label predictor* is simultaneously the slowest (≈1000× actinn-jax), the least accurate,
+and the most brittle (fixed vocabulary, hard requirement on CL ids) option in the panel.
+This is exactly why our two-stage workflow ([MODEL_FLOW.md](MODEL_FLOW.md)) uses scPRINT's
+**embeddings** — its learned structure — to shape a small trained model, and never its
+zero-shot labels. Foundation models are valuable here; their raw predictions are not.
 
 ## 4. Discussion
 

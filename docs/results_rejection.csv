@@ -1,0 +1,11 @@
+method,min_prob,indist_acc_kept,coverage,ood_flagged
+actinn-jax,0.0,0.885,1.0,0.0
+actinn-jax,0.3,0.894,0.987,0.067
+actinn-jax,0.5,0.919,0.928,0.299
+actinn-jax,0.7,0.946,0.838,0.519
+actinn-jax,0.9,0.969,0.657,0.733
+celltypist,0.0,0.873,1.0,0.0
+celltypist,0.3,0.936,0.681,0.682
+celltypist,0.5,0.936,0.68,0.682
+celltypist,0.7,0.936,0.68,0.682
+celltypist,0.9,0.937,0.678,0.683

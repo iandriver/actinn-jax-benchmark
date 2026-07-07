@@ -1,5 +1,14 @@
 # actinn-jax-benchmark
 
+## 📄 Comprehensive benchmark report — **[docs/PAPER.md](docs/PAPER.md)**
+
+10-method × 6-dataset neutral comparison of accuracy × speed × memory on commodity
+Apple-Silicon hardware. **Headline:** across six datasets **actinn-jax ties the most
+accurate methods (mean accuracy 0.752 vs. scANVI 0.756 / scArches 0.754) while predicting
+~195× faster (0.37 s vs. 73 s per query) and using 3.6× less memory than the original
+TensorFlow ACTINN — no method dominates it on both accuracy and speed.** Figures in
+[docs/figures/](docs/figures). Reproduce: `python -m benchmark.driver configs/paper.yaml`.
+
 ## ⭐ Headline: foundation-model-shaped, CPU-fast cell typing — **[docs/MODEL_FLOW.md](docs/MODEL_FLOW.md)**
 
 A two-stage flow that uses the **scPRINT** foundation model *once, offline, on a GPU*

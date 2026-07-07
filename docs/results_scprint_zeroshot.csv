@@ -1,0 +1,27 @@
+dataset,method,repeat,error,tier,device,n_ref,n_query,fit_s,predict_s,peak_mem_mb,n,pct_rejected,accuracy,macro_f1,kappa,ontology_concordance
+liver_cross,scprint,0,"ner.py"", line 49, in main
+    preds = method.predict(query)
+            ^^^^^^^^^^^^^^^^^^^^^
+  File ""/Users/iandriver/Downloads/actinn-jax-benchmark/benchmark/adapters/scprint_adapter.py"", line 107, in predict
+    res = emb(self._model, a)
+          ^^^^^^^^^^^^^^^^^^^
+  File ""/Users/iandriver/Downloads/actinn-jax-benchmark/.venv-scprint/lib/python3.11/site-packages/scprint/tasks/cell_emb.py"", line 247, in __call__
+    raise ValueError(
+ValueError: true label CL:0000973 not in available classes",,,,,,,,,,,,,
+liver_intra,scprint,0,"ner.py"", line 49, in main
+    preds = method.predict(query)
+            ^^^^^^^^^^^^^^^^^^^^^
+  File ""/Users/iandriver/Downloads/actinn-jax-benchmark/benchmark/adapters/scprint_adapter.py"", line 107, in predict
+    res = emb(self._model, a)
+          ^^^^^^^^^^^^^^^^^^^
+  File ""/Users/iandriver/Downloads/actinn-jax-benchmark/.venv-scprint/lib/python3.11/site-packages/scprint/tasks/cell_emb.py"", line 247, in __call__
+    raise ValueError(
+ValueError: true label CL:4047054 not in available classes",,,,,,,,,,,,,
+blood_gut_intra,scprint,0,"          ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""/Users/iandriver/Downloads/actinn-jax-benchmark/.venv-scprint/lib/python3.11/site-packages/pandas/core/frame.py"", line 4113, in __getitem__
+    indexer = self.columns.get_loc(key)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File ""/Users/iandriver/Downloads/actinn-jax-benchmark/.venv-scprint/lib/python3.11/site-packages/pandas/core/indexes/base.py"", line 3819, in get_loc
+    raise KeyError(key) from err
+KeyError: 'cell_type_ontology_term_id'",,,,,,,,,,,,,
+lung_intra,scprint,0,,foundation,mps,8109.0,2694.0,17.348437499953434,321.1018957500346,4721.328128,2694.0,0.0,0.02746844840386043,0.008804643191376608,0.02502403500823247,0.20601336302895323
