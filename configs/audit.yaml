@@ -1,0 +1,31 @@
+# Smoke-audit: run EVERY method once on a tiny real (Ensembl-gene) subsample of the
+# krasnow lung atlas, to confirm all adapters + their venvs still execute before any
+# long run. ~30 cells/type -> ~1.4k cells; fast even for scPRINT/scANVI.
+label: cell_type
+repeats: 1
+output: results/audit
+ontology_obo: /tmp/cl-basic.obo
+
+datasets:
+  - name: krasnow_smoke
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 30
+    test_frac: 0.3
+
+methods:
+  - name: actinn-jax
+  - name: svm
+  - name: knn
+  - name: celltypist
+  - name: actinn-orig
+    python: .venv-tf/bin/python
+  - name: singler
+  - name: scmap-cluster
+  - name: scpred
+  - name: scanvi
+    python: .venv-scvi/bin/python
+  - name: scarches
+    python: .venv-scvi/bin/python
+  - name: scprint
+    python: .venv-scprint/bin/python

@@ -1,0 +1,35 @@
+# scPRINT zero-shot foundation-model baseline, run separately (slow GPU/MPS embeds,
+# near-deterministic -> repeats=1). Ensembl-gene datasets only (pbmc is symbols -> skip).
+label: cell_type
+repeats: 1
+output: results/paper_scprint
+ontology_obo: /tmp/cl-basic.obo
+
+datasets:
+  - name: liver_cross
+    type: cross
+    ref_path: /Volumes/IanSSD/hlica/liver_ref_xstudy.h5ad
+    query_path: /Volumes/IanSSD/hlica/liver_query_xstudy.h5ad
+  - name: liver_intra
+    type: intra
+    path: /Volumes/IanSSD/hlica/liver_intra.h5ad
+    test_frac: 0.25
+  - name: blood_gut_intra
+    type: intra
+    path: /Volumes/IanSSD/hlica/blood_gut_intra.h5ad
+    test_frac: 0.25
+  - name: lung_intra
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 300
+    test_frac: 0.25
+  - name: lung_cross
+    type: cross
+    ref_path: ~/Downloads/Sikkama_HCLA.h5ad
+    query_path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    ref_subsample_per_label: 300
+    query_subsample_per_label: 400
+
+methods:
+  - name: scprint
+    python: .venv-scprint/bin/python

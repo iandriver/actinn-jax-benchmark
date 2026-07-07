@@ -1,0 +1,13 @@
+label: cell_type
+repeats: 1
+output: results/audit_scprint
+ontology_obo: /tmp/cl-basic.obo
+datasets:
+  - name: krasnow_smoke
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 30
+    test_frac: 0.3
+methods:
+  - name: scprint
+    python: .venv-scprint/bin/python

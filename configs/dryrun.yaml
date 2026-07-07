@@ -1,0 +1,20 @@
+label: cell_type
+repeats: 1
+output: results/dryrun
+ontology_obo: /tmp/cl-basic.obo
+datasets:
+  - name: liver_intra
+    type: intra
+    path: /Volumes/IanSSD/hlica/liver_intra.h5ad
+    test_frac: 0.25
+  - name: liver_cross
+    type: cross
+    ref_path: /Volumes/IanSSD/hlica/liver_ref_xstudy.h5ad
+    query_path: /Volumes/IanSSD/hlica/liver_query_xstudy.h5ad
+  - name: blood_gut_intra
+    type: intra
+    path: /Volumes/IanSSD/hlica/blood_gut_intra.h5ad
+    test_frac: 0.25
+methods:
+  - name: actinn-jax
+  - name: svm
