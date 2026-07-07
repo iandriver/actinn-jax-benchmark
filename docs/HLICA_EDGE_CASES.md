@@ -117,19 +117,47 @@ processed file, it's a stated absence from the *entire* atlas. `liver_hlica_v1` 
 this gap and cannot be fixed by re-including a dropped file — would need markers HLiCA
 itself says don't yet exist.
 
-## Bottom line / recommended fix
+## Fixed: `liver_hlica_v2`
 
-Two concrete, fixable gaps, both self-inflicted by using the lineage-file split at face
-value rather than checking each file's richer `author_cell_type` and the full-atlas
-`all_cells.h5ad` for cells the lineage split excludes:
+Built (`build_hlica_liver_v2.py`) with both fixes applied:
 
-1. **Add pDCs** (790 cells) from `all_cells.h5ad` as a 39th class, likely its own
-   single-cell coarse group (or folded into myeloid/lymphocyte with an "unmapped"-style
-   catch-all, mirroring `_unmapped` handling already in `build_hierarchical_reference`).
-2. **Rebuild using `author_cell_type` uniformly across all 6 lineages**, not just
-   hepatocytes — recovers NRXN1+ stromal cells, CUX2+ hepatic stellate cells, MAMLD1+
-   trans monocytes, TREM2+ macrophages, Type 1/2 cDCs, Bright/Dim NK, and the finer
-   endothelial vascular-bed distinctions (Periportal LSEC vs. Portal Vein). Would take
-   `liver_hlica_v1` from 38 to ~65 fine types — a much closer match to HLiCA's own
-   headline findings, though per-class training data shrinks accordingly for the
-   newly-split substates (some, like NRXN1+ at 347 cells, are genuinely rare).
+1. `author_cell_type` uniformly across all 6 lineages (not just hepatocytes) →
+   **48 fine types across 7 coarse groups** (up from 38/6), close to HLiCA's own
+   reported 47.
+2. The 790 pDCs added as their own coarse group, pulled from `all_cells.h5ad`.
+3. `class_to_cl` built directly from each row's own `cell_type_ontology_term_id`
+   (not a hand-typed dict) — a collapsed label naturally inherits its parent's CL id.
+4. "Cycling" cells — found not just in hepatocyte but in 4 of 6 lineage files (5,342
+   cells total, always resolving to `cell_type` = "lymphocyte" regardless of host
+   file) — are re-routed to the lymphocyte group using their own label, not dropped
+   and not left in a possibly-wrong lineage by accident of dict ordering.
+
+**Same cross-study held-out validation (train on 6 studies, test only on the withheld
+Andrews_2022) — the fixes cost nothing on the core metrics:**
+
+| metric | v1 (38 types) | v2 (48 types) |
+|---|---|---|
+| exact-CL | 0.728 | 0.724 |
+| ontology-concordant | 0.858 | 0.859 |
+| hepatocyte zonation exact-zone | 0.787 | 0.789 |
+| hepatocyte zonation flip rate | 0.182 | 0.178 |
+| endothelial zonation exact-zone | 0.711 | 0.708 |
+| endothelial zonation flip rate | 0.264 | 0.267 |
+
+Recovering the lost cell types (NRXN1+ stromal cells, CUX2+ hepatic stellate cells,
+MAMLD1+ trans monocytes, TREM2+ macrophages, Type 1/2 cDCs, Bright/Dim NK cells, finer
+endothelial vascular beds, pDCs) is essentially free — the differences above are noise,
+not signal.
+
+**One honest new result, not glossed over:** pDC held-out recall was **0/4** — only 4
+pDC cells landed in the held-out `Andrews_2022` split (matches the low pDC representation
+in that study generally), too small a sample to draw any real conclusion from, but stated
+plainly rather than omitted. pDCs are a genuinely hard, rare (0.15% of the atlas),
+transcriptionally-close-to-other-immune-cells population; 786 training examples spread
+across ~468k cells may simply not be enough for the coarse router to reliably carve out
+a 7th bucket. Shipped anyway since it's a strict improvement in *what the reference can
+represent at all* — a missed pDC call is a coarse-routing error into a sibling myeloid/
+lymphocyte class, not a new failure mode, and doesn't regress the other 47 types.
+
+`liver_hlica_v2` is the recommended bundled reference going forward; `liver_hlica_v1`
+stays available for anyone who wants the smaller 38-type taxonomy.
