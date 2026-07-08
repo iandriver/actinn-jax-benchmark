@@ -1,0 +1,46 @@
+__merge__: /src/api/comp_method.yaml
+name: "actinn_jax"
+label: actinn-jax
+summary: "A fast, dependency-light JAX reimplementation of ACTINN: a 4-layer MLP cell-type classifier that trains in gene space (its own CP10k+log2 + expr/CV gene filtering) rather than on PCA."
+description: |
+  actinn-jax is a from-scratch JAX/optax reimplementation of ACTINN (Ma & Pellegrini
+  2020), a 4-layer fully-connected network (100/50/25 hidden units, ReLU, softmax)
+  trained with Adam. Unlike the PCA-input MLP baseline, actinn-jax trains directly in
+  gene space with sparse-aware CP10k+log2 normalization and an expression/CV percentile
+  gene filter, and predicts in a single forward pass. It is CPU-first and light: no
+  TensorFlow, sub-second inference, and a train-once/map-many cached reference model.
+  Repository: https://github.com/iandriver/actinn-jax
+references:
+  doi:
+    - 10.1093/bioinformatics/btz592
+links:
+  repository: https://github.com/iandriver/actinn-jax
+  documentation: https://github.com/iandriver/actinn-jax#readme
+info:
+  preferred_normalization: log_cp10k
+arguments:
+  - name: "--n_hvg"
+    type: "integer"
+    default: 1000
+    description: "Restrict training to the top-N highly-variable genes provided in var['hvg'] (0 = use all genes; needs large RAM on atlas-scale data)."
+resources:
+  - type: python_script
+    path: script.py
+engines:
+  - type: docker
+    image: openproblems/base_python:1
+    setup:
+      - type: python
+        packages:
+          - jax
+          - jaxlib
+          - optax
+          - scikit-learn
+      - type: docker
+        run: |
+          pip install git+https://github.com/iandriver/actinn-jax.git
+runners:
+  - type: executable
+  - type: nextflow
+    directives:
+      label: [midtime, highmem, midcpu]
