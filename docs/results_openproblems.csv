@@ -1,0 +1,2 @@
+dataset,method,accuracy,f1_macro,fit_s,predict_s,n_train,n_test,n_labels
+dkd,actinn-jax,0.9437,0.922,59.8,0.37,33898,5278,13
