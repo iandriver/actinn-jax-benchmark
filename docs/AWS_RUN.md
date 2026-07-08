@@ -60,12 +60,38 @@ curl -fsSL https://github.com/viash-io/viash/releases/latest/download/viash -o v
 ## 4. Add the actinn-jax component and build
 
 ```bash
-git clone https://github.com/openproblems-bio/task_label_projection.git
+git clone --recursive https://github.com/openproblems-bio/task_label_projection.git
 cd task_label_projection
+git submodule update --init --recursive    # `common/` — REQUIRED (helper.nf, base configs); a --depth 1 clone skips it
 # drop in the component (from this repo's openproblems_component/actinn_jax/)
 mkdir -p src/methods/actinn_jax
 cp /path/to/actinn-jax-benchmark/openproblems_component/actinn_jax/* src/methods/actinn_jax/
-viash ns build --setup cachedbuild          # builds all component containers incl. actinn_jax
+```
+
+**Wire the method into the benchmark workflow (two edits — a component alone is invisible to `run_benchmark`):**
+
+1. `src/workflows/run_benchmark/config.vsh.yaml` → add under `dependencies:`
+   ```yaml
+     - name: methods/actinn_jax
+   ```
+2. `src/workflows/run_benchmark/main.nf` → add to the `methods = [ ... ]` array
+   ```nextflow
+     actinn_jax,
+   ```
+
+Adding *only* the dependency (or *only* the array entry) silently drops the method from
+the run with no error — it just never appears in the DAG. Both are required, then:
+
+```bash
+viash ns build                              # regenerates target/nextflow/**, incl. run_benchmark/main.nf
+grep -c actinn_jax target/nextflow/workflows/run_benchmark/main.nf   # must be > 0
+# build the CPU-tier images (docker is an *engine* in viash 0.9, not a runner):
+for c in methods/actinn_jax methods/mlp methods/knn methods/logistic_regression \
+         methods/naive_bayes methods/xgboost methods/singler methods/seurat_transferdata \
+         methods/cellmapper_linear metrics/accuracy metrics/f1 \
+         control_methods/true_labels control_methods/majority_vote control_methods/random_labels; do
+  viash build "src/$c/config.vsh.yaml" --engine docker --setup cachedbuild
+done
 ```
 
 ## 5. Sync data (in-region → fast) and run the CPU tier
@@ -80,13 +106,25 @@ output_state: "state.yaml"
 settings: '{"methods_include": ["actinn_jax","mlp","knn","logistic_regression","naive_bayes","xgboost","singler","seurat_transferdata","cellmapper_linear","true_labels","majority_vote","random_labels"]}'
 publish_dir: "resources/results/aws_run"
 YAML
-nextflow run . -main-script target/nextflow/workflows/run_benchmark/main.nf \
+export JAVA_CMD=/usr/lib/jvm/java-17-openjdk-amd64/bin/java   # Nextflow 26.04 needs Java 17+
+export NXF_SYNTAX_PARSER=v1                                   # 26.04's strict parser rejects the OP nextflow.config
+nextflow run target/nextflow/workflows/run_benchmark/main.nf \
   -profile docker -resume -entry auto \
-  -c common/nextflow_helpers/labels_ci.config -params-file /tmp/params.yaml
+  -c /root/big.config -params-file /tmp/params.yaml
 ```
 
-`-resume` makes the run idempotent: a spot interruption or added method re-uses cached
-results, so **nothing re-runs unnecessarily**.
+Notes learned the hard way on the r7i.8xlarge (32 vCPU / 256 GB):
+
+- **Don't use `common/nextflow_helpers/labels_ci.config`** — it caps *every* label's memory
+  at 5 GB (a CI-only config), so `random_labels`/`singler` OOM (exit 137) loading the 20 GB
+  Tabula Sapiens h5ad. Use a generous custom config (`big.config`): `lowmem 80 / midmem 100 /
+  highmem 120 GB`, `maxForks = 2`, `executor { memory "250 GB"; cpus 32; queueSize 2 }`. The
+  `maxForks 2` also stops concurrent big-h5ad loads from oversubscribing RAM.
+- Invoke the **compiled** `main.nf` by path (`target/nextflow/workflows/run_benchmark/main.nf`);
+  `nextflow run . -main-script …` makes 26.04 try to pull a remote repo named `.`.
+- `-resume` makes the run idempotent: a spot interruption or an added method re-uses cached
+  results, so **nothing re-runs unnecessarily**. If a prior run was `kill -9`'d, delete the
+  stale lock first: `find .nextflow -name LOCK -delete`.
 
 ## 6. Collect results, then tear down
 
