@@ -118,13 +118,29 @@ Notes learned the hard way on the r7i.8xlarge (32 vCPU / 256 GB):
 - **Don't use `common/nextflow_helpers/labels_ci.config`** — it caps *every* label's memory
   at 5 GB (a CI-only config), so `random_labels`/`singler` OOM (exit 137) loading the 20 GB
   Tabula Sapiens h5ad. Use a generous custom config (`big.config`): `lowmem 80 / midmem 100 /
-  highmem 120 GB`, `maxForks = 2`, `executor { memory "250 GB"; cpus 32; queueSize 2 }`. The
-  `maxForks 2` also stops concurrent big-h5ad loads from oversubscribing RAM.
+  highmem 120 GB`.
+- **Memory thrash is the real hazard, not per-task OOM.** The box has **no swap**, so if the
+  *sum* of concurrently-scheduled tasks' actual RSS exceeds ~247 GB the kernel thrashes and
+  `sshd` goes unresponsive for many minutes (the EC2 system/reachability checks still pass —
+  it's userspace starvation, not a dead box; `aws ec2 reboot-instances` recovers it). Two
+  Tabula-Sapiens-scale tasks overlapping under `maxForks 2` + `executor.memory 250 GB` is
+  enough to trigger it. **Fix:** cap `executor { memory "180 GB" }` so two `highmem` (120 GB)
+  tasks can't co-schedule (240 > 180), keeping `maxForks 2` for the light tasks. `maxForks 1`
+  is bulletproof but serial and slow — only worth it if a single task also can't fit.
+- **`singler` (SingleR) is a time bomb.** It ran **single-threaded at 100 % of one core for
+  >2 h without finishing on the *smallest* dataset** (mouse_pancreas), blocking the whole
+  serial queue; on TS/hypomap it would take many hours. `seurat_transferdata` is the next
+  slowest R method. For a time-boxed same-hardware run, **exclude both** from
+  `methods_include` — the controlled comparison that matters is actinn-jax vs the Python ML
+  tier (`mlp`, `knn`, `logistic_regression`, `naive_bayes`, `xgboost`, `cellmapper_linear`);
+  the R methods' numbers can stay sourced from OP's own CI trace.
 - Invoke the **compiled** `main.nf` by path (`target/nextflow/workflows/run_benchmark/main.nf`);
   `nextflow run . -main-script …` makes 26.04 try to pull a remote repo named `.`.
 - `-resume` makes the run idempotent: a spot interruption or an added method re-uses cached
   results, so **nothing re-runs unnecessarily**. If a prior run was `kill -9`'d, delete the
-  stale lock first: `find .nextflow -name LOCK -delete`.
+  stale lock first: `find .nextflow -name LOCK -delete`. Note that enabling `trace`/`report`
+  after tasks have run leaves those tasks untraced — enable tracing from the **first** run,
+  or restart fresh, so every task carries a `realtime`/`peak_rss` row.
 
 ## 6. Collect results, then tear down
 
