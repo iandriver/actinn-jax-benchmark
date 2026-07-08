@@ -1,5 +1,14 @@
 # actinn-jax-benchmark
 
+## 🏆 Objective external placement — **[Open Problems `label_projection`](docs/OPENPROBLEMS.md)**
+
+Run through the community-standard [Open Problems](https://openproblems.bio/benchmarks/label_projection)
+benchmark (their 6 datasets, splits, and metrics; scored against their published v2.0.0
+leaderboard): **actinn-jax places 3rd of 17 on accuracy — and 1st among every method that
+completes all 6 datasets** — beating its PCA-space `mlp` sibling on both metrics and posting
+the best accuracy on the hardest dataset (tabula_sapiens, 160 types). Full table:
+**[docs/OPENPROBLEMS.md](docs/OPENPROBLEMS.md)**.
+
 ## 📄 Comprehensive benchmark report — **[docs/PAPER.md](docs/PAPER.md)**
 
 10-method × 6-dataset neutral comparison of accuracy × speed × memory on commodity

@@ -305,6 +305,21 @@ This is exactly why our two-stage workflow ([MODEL_FLOW.md](MODEL_FLOW.md)) uses
 **embeddings** — its learned structure — to shape a small trained model, and never its
 zero-shot labels. Foundation models are valuable here; their raw predictions are not.
 
+### 3.9 External validation: Open Problems `label_projection`
+
+Our in-house benchmark is neutral but self-run. For an **independent** check, we ran
+actinn-jax through the community-standard [Open Problems](https://openproblems.bio/benchmarks/label_projection)
+label-projection task — their 6 datasets, splits, and metrics — and slotted it into their
+published v2.0.0 leaderboard (full detail: [OPENPROBLEMS.md](OPENPROBLEMS.md)). On a
+benchmark we did not design and cannot tune: **actinn-jax places 3rd of 17 on mean accuracy
+(0.837), 1st among all methods that complete every dataset, beats its PCA-space `mlp`
+sibling on both accuracy (0.837 vs 0.828) and macro-F1 (0.656 vs 0.648), and posts the best
+accuracy of any completing method on the hardest dataset (tabula_sapiens, 160 types: 0.394
+vs mlp 0.342).** It is upper-mid on macro-F1 and not the top method overall
+(scANVI+scArches surgery and xgboost score higher on the datasets they finish — but both
+fail tabula_sapiens). The foundation models again land at the bottom (scgpt_zeroshot 0.639,
+uce 0.131 ≈ random), reproducing §3.8 externally.
+
 ## 4. Discussion
 
 [[FILL after numbers, but the thesis is fixed:]] actinn-jax is not the accuracy champion on
