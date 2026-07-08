@@ -23,10 +23,13 @@ TensorFlow ACTINN, deep probabilistic (scANVI, scArches), and a foundation model
 (scPRINT) — across **six** datasets (within-dataset, cross-dataset, and cross-study;
 8 to 86 cell types) on commodity Apple-Silicon hardware. We measure accuracy, macro-F1,
 ontology-aware concordance, training time, inference time, and peak memory. **Across the
-six datasets, actinn-jax ties the most accurate methods (mean accuracy 0.752, vs. scANVI
-0.756 and scArches 0.754 — a five-way top cluster within 0.004) while predicting ~195×
-faster than scANVI (0.37 s vs. 73 s per query) and using 3.6× less memory than its own
-TensorFlow predecessor; no benchmarked method dominates it on both accuracy and speed.**
+five datasets that share a label vocabulary between reference and query, actinn-jax ties
+the most accurate methods (mean accuracy 0.831, vs. scANVI 0.835 and scArches 0.833 — a
+five-way top cluster within 0.004) while predicting ~195× faster than scANVI (0.37 s vs.
+73 s per query) and using 3.6× less memory than its own TensorFlow predecessor; no
+benchmarked method dominates it on both accuracy and speed.** (The sixth dataset,
+cross-dataset lung, is a label-vocabulary mismatch — see §3.1 — where every method scores
+~0.35 by exact match but ~0.75 by ontology-aware concordance.)
 The central finding is that actinn-jax is **Pareto-efficient**: it matches the accuracy of
 the strongest methods while being in the fastest-inference, lightest cluster, and —
 uniquely among the panel — it also supports atlas-scale (~800-type) references, a
@@ -134,19 +137,21 @@ practitioner sees it); an optional thread cap is available for stricter reproduc
 
 ![accuracy heatmap](figures/fig_accuracy_heatmap.png)
 
-Mean accuracy across the six datasets (± is std over 3 repeats aggregated):
+Mean accuracy across the **five shared-vocabulary datasets** (lung_cross excluded — its
+exact accuracy is a vocabulary artifact, see the † note below; means over all six are ~0.08
+lower for every method with the identical ranking):
 
-| method | mean acc | mean macro-F1 | mean ontology |
+| method | mean acc (5 datasets) | mean macro-F1 (6) | mean ontology (6) |
 |---|---|---|---|
-| scANVI | **0.756** | 0.701 | 0.812 |
-| original ACTINN | 0.754 | 0.691 | **0.815** |
-| scArches | 0.754 | 0.700 | 0.809 |
-| **actinn-jax** | **0.752** | 0.683 | **0.811** |
-| CellTypist | 0.752 | 0.697 | 0.807 |
-| SVM | 0.738 | 0.688 | 0.797 |
-| SingleR | 0.701 | 0.652 | 0.750 |
-| kNN | 0.700 | 0.624 | 0.769 |
-| scmap-cluster | 0.595 | 0.550 | 0.771 |
+| scANVI | **0.835** | 0.701 | 0.812 |
+| original ACTINN | 0.834 | 0.691 | **0.815** |
+| scArches | 0.833 | 0.700 | 0.809 |
+| **actinn-jax** | **0.831** | 0.683 | **0.811** |
+| CellTypist | 0.831 | 0.697 | 0.807 |
+| SVM | 0.816 | 0.688 | 0.797 |
+| SingleR | 0.770 | 0.652 | 0.750 |
+| kNN | 0.770 | 0.624 | 0.769 |
+| scmap-cluster | 0.646 | 0.550 | 0.771 |
 
 The top five methods (scANVI, original ACTINN, scArches, actinn-jax, CellTypist) are a
 statistical tie on accuracy — spread of 0.004 — and actinn-jax is joint-top on
@@ -155,7 +160,7 @@ ontology-aware concordance (0.811). Per dataset (accuracy):
 | dataset | actinn-jax | best method (acc) |
 |---|---|---|
 | lung_intra (46 types) | 0.894 | scANVI 0.913 |
-| lung_cross (cross-dataset) | 0.358 | scANVI 0.360 (all ~0.35 — hard for every method) |
+| lung_cross (cross-dataset)† | 0.358 exact / **0.749 ontology** | scANVI 0.360 / 0.767 |
 | liver_intra (36 types) | **0.802** | scANVI 0.802 (**tied #1**) |
 | liver_cross (cross-study) | 0.686 | original ACTINN 0.695 (actinn-jax #2, top cluster) |
 | blood_gut (86 types) | 0.860 | scANVI 0.880 |
@@ -163,10 +168,25 @@ ontology-aware concordance (0.811). Per dataset (accuracy):
 
 actinn-jax is tied-#1 on the richer within-dataset liver data and in the top cluster on
 the hard cross-study split; it trails the deep methods by 1–2 points on the high-
-cardinality and small-n sets. Cross-dataset lung (lung_cross) collapses to ~0.35 for
-**every** method — an honest ceiling on naïve cross-dataset transfer without integration,
-not a method-specific failure. scmap-cluster is consistently the weakest (0.24 macro-F1 on
+cardinality and small-n sets. scmap-cluster is consistently the weakest (0.24 macro-F1 on
 liver_cross).
+
+**† lung_cross exact accuracy (~0.35 for every method) is a label-vocabulary artifact, not
+a transfer failure.** HCLA (reference) and Krasnow (query) were annotated independently and
+share only **20 of 46 cell-type names**; 26 of Krasnow's types are absent from HCLA's
+vocabulary, so no classifier can emit the exact string. The mismatch is granularity: HCLA's
+finer taxonomy has `alveolar / elicited / lung macrophage` but **no generic `macrophage`**
+(CL:0000235), while Krasnow labels many cells generic `macrophage` — so an HCLA-trained
+model predicts `lung macrophage` (CL:1001603) for them, exact-wrong but ontology-correct
+(*lung macrophage is-a macrophage*); likewise Krasnow's generic `endothelial cell`
+(CL:0000115) has no HCLA counterpart. **Ontology-aware concordance — which credits a
+same-lineage call — is 0.75–0.77 for every method**, so cross-dataset transfer actually
+works; exact-match just conflates classifier error with vocabulary/granularity mismatch.
+This is precisely why we report ontology concordance, and it is a general benchmarking
+pitfall: **cross-dataset exact accuracy between independently-annotated atlases is not a
+meaningful accuracy signal.** The other five datasets use a single shared label vocabulary
+for reference and query (a split of one atlas, or HLiCA's harmonized annotations), so their
+exact scores are unaffected.
 
 ### 3.2 Speed and memory
 
