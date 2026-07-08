@@ -1,2 +1,5 @@
 dataset,method,accuracy,f1_macro,fit_s,predict_s,n_train,n_test,n_labels
-dkd,actinn-jax,0.9437,0.922,59.8,0.37,33898,5278,13
+gtex_v9,actinn-jax,0.8576,0.3309,59.9,0.08,197618,11508,53
+dkd,actinn-jax,0.9471,0.9362,34.3,0.25,33898,5278,13
+mouse_pancreas_atlas,actinn-jax,0.9653,0.784,169.2,0.44,292354,9442,13
+tabula_sapiens,actinn-jax,0.3944,0.1709,327.3,0.48,482868,284,160

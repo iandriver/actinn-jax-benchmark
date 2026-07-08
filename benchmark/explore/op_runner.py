@@ -43,6 +43,14 @@ tr = load_counts(f"{ds_dir}/train.h5ad")
 tr.obs["label"] = tr.obs["label"].astype(str)
 te = load_counts(f"{ds_dir}/test.h5ad")
 sol = sc.read_h5ad(f"{ds_dir}/solution.h5ad", backed="r")
+
+# Restrict to the OP-provided highly-variable genes (var['hvg']) -- the same feature set
+# the framework's PCA is built from. Keeps atlas-scale training (up to 482k x 56k) tractable
+# and makes actinn-jax's gene-space input consistent with what the other methods consume.
+if "hvg" in tr.var.columns:
+    mask = tr.var["hvg"].astype(bool).to_numpy()
+    tr = tr[:, mask].copy(); te = te[:, mask].copy()
+    print(f"restricted to {int(mask.sum())} HVGs", flush=True)
 print(f"{name}: train {tr.n_obs}x{tr.n_vars}, test {te.n_obs}, "
       f"{tr.obs['label'].nunique()} labels (loaded {time.time()-t0:.0f}s)", flush=True)
 
