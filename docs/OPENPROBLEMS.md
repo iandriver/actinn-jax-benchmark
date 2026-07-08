@@ -53,6 +53,52 @@ logistic 0.691, scanvi 0.681, seurat 0.662, **actinn-jax 0.656**, mlp 0.648, knn
 naive_bayes 0.613, singler 0.605, … , scgpt_zeroshot 0.291, uce/random ≈ 0.04. actinn-jax
 is upper-mid — above its sibling `mlp`, below the logistic/scanvi cluster.
 
+## Runtime & peak memory
+
+Mean over the 6 datasets. **Caveat — this is not a controlled head-to-head:** the 16 OP
+methods' runtime/memory come from OP's Nextflow trace on their **cloud CI** (and their
+`realtime`/`peak_rss` include container startup + the 1–20 GB h5ad I/O); actinn-jax's are
+**total wall time + peak RSS on the local Apple-Silicon Mac** (also load+fit+predict, so
+scope-matched, but different hardware and storage). Peak memory (an algorithm's working
+set) is the more hardware-robust axis; runtime is indicative of *tier*, not exact factors.
+
+| method | accuracy | macro-F1 | runtime (s) | peak mem (GB) |
+|---|---|---|---|---|
+| scanvi_scarches | 0.939 | 0.810 | 1542 | 39.3 |
+| xgboost | 0.911 | 0.723 | 999 | 41.4 |
+| **actinn-jax** | **0.837** | 0.656 | **96** | **8.7** |
+| mlp | 0.828 | 0.648 | 809 | 10.1 |
+| seurat_transferdata | 0.827 | 0.662 | 934 | 48.8 |
+| scanvi | 0.826 | 0.681 | 647 | 49.2 |
+| logistic_regression | 0.814 | 0.691 | 74 | 10.4 |
+| knn | 0.793 | 0.648 | 21 | 10.0 |
+| cellmapper_linear | 0.775 | 0.561 | 160 | 17.2 |
+| singler | 0.745 | 0.605 | 3913 | 32.5 |
+| naive_bayes | 0.738 | 0.613 | 17 | 8.5 |
+| scimilarity_knn | 0.711 | 0.566 | 814 | 38.8 |
+| scgpt_zeroshot | 0.639 | 0.291 | 3259 | ~0* |
+| uce | 0.131 | 0.043 | 11825 | 129.0 |
+
+*scgpt_zeroshot's trace peak_rss is anomalous (GPU-resident). Even allowing for the
+hardware caveat, the tier structure is unambiguous:
+
+- **actinn-jax is Pareto-efficient here too.** Only the *less accurate* knn / logistic /
+  naive_bayes are faster; every method *more accurate* than actinn-jax is far heavier —
+  scanvi_scarches (0.939) at 39 GB, xgboost (0.911) at 41 GB, seurat/scanvi (≈ same
+  accuracy as actinn-jax, 0.826-0.827) at **≈ 49 GB, 6× actinn-jax's 8.7 GB**.
+- **vs. its sibling `mlp`:** higher accuracy (0.837 vs 0.828) at **~8× less runtime**
+  (96 s vs 809 s) and less memory (8.7 vs 10.1 GB) — even discounting hardware, an
+  8× gap is not a hardware artifact.
+- **The foundation models are the extreme:** uce needs **129 GB and ~3.3 h** to score
+  0.131 (≈ random); singler 3913 s; the deep methods 39-49 GB.
+- actinn-jax's own peak memory is dominated by **loading the 10-20 GB training h5ads**,
+  not the model (its predict is 0.07-0.11 s and a fraction of a GB); with the train-once
+  cache, that load+fit is paid once.
+
+Per-dataset actinn-jax numbers (this Mac): fit 8.6 s (34k cells) → 112.6 s (482k-cell
+tabula_sapiens); total wall 14-178 s; peak 2.1-12.7 GB. `docs/results_openproblems.csv`;
+OP resources parsed from the run's `trace.txt`.
+
 ## Reading the result
 
 1. **actinn-jax vs. its direct sibling `mlp`.** Both are multilayer perceptrons; the only
@@ -74,11 +120,12 @@ is upper-mid — above its sibling `mlp`, below the logistic/scanvi cluster.
    annotation signal; its embeddings are where the value is.
 
 4. **The honest cost.** actinn-jax trains in gene space, so its **fit time scales with the
-   training set** — 34 s (34k cells) up to 327 s (482k-cell tabula_sapiens) — much heavier
-   than the PCA-based classifiers, which fit on 50 dims. Its **predict stays sub-second**
-   (0.08–0.48 s) on every dataset, and with the train-once/map-many cache the fit is paid
-   once. Full-gene training on the 482k×56k atlas OOM'd on 51 GB RAM; the HVG restriction
-   (which the task provides and its PCA methods already use) is what makes it tractable.
+   training set** — 8.6 s (34k cells) up to 112.6 s (482k-cell tabula_sapiens); total wall
+   (load+fit+predict) 14-178 s, mean 96 s. Its **predict stays sub-tenth-of-a-second**
+   (0.07–0.11 s), and with the train-once/map-many cache the fit is paid once. Full-gene
+   training on the 482k×56k atlas OOM'd on 51 GB RAM; the HVG restriction (which the task
+   provides and its PCA methods already use) is what makes it tractable. See the runtime &
+   memory table above: actinn-jax is in the fast, light tier, not the slow/heavy one.
 
 ## Bottom line
 

@@ -1,7 +1,7 @@
-dataset,method,accuracy,f1_macro,fit_s,predict_s,n_train,n_test,n_labels
-gtex_v9,actinn-jax,0.8576,0.3309,59.9,0.08,197618,11508,53
-dkd,actinn-jax,0.9471,0.9362,34.3,0.25,33898,5278,13
-mouse_pancreas_atlas,actinn-jax,0.9653,0.784,169.2,0.44,292354,9442,13
-tabula_sapiens,actinn-jax,0.3944,0.1709,327.3,0.48,482868,284,160
-immune_cell_atlas,actinn-jax,0.859,0.7342,120.3,0.12,325442,4320,35
-hypomap,actinn-jax,0.9973,0.9802,139.1,0.13,383829,1096,13
+dataset,method,accuracy,f1_macro,fit_s,predict_s,total_s,peak_mem_mb,n_train,n_test,n_labels
+dkd,actinn-jax,0.9471,0.9362,8.6,0.07,13.9,2130.0,33898,5278,13
+gtex_v9,actinn-jax,0.8576,0.3309,47.5,0.1,58.8,4030.0,197618,11508,53
+hypomap,actinn-jax,0.9973,0.9802,81.1,0.09,125.6,12746.0,383829,1096,13
+immune_cell_atlas,actinn-jax,0.859,0.7342,63.5,0.07,97.7,10841.0,325442,4320,35
+mouse_pancreas_atlas,actinn-jax,0.9653,0.784,54.6,0.11,101.6,10716.0,292354,9442,13
+tabula_sapiens,actinn-jax,0.3944,0.1709,112.6,0.1,178.1,11563.0,482868,284,160

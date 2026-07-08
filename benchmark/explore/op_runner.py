@@ -12,11 +12,22 @@ plus fit/predict wall time (actinn-jax's differentiator).
 
     python op_runner.py <dataset_dir> [out_csv]
 """
-import sys, time, os, warnings; warnings.filterwarnings("ignore")
-import numpy as np, pandas as pd, scanpy as sc, anndata as ad
+import sys, time, os, threading, warnings; warnings.filterwarnings("ignore")
+import numpy as np, pandas as pd, scanpy as sc, anndata as ad, psutil
 sys.path.insert(0, "/Users/iandriver/Downloads/actinn-jax")
 import actinn_jax as aj
 from sklearn.metrics import accuracy_score, f1_score
+
+# background peak-RSS sampler over the whole run (load+fit+predict), to be scope-comparable
+# with OP's Nextflow `realtime`/`peak_rss` (which also include data I/O + container).
+_proc = psutil.Process(os.getpid()); _peak = [0.0]; _run = [True]
+def _sample():
+    while _run[0]:
+        try: _peak[0] = max(_peak[0], _proc.memory_info().rss)
+        except Exception: pass
+        time.sleep(0.1)
+threading.Thread(target=_sample, daemon=True).start()
+_wall0 = time.time()
 
 ds_dir = sys.argv[1]
 out_csv = sys.argv[2] if len(sys.argv) > 2 else None
@@ -61,8 +72,12 @@ true = sol.obs.loc[list(te.obs_names), "label"].astype(str).to_numpy()
 
 acc = accuracy_score(true, pred)
 f1m = f1_score(true, pred, average="macro")
+_run[0] = False
+total_s = time.time() - _wall0
+peak_mb = _peak[0] / 1e6
 row = {"dataset": name, "method": "actinn-jax", "accuracy": round(acc, 4),
        "f1_macro": round(f1m, 4), "fit_s": round(fit_s, 1), "predict_s": round(pred_s, 2),
+       "total_s": round(total_s, 1), "peak_mem_mb": round(peak_mb, 0),
        "n_train": tr.n_obs, "n_test": te.n_obs, "n_labels": tr.obs["label"].nunique()}
 print("RESULT", row, flush=True)
 if out_csv:
