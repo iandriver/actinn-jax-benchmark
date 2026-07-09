@@ -65,3 +65,27 @@ Adopt **E1 (reference-fit per-gene standardization)** as actinn-jax's default (o
 scaling step: fit μ,σ on the reference after normalization + gene filtering, store them in
 the `ReferenceModel`, apply to every query block. Offer **E4 self-training** as an optional
 flag for hard cross-batch cases. Skip E2/E3 as defaults.
+
+## Adopted: `standardize=True` (validated through the package API)
+
+E1 was implemented in actinn-jax as an opt-in `train_reference(..., standardize=True)`
+flag (frozen reference μ,σ, applied per-minibatch so atlas training stays memory-bounded;
+scaler persisted with the model). Re-run end-to-end through the shipped API on all 6
+datasets (`results_standardize_packageapi.csv`):
+
+| dataset | base acc | std acc | Δacc | base F1 | std F1 | ΔF1 |
+|---|---|---|---|---|---|---|
+| dkd | 0.9471 | 0.9451 | −0.20 | 0.9362 | 0.9300 | −0.62 |
+| gtex_v9 | 0.8576 | 0.8613 | +0.37 | 0.3309 | 0.4095 | **+7.86** |
+| immune_cell_atlas | 0.8590 | 0.8574 | −0.16 | 0.7342 | 0.7593 | +2.51 |
+| mouse_pancreas_atlas | 0.9653 | 0.9659 | +0.06 | 0.7840 | 0.7695 | −1.45 |
+| hypomap | 0.9973 | 0.9982 | +0.09 | 0.9802 | 0.9950 | +1.48 |
+| tabula_sapiens | 0.3944 | 0.4049 | **+1.05** | 0.1709 | 0.1468 | −2.41 |
+| **MEAN** | **0.8368** | **0.8388** | **+0.20** | **0.6561** | **0.6684** | **+1.23** |
+
+Net positive but not free: mean +0.20 acc / +1.23 macro-F1, big F1 wins on the
+batch-shifted references and the best single-lever accuracy gain on the hardest dataset
+(tabula_sapiens +1.05), against a few small F1 dips and ~24% fit-time overhead. **Shipped
+opt-in** (default off): standardization shifts softmax calibration, which the two-stage
+refine/abstain thresholds are tuned against — default-on regresses that path. Enable for a
+one-stage accuracy win, or re-tune the refine thresholds before combining.

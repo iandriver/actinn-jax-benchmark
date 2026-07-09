@@ -1,0 +1,13 @@
+dataset,standardize,accuracy,f1_macro,fit_s
+dkd,False,0.9471,0.9362,7.4
+dkd,True,0.9451,0.93,7.1
+gtex_v9,False,0.8576,0.3309,42.3
+gtex_v9,True,0.8613,0.4095,53.3
+immune_cell_atlas,False,0.859,0.7342,68.2
+immune_cell_atlas,True,0.8574,0.7593,73.9
+mouse_pancreas_atlas,False,0.9653,0.784,56.0
+mouse_pancreas_atlas,True,0.9659,0.7695,69.3
+hypomap,False,0.9973,0.9802,84.3
+hypomap,True,0.9982,0.995,103.9
+tabula_sapiens,False,0.3944,0.1709,127.4
+tabula_sapiens,True,0.4049,0.1468,171.6
