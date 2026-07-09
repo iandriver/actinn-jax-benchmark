@@ -1,0 +1,1200 @@
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: logistic_regression
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.12303894389335988
+  - 0.176056338028169
+  - 0.19418338852389602
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: knn
+  metric_ids: accuracy
+  metric_values: 0.8143518518518519
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: true_labels
+  metric_ids: accuracy
+  metric_values: 1.0
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: cellmapper_linear
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.0717497938203375
+  - 0.15140845070422534
+  - 0.16722865450103014
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: cellmapper_linear
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.5021264530497483
+  - 0.7865740740740741
+  - 0.7785281957536163
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: mlp
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.9099960535185404
+  - 0.9490337248957939
+  - 0.9480206878143775
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: random_labels
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.020370420960451892
+  - 0.04837962962962963
+  - 0.057810398300108506
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: majority_vote
+  metric_ids: accuracy
+  metric_values: 0.32387206100402455
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: random_labels
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.00728164450438546
+  - 0.03345498783454988
+  - 0.04064064523011209
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: mlp
+  metric_ids: accuracy
+  metric_values: 1.0
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: logistic_regression
+  metric_ids: accuracy
+  metric_values: 0.176056338028169
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: logistic_regression
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.8773412290706891
+  - 0.9776530396102521
+  - 0.9766515678744724
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: knn
+  metric_ids: accuracy
+  metric_values: 0.17253521126760563
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: true_labels
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 1.0
+  - 1.0
+  - 1.0
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: actinn_jax
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.9802188152141883
+  - 0.9972627737226277
+  - 0.9972395551051646
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: knn
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.3913468164784988
+  - 0.8522766770941953
+  - 0.8581696136257007
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: true_labels
+  metric_ids: accuracy
+  metric_values: 1.0
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: majority_vote
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.035080613404439645
+  - 0.2953770367563471
+  - 0.1347060992549788
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: mlp
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.7114080696721188
+  - 0.8641203703703704
+  - 0.8658476035683358
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: xgboost
+  metric_ids: accuracy
+  metric_values: 0.9708748146579115
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: actinn_jax
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.17094872269101236
+  - 0.39436619718309857
+  - 0.42954945700888436
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: knn
+  metric_ids: accuracy
+  metric_values: 0.8522766770941953
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: logistic_regression
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.9398454306580303
+  - 0.9566123531640773
+  - 0.9560984884513009
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: naive_bayes
+  metric_ids: accuracy
+  metric_values: 0.9945255474452555
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: actinn_jax
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.7338307665879578
+  - 0.8592592592592593
+  - 0.8575536197116823
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: xgboost
+  metric_ids: accuracy
+  metric_values: 0.9594543387646836
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: random_labels
+  metric_ids: accuracy
+  metric_values: 0.014084507042253521
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: actinn_jax
+  metric_ids: accuracy
+  metric_values: 0.9650497775894937
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: naive_bayes
+  metric_ids: accuracy
+  metric_values: 0.15845070422535212
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: xgboost
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.8266871850395051
+  - 0.9708748146579115
+  - 0.9700724383204373
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: actinn_jax
+  metric_ids: accuracy
+  metric_values: 0.8592592592592593
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: majority_vote
+  metric_ids: accuracy
+  metric_values: 0.2953770367563471
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: random_labels
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.07541673841770385
+  - 0.3220802919708029
+  - 0.3232459038773275
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: majority_vote
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.0019704433497536944
+  - 0.02112676056338028
+  - 8.742107819329772E-4
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: majority_vote
+  metric_ids: accuracy
+  metric_values: 0.02112676056338028
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: true_labels
+  metric_ids: accuracy
+  metric_values: 1.0
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: naive_bayes
+  metric_ids: accuracy
+  metric_values: 0.6388888888888888
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: knn
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.9730372999966023
+  - 0.9954379562043796
+  - 0.9953697249298228
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: knn
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.9286406946954762
+  - 0.9490337248957939
+  - 0.9486919427195936
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: true_labels
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 1.0
+  - 1.0
+  - 1.0
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: naive_bayes
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.5209068866398556
+  - 0.6388888888888888
+  - 0.6612120868908664
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: random_labels
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.07277890552113096
+  - 0.16087693285320906
+  - 0.1644793949933261
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: actinn_jax
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.9333371659852125
+  - 0.946949602122016
+  - 0.9467854740253433
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: majority_vote
+  metric_ids: accuracy
+  metric_values: 0.4516423357664234
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: xgboost
+  metric_ids: accuracy
+  metric_values: 0.23591549295774647
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: knn
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.10293878539832818
+  - 0.17253521126760563
+  - 0.22178428350097196
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: cellmapper_linear
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.8066930462529995
+  - 0.9615547553484431
+  - 0.9658401969737279
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: majority_vote
+  metric_ids: accuracy
+  metric_values: 0.005787037037037037
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: random_labels
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.002173459451940464
+  - 0.014084507042253521
+  - 0.017624980653149668
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: cellmapper_linear
+  metric_ids: accuracy
+  metric_values: 0.9863138686131386
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: xgboost
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.9057536838815461
+  - 0.9594543387646836
+  - 0.9578068015694836
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: logistic_regression
+  metric_ids: accuracy
+  metric_values: 0.8846020159888773
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: cellmapper_linear
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.7094799482261718
+  - 0.9863138686131386
+  - 0.9830091039945054
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: naive_bayes
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.16217745076811219
+  - 0.15845070422535212
+  - 0.18991744684206438
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: actinn_jax
+  metric_ids: accuracy
+  metric_values: 0.9972627737226277
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: cellmapper_linear
+  metric_ids: accuracy
+  metric_values: 0.15140845070422534
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: majority_vote
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.07778126964173476
+  - 0.4516423357664234
+  - 0.28103451439896865
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: logistic_regression
+  metric_ids: accuracy
+  metric_values: 0.9776530396102521
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: mlp
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.180655904676681
+  - 0.3873239436619718
+  - 0.46568041217030465
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: true_labels
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 1.0
+  - 1.0
+  - 1.0
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: random_labels
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.0733080263272333
+  - 0.17563471011746873
+  - 0.17473257318780697
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: majority_vote
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 3.96809650410698E-4
+  - 0.005787037037037037
+  - 6.659421216383242E-5
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: xgboost
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.08917287650400282
+  - 0.23591549295774647
+  - 0.3116968887670894
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: knn
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.8425846518300987
+  - 0.9756407540775259
+  - 0.9743709674645931
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: actinn_jax
+  metric_ids: accuracy
+  metric_values: 0.8573166492874522
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: xgboost
+  metric_ids: accuracy
+  metric_values: 0.8069444444444445
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: random_labels
+  metric_ids: accuracy
+  metric_values: 0.03345498783454988
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: random_labels
+  metric_ids: accuracy
+  metric_values: 0.04837962962962963
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: naive_bayes
+  metric_ids: accuracy
+  metric_values: 0.9268662372110648
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: logistic_regression
+  metric_ids: accuracy
+  metric_values: 0.9963503649635036
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: true_labels
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 1.0
+  - 1.0
+  - 1.0
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: true_labels
+  metric_ids: accuracy
+  metric_values: 1.0
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: logistic_regression
+  metric_ids: accuracy
+  metric_values: 0.9566123531640773
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: logistic_regression
+  metric_ids: accuracy
+  metric_values: 0.8840277777777777
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: cellmapper_linear
+  metric_ids: accuracy
+  metric_values: 0.9543387646835922
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: logistic_regression
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.4439523956482946
+  - 0.8846020159888773
+  - 0.8870318217091488
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: true_labels
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 1.0
+  - 1.0
+  - 1.0
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: actinn_jax
+  metric_ids: accuracy
+  metric_values: 0.39436619718309857
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: naive_bayes
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.9625692307050036
+  - 0.9945255474452555
+  - 0.9945631324529857
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: actinn_jax
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.3308567932341936
+  - 0.8573166492874522
+  - 0.8572599158182281
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: knn
+  metric_ids: accuracy
+  metric_values: 0.9954379562043796
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: mlp
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.8594533840405761
+  - 0.9733107392501589
+  - 0.97340632194504
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: naive_bayes
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.33628077544201646
+  - 0.7599061522419187
+  - 0.793724991471897
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: actinn_jax
+  metric_ids: accuracy
+  metric_values: 0.946949602122016
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: mlp
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.32460460574453204
+  - 0.8571428571428571
+  - 0.8642166922630874
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: actinn_jax
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.7836026288150253
+  - 0.9650497775894937
+  - 0.9595072260892054
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: knn
+  metric_ids: accuracy
+  metric_values: 0.9756407540775259
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: random_labels
+  metric_ids: accuracy
+  metric_values: 0.17563471011746873
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: majority_vote
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.008225154668669313
+  - 0.07994438651372958
+  - 0.011835988991411523
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: majority_vote
+  metric_ids: accuracy
+  metric_values: 0.07994438651372958
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: naive_bayes
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.779368574311228
+  - 0.9502224105062487
+  - 0.9522279008630026
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: mlp
+  metric_ids: accuracy
+  metric_values: 0.9733107392501589
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: knn
+  metric_ids: accuracy
+  metric_values: 0.9490337248957939
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: xgboost
+  metric_ids: accuracy
+  metric_values: 0.9963503649635036
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: xgboost
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.9767191151388158
+  - 0.9963503649635036
+  - 0.996316827984128
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: xgboost
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.27251752015861025
+  - 0.7981404240528328
+  - 0.8104058387058951
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: cellmapper_linear
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.29249642284952504
+  - 0.8186478971150504
+  - 0.8304430695962773
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: cellmapper_linear
+  metric_ids: accuracy
+  metric_values: 0.7865740740740741
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: logistic_regression
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.7752127747110313
+  - 0.8840277777777777
+  - 0.8822299987288814
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: knn
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.6510399239206479
+  - 0.8143518518518519
+  - 0.8108834051204188
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: random_labels
+  metric_ids: accuracy
+  metric_values: 0.16087693285320906
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: xgboost
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.6080177561513307
+  - 0.8069444444444445
+  - 0.8097986805686276
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: mlp
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 1.0
+  - 1.0
+  - 1.0
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: majority_vote
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.037636923076923075
+  - 0.32387206100402455
+  - 0.15846412200804913
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: xgboost
+  metric_ids: accuracy
+  metric_values: 0.7981404240528328
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: naive_bayes
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.9180663397063415
+  - 0.9268662372110648
+  - 0.9295719380438023
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: naive_bayes
+  metric_ids: accuracy
+  metric_values: 0.9502224105062487
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: true_labels
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 1.0
+  - 1.0
+  - 1.0
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: naive_bayes
+  metric_ids: accuracy
+  metric_values: 0.7599061522419187
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/immune_cell_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: mlp
+  metric_ids: accuracy
+  metric_values: 0.8641203703703704
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: true_labels
+  metric_ids: accuracy
+  metric_values: 1.0
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: random_labels
+  metric_ids: accuracy
+  metric_values: 0.3220802919708029
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: mlp
+  metric_ids: accuracy
+  metric_values: 0.8571428571428571
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: mlp
+  metric_ids: accuracy
+  metric_values: 0.9490337248957939
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: cellmapper_linear
+  metric_ids: accuracy
+  metric_values: 0.9615547553484431
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/dkd
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: cellmapper_linear
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.933056511601686
+  - 0.9543387646835922
+  - 0.9550380768125657
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/gtex_v9
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: cellmapper_linear
+  metric_ids: accuracy
+  metric_values: 0.8186478971150504
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/tabula_sapiens
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: mlp
+  metric_ids: accuracy
+  metric_values: 0.3873239436619718
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/hypomap
+  date_created: 09-07-2026
+  file_size: 22632
+  method_id: logistic_regression
+  metric_ids:
+  - f1_macro
+  - f1_micro
+  - f1_weighted
+  metric_values:
+  - 0.9767191151388158
+  - 0.9963503649635036
+  - 0.996316827984128
+  normalization_id: log_cp10k
+- dataset_id: cellxgene_census/mouse_pancreas_atlas
+  date_created: 09-07-2026
+  file_size: 18360
+  method_id: true_labels
+  metric_ids: accuracy
+  metric_values: 1.0
+  normalization_id: log_cp10k
