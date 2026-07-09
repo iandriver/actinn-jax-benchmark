@@ -193,6 +193,20 @@ scArches − standardized):
   gtex F1. The residual ~1.3 acc / 3.7 F1 is a genuine VAE-latent benefit on fine/rare
   types, not something a CPU normalization recovers.
 
+### Annotated UMAPs (test set: ground truth vs actinn-jax vs +std)
+
+![immune_cell_atlas annotated UMAP](figures/umap_immune_cell_atlas.png)
+
+![gtex_v9 annotated UMAP](figures/umap_gtex_v9.png)
+
+Test cells embedded from the task-provided PCA, coloured by true label and by each model's
+prediction (shared palette). Coarse compartments are annotated correctly — in immune, NK
+cells, B cells, and monocytes are clean — while errors concentrate in the **dense central
+T-cell subtypes** (CD4/CD8/memory/naive), which is exactly where scArches's +3.4-pt immune
+lead comes from. The baseline and `+std` panels are near-identical by eye (their difference
+is rare-class recall, not gross reassignment). Regenerate / add datasets with
+`benchmark/explore/plot_umaps.py <dataset_dir> <out.png>`.
+
 ## Reading the result
 
 1. **actinn-jax vs. its direct sibling `mlp`.** Both are multilayer perceptrons; the only
