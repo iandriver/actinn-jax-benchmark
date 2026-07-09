@@ -53,6 +53,37 @@ logistic 0.691, scanvi 0.681, seurat 0.662, **actinn-jax 0.656**, mlp 0.648, knn
 naive_bayes 0.613, singler 0.605, … , scgpt_zeroshot 0.291, uce/random ≈ 0.04. actinn-jax
 is upper-mid — above its sibling `mlp`, below the logistic/scanvi cluster.
 
+### At a glance: accuracy · macro-F1 · runtime · memory (all methods)
+
+Sorted by mean accuracy. `n` = datasets completed (of 6). **Runtime/memory are
+cross-hardware and indicative:** actinn-jax (†) is the same-hardware AWS mean-per-dataset
+(`r7i.8xlarge`); every other method is OP's cloud-CI Nextflow trace. For the CPU-tier
+apples-to-apples, see [Controlled same-hardware run](#controlled-same-hardware-run-the-honest-head-to-head).
+
+| method | mean acc | macro-F1 | n | runtime (s) | peak (GB) |
+|---|---|---|---|---|---|
+| scanvi_scarches | **0.939** | 0.810 | 5 | 1542 | 39.3 |
+| xgboost | 0.911 | 0.723 | 5 | 999 | 41.4 |
+| **actinn-jax + std** | 0.839 | 0.668 | 6 | 205† | 21.0† |
+| **actinn-jax** | 0.837 | 0.656 | 6 | 165† | 21.0† |
+| mlp | 0.828 | 0.648 | 6 | 809 | 10.1 |
+| seurat_transferdata | 0.827 | 0.662 | 6 | 934 | 48.8 |
+| scanvi | 0.826 | 0.681 | 6 | 647 | 49.2 |
+| logistic_regression | 0.814 | 0.691 | 6 | 74 | 10.4 |
+| knn | 0.793 | 0.648 | 6 | 21 | 10.0 |
+| cellmapper_linear | 0.775 | 0.561 | 6 | 160 | 17.3 |
+| cellmapper_scvi | 0.753 | 0.550 | 5 | 1312 | 25.7 |
+| singler | 0.745 | 0.605 | 6 | 3913 | 32.5 |
+| naive_bayes | 0.738 | 0.613 | 6 | 17 | 8.5 |
+| scimilarity_knn | 0.711 | 0.566 | 4 | 814 | 38.9 |
+| scgpt_zeroshot | 0.639 | 0.291 | 1 | 3259 | ~0 |
+| uce | 0.131 | 0.043 | 6 | 11825 | 129.0 |
+
+The two methods above actinn-jax on mean accuracy (scanvi_scarches, xgboost) **do not
+complete tabula_sapiens** (n=5, means over easier datasets) and cost **6–9× the runtime at
+2× the memory**. Among all-6 completers, actinn-jax leads. Its opt-in `standardize=True`
+nudges it to 0.839 / 0.668 (above `mlp` on both) for ~24% more fit time.
+
 ## Runtime & peak memory
 
 ### Controlled same-hardware run (the honest head-to-head)
@@ -117,6 +148,50 @@ accuracy) at ≈ 49 GB. **The foundation models are the extreme:** uce needs 129
 ~3.3 h to score 0.131 (≈ random); singler 3913 s. This independently reproduces our own
 finding ([PAPER.md](PAPER.md) §3.8) that a foundation model's *zero-shot labels* are a weak
 annotation signal.
+
+## Zoom: actinn-jax vs. the top method (scanvi_scarches)
+
+scanvi_scarches (scVI latent + scArches reference surgery) is #1 on mean accuracy. But the
+mean hides two things: it **does not complete tabula_sapiens**, and where both run the gap
+is modest. Per dataset (actinn-jax baseline, with `standardize=True`, and scArches; gap =
+scArches − standardized):
+
+**Accuracy**
+
+| dataset | actinn-jax | +std | scanvi_scarches | gap |
+|---|---|---|---|---|
+| dkd | 0.9471 | 0.9451 | 0.9551 | +1.00 |
+| gtex_v9 | 0.8576 | 0.8613 | 0.8745 | +1.32 |
+| immune_cell_atlas | 0.8590 | 0.8574 | 0.8917 | **+3.43** |
+| mouse_pancreas | 0.9653 | 0.9659 | 0.9755 | +0.96 |
+| hypomap | 0.9973 | 0.9982 | 0.9973 | −0.09 |
+| tabula_sapiens | 0.3944 | 0.4049 | **DNF** | — |
+| **mean (5 common)** | 0.9253 | 0.9256 | **0.9388** | **+1.32** |
+
+**Macro-F1**
+
+| dataset | +std | scanvi_scarches | gap |
+|---|---|---|---|
+| dkd | 0.9300 | 0.9404 | +1.04 |
+| gtex_v9 | 0.4095 | 0.4822 | +7.27 |
+| immune_cell_atlas | 0.7593 | 0.7517 | **−0.76** |
+| mouse_pancreas | 0.7695 | 0.8843 | **+11.48** |
+| hypomap | 0.9950 | 0.9915 | −0.35 |
+| **mean (5 common)** | 0.7727 | **0.8100** | **+3.73** |
+
+- **The edge is modest on accuracy (~1.3 pt) and larger on macro-F1 (~3.7 pt)** across the
+  five datasets both complete. The F1-heavy gap is the tell: scArches's batch-corrected
+  latent helps **rare / fine cell types** most — mouse_pancreas F1 **+11.5** (rare islet
+  subtypes), gtex F1 +7.3 — exactly where a gene-space MLP lags.
+- **It is not uniformly ahead:** actinn-jax+std **beats scArches on macro-F1 for immune
+  (−0.76) and hypomap (−0.35)**, and ties it on hypomap accuracy.
+- **The structural trade:** scArches is 1–4 pt better *where it runs* but **fails on
+  tabula_sapiens**, which actinn-jax completes (0.405). That is why actinn-jax tops the
+  all-6-completers ranking.
+- **Standardization doesn't close the gap** — on the 5 common datasets it barely moves
+  actinn-jax (0.9253 → 0.9256); its gains land on tabula_sapiens (where scArches DNF) and
+  gtex F1. The residual ~1.3 acc / 3.7 F1 is a genuine VAE-latent benefit on fine/rare
+  types, not something a CPU normalization recovers.
 
 ## Reading the result
 
