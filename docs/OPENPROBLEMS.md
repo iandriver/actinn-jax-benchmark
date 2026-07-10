@@ -222,6 +222,39 @@ The gap to scArches's all-gene leaderboard number (0.892) therefore comes substa
 per se. (Single dataset, resource-constrained CPU run: illustrative, not a full re-benchmark;
 CPU cost was ~23 min at 1k HVG / 30k cells vs. days for the full all-gene config.)
 
+### Does actinn-jax improve with more genes? Yes — and it closes the gap
+
+The obvious follow-up: OP feeds *every* method the same 1000 HVGs, and a gene-space MLP is the
+one most starved by that. Sweeping actinn-jax's input gene budget (seurat_v3 HVG,
+`standardize=True`, full reference; `benchmark/explore/gene_budget.py`):
+
+![actinn-jax accuracy & macro-F1 vs gene budget](figures/gene_budget_curve.png)
+
+| dataset | 1000 | 2000 | **5000** | all (~27k) | scArches (all-gene) |
+|---|---|---|---|---|---|
+| immune_cell_atlas | 0.857 | 0.861 | **0.891** | 0.890 | 0.892 |
+| gtex_v9 | 0.861 | 0.879 | **0.891** | 0.883 | 0.875 |
+| mouse_pancreas | 0.966 | 0.970 | **0.974** | 0.973 | 0.976 |
+
+*(accuracy; macro-F1 rises in lockstep — immune 0.759→0.816, gtex 0.410→0.455, mouse
+0.770→0.845 from 1k→5k).*
+
+Three clean conclusions, consistent across all three datasets:
+
+1. **More genes help, a lot.** 1000 → 5000 lifts accuracy +3.4 / +3.0 / +0.8 pt and macro-F1
+   +5.7 / +4.5 / +7.6 pt. The gene-space MLP was simply under-fed at 1000 HVGs.
+2. **At 5000 genes, actinn-jax matches or beats scANVI+scArches's full-config leaderboard
+   accuracy** — immune 0.891 ≈ 0.892, gtex 0.891 **>** 0.875, mouse 0.974 ≈ 0.976 — on CPU in
+   ~2–3 min. **The gap to scArches was gene budget, not the model.**
+3. **~5000 is the sweet spot; "all genes" is worse.** All ~27k genes plateaus or *regresses*
+   accuracy on every dataset (noise genes dilute the signal) and costs **5–9× the runtime**
+   (500–870 s vs 120–160 s) at no benefit. Peak memory stays bounded (~5–14 GB) throughout.
+
+**Actionable:** the shipped OP component's `n_hvg=1000` leaves ~3 accuracy points on the
+table; `n_hvg≈5000` (its own seurat_v3 HVGs rather than the task's 1000) is a large, cheap
+win that erases the headline gap to the top method. Full sweep:
+`docs/results_gene_budget.csv`.
+
 ## Reading the result
 
 1. **actinn-jax vs. its direct sibling `mlp`.** Both are multilayer perceptrons; the only
