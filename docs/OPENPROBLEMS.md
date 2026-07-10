@@ -265,6 +265,44 @@ well-behaved same-domain references; and for hard cross-domain / fine-grained ta
 *fewer* genes are safer. An adaptive rule (widen the gene set only when train/test
 distributions look similar) is the real fix. Full sweep: `docs/results_gene_budget.csv`.
 
+#### Can you pick the gene budget without test labels? Yes — deterministically
+
+If more genes help some datasets and wreck others, the practical question is whether you can
+choose the budget *at inference* — from the reference and the **unlabeled** query — without
+peeking at test labels (which would be leakage) or looping over held-out test accuracy. Two
+signals, computed with **no test labels**, and checked against the actual 1k→5k transfer
+outcome on all 6 (`benchmark/explore/probe_signals.py`):
+
+![deterministic label-free signals vs transfer outcome](figures/gene_budget_signals.png)
+
+| dataset | query cells/class | Δ ref held-out CV (1k→5k) | Δ transfer acc | outcome |
+|---|---|---|---|---|
+| dkd | 406 | +1.2 | +0.4 | help |
+| gtex_v9 | 217 | +4.8 | +3.0 | help |
+| immune_cell_atlas | 123 | +5.2 | +3.4 | help |
+| mouse_pancreas | 726 | +0.6 | +0.9 | help |
+| hypomap | 84 | +3.4 | −0.2 | saturated |
+| **tabula_sapiens** | **1.8** | **−9.9** | **−10.2** | **HURT** |
+
+- **Reference held-out CV *is* predictive (not misleading).** Sweep the gene budget and
+  cross-validate on the *reference* (no test labels). It **rises** for every safe dataset and
+  is the one signal that **drops** for tabula_sapiens (−9.9, tracking the −10.2 transfer
+  collapse almost exactly). So "expand genes only while reference CV improves" would correctly
+  stop TS at 1000 and grow the others.
+- **Query-cells-per-class is a free pre-flag.** `n_query / n_ref_classes` needs *zero*
+  training (label space = the reference's types; query size is known). TS is 1.8; everyone
+  else ≥ 84. `< ~10` = thin query / fine label space = don't expand.
+- **A signal that *didn't* work:** a ref-vs-query domain-classifier AUC — it saturates near
+  1.0 for **all** datasets (OP label-projection is cross-batch by construction), so it can't
+  discriminate. (Recorded so the negative result isn't re-tried.)
+
+**Deterministic rule (no test-label loop):** default `n_hvg=1000`; expand toward ~5000 only
+while reference held-out CV keeps improving **and** query-cells-per-class is comfortably above
+~10. On these 6 that rule expands gtex/immune/mouse/dkd, leaves TS at 1000 (dodging the −10),
+and merely over-recommends on saturated hypomap (wasted compute, no accuracy cost). Caveat:
+n=6 with a single clean HURT case — directional evidence for the rule, not a tuned threshold.
+Signals: `docs/results_probe_signals.csv`.
+
 #### Fine sweep on the saturated case (hypomap, 1000 → 10000)
 
 ![hypomap fine gene-budget sweep](figures/gene_budget_hypomap.png)
