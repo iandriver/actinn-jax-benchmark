@@ -265,6 +265,20 @@ well-behaved same-domain references; and for hard cross-domain / fine-grained ta
 *fewer* genes are safer. An adaptive rule (widen the gene set only when train/test
 distributions look similar) is the real fix. Full sweep: `docs/results_gene_budget.csv`.
 
+#### Fine sweep on the saturated case (hypomap, 1000 → 10000)
+
+![hypomap fine gene-budget sweep](figures/gene_budget_hypomap.png)
+
+hypomap starts near-ceiling (0.998 / 0.995), so the −1.7 macro-F1 seen at 5000 is worth
+resolving: is it a slide or a step? It's a **step to a hard plateau.** F1 falls only over
+1000 → 3000 (a handful of rare-class cells flip: 0.9950 → 0.9915 → 0.9783), then accuracy
+**and** F1 are **identical to four decimals from 3000 to 10000** — the models retrain with
+different fit time and memory but emit the *exact same test labels*; the extra 7000 genes are
+inert. Meanwhile fit time climbs linearly (75 → 273 s, +2.6×). So on an already-saturated,
+cleanly-separated reference, gene budget past ~1000–3000 is **pure wasted compute** — no
+signal to gain, and the small F1 dip is a fixed rare-class reassignment, not a worsening
+trend. (`benchmark/explore/gene_budget.py hypomap out.csv 1000_op,2000,3000,5000,7500,10000`)
+
 ## Reading the result
 
 1. **actinn-jax vs. its direct sibling `mlp`.** Both are multilayer perceptrons; the only
