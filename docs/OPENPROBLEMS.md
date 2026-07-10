@@ -207,6 +207,21 @@ lead comes from. The baseline and `+std` panels are near-identical by eye (their
 is rare-class recall, not gross reassignment). Regenerate / add datasets with
 `benchmark/explore/plot_umaps.py <dataset_dir> <out.png>`.
 
+### Four-way, with scANVI+scArches — on equal features they converge
+
+![immune 4-panel: truth / actinn / actinn+std / scArches](figures/umap4_immune_cell_atlas.png)
+
+scANVI+scArches was run **locally on CPU** (`benchmark/explore/run_scarches.py`, OP's exact
+SCVI→SCANVI→`load_query_data` recipe) restricted to the **same 1000 HVGs actinn-jax uses**
+with a 30k-cell reference (both for CPU feasibility). Under that **equal-feature budget** it
+scores **accuracy 0.857 / macro-F1 0.702 on immune — a tie with actinn-jax (0.859 / 0.734)**,
+which actually *wins* on macro-F1. All three prediction panels are visually near-identical.
+
+The gap to scArches's all-gene leaderboard number (0.892) therefore comes substantially from
+**feature and data budget** — 29k genes and the full 325k-cell reference — not the VAE/latent
+per se. (Single dataset, resource-constrained CPU run: illustrative, not a full re-benchmark;
+CPU cost was ~23 min at 1k HVG / 30k cells vs. days for the full all-gene config.)
+
 ## Reading the result
 
 1. **actinn-jax vs. its direct sibling `mlp`.** Both are multilayer perceptrons; the only
