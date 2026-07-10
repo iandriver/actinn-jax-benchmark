@@ -222,38 +222,48 @@ The gap to scArches's all-gene leaderboard number (0.892) therefore comes substa
 per se. (Single dataset, resource-constrained CPU run: illustrative, not a full re-benchmark;
 CPU cost was ~23 min at 1k HVG / 30k cells vs. days for the full all-gene config.)
 
-### Does actinn-jax improve with more genes? Yes — and it closes the gap
+### Does actinn-jax improve with more genes? On most datasets yes — but not all
 
-The obvious follow-up: OP feeds *every* method the same 1000 HVGs, and a gene-space MLP is the
-one most starved by that. Sweeping actinn-jax's input gene budget (seurat_v3 HVG,
-`standardize=True`, full reference; `benchmark/explore/gene_budget.py`):
+OP feeds *every* method the same 1000 HVGs, and a gene-space MLP is the one most starved by
+that. Sweeping actinn-jax's input gene budget on **all 6 datasets, same hardware**
+(seurat_v3 HVG, `standardize=True`, full reference; `benchmark/explore/gene_budget.py`):
 
-![actinn-jax accuracy & macro-F1 vs gene budget](figures/gene_budget_curve.png)
+![actinn-jax accuracy & macro-F1 vs gene budget, all 6 datasets](figures/gene_budget_curve.png)
 
-| dataset | 1000 | 2000 | **5000** | all (~27k) | scArches (all-gene) |
-|---|---|---|---|---|---|
-| immune_cell_atlas | 0.857 | 0.861 | **0.891** | 0.890 | 0.892 |
-| gtex_v9 | 0.861 | 0.879 | **0.891** | 0.883 | 0.875 |
-| mouse_pancreas | 0.966 | 0.970 | **0.974** | 0.973 | 0.976 |
+| dataset | acc 1k | acc 5k | Δacc | F1 1k | F1 5k | ΔF1 | fit 1k→5k | peak GB 1k→5k |
+|---|---|---|---|---|---|---|---|---|
+| dkd | 0.945 | 0.949 | +0.4 | 0.930 | 0.938 | +0.8 | 7→16 s | 3.5→3.7 |
+| gtex_v9 | 0.861 | 0.891 | **+3.0** | 0.409 | 0.455 | +4.5 | 94→119 s | 6.1→5.8 |
+| immune_cell_atlas | 0.857 | 0.891 | **+3.4** | 0.759 | 0.816 | +5.7 | 65→158 s | 11.9→7.4 |
+| mouse_pancreas | 0.966 | 0.974 | +0.9 | 0.769 | 0.845 | +7.6 | 56→147 s | 13.3→9.4 |
+| hypomap | 0.998 | 0.996 | −0.2 | 0.995 | 0.978 | −1.7 | 70→188 s | 17.9→13.7 |
+| tabula_sapiens | 0.405 | **0.303** | **−10.2** | 0.147 | 0.135 | −1.1 | 101→223 s | 23.5→21.7 |
+| **mean (6)** | **0.839** | **0.834** | **−0.5** | | | | | |
+| mean (excl. TS) | 0.926 | 0.940 | **+1.5** | | | | | |
 
-*(accuracy; macro-F1 rises in lockstep — immune 0.759→0.816, gtex 0.410→0.455, mouse
-0.770→0.845 from 1k→5k).*
+Four conclusions — and the important one is the exception:
 
-Three clean conclusions, consistent across all three datasets:
+1. **More genes help the "normal" datasets** — 4 of 6 gain (gtex +3.0, immune +3.4 lead),
+   and on those five the mean rises +1.5 pt accuracy. On immune, 5000 genes reaches 0.891,
+   **matching scArches's full-config 0.892** (see the four-way above): that gap was gene
+   budget, not the model.
+2. **But tabula_sapiens *regresses hard* — −10.2 pt** (0.405 → 0.303), monotonically worse
+   with more genes. Its 284-cell test batch spans 160 fine types across many organs; extra
+   genes let the MLP overfit reference/organ-specific expression that the tiny shifted test
+   batch can't exploit. This is the classic **more-features-hurt-under-domain-shift** regime.
+   hypomap is already saturated (0.998) and gains nothing.
+3. **Net over all 6, 5000 is slightly *worse* (−0.5)** — TS's collapse outweighs the others'
+   gains. So a blanket `n_hvg=5000` would trade a modest lift on easy references for a
+   catastrophic loss on the hardest one — exactly the dataset that is actinn-jax's
+   all-6-completion differentiator. `n_hvg=1000` is the more robust default.
+4. **Cost is modest and bounded:** 5000 genes is ~2–2.5× the fit time (still ≤ 4 min) and
+   comparable, data-load-dominated peak memory (3–24 GB; sometimes *lower* than 1000).
 
-1. **More genes help, a lot.** 1000 → 5000 lifts accuracy +3.4 / +3.0 / +0.8 pt and macro-F1
-   +5.7 / +4.5 / +7.6 pt. The gene-space MLP was simply under-fed at 1000 HVGs.
-2. **At 5000 genes, actinn-jax matches or beats scANVI+scArches's full-config leaderboard
-   accuracy** — immune 0.891 ≈ 0.892, gtex 0.891 **>** 0.875, mouse 0.974 ≈ 0.976 — on CPU in
-   ~2–3 min. **The gap to scArches was gene budget, not the model.**
-3. **~5000 is the sweet spot; "all genes" is worse.** All ~27k genes plateaus or *regresses*
-   accuracy on every dataset (noise genes dilute the signal) and costs **5–9× the runtime**
-   (500–870 s vs 120–160 s) at no benefit. Peak memory stays bounded (~5–14 GB) throughout.
-
-**Actionable:** the shipped OP component's `n_hvg=1000` leaves ~3 accuracy points on the
-table; `n_hvg≈5000` (its own seurat_v3 HVGs rather than the task's 1000) is a large, cheap
-win that erases the headline gap to the top method. Full sweep:
-`docs/results_gene_budget.csv`.
+**Revised takeaway (correcting an earlier optimistic read):** the gene budget is a **tunable
+knob, not a free lunch.** Keep `n_hvg=1000` as the robust default; raise to ~5000 for
+well-behaved same-domain references; and for hard cross-domain / fine-grained targets,
+*fewer* genes are safer. An adaptive rule (widen the gene set only when train/test
+distributions look similar) is the real fix. Full sweep: `docs/results_gene_budget.csv`.
 
 ## Reading the result
 

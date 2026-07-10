@@ -47,8 +47,9 @@ def peak_sampler(peak, run):
         except Exception: pass
         time.sleep(0.1)
 
+budgets = sys.argv[3].split(",") if len(sys.argv) > 3 else ["1000_op", "2000", "5000", "all"]
 rows = []
-for budget in ["1000_op", "2000", "5000", "all"]:
+for budget in budgets:
     m = mask_for(budget)
     trm = tr[:, m].copy(); tem = te[:, m].copy()
     peak = [0.0]; run = [True]; th = threading.Thread(target=peak_sampler, args=(peak, run), daemon=True); th.start()
