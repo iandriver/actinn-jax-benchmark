@@ -89,3 +89,28 @@ batch-shifted references and the best single-lever accuracy gain on the hardest 
 opt-in** (default off): standardization shifts softmax calibration, which the two-stage
 refine/abstain thresholds are tuned against — default-on regresses that path. Enable for a
 one-stage accuracy win, or re-tune the refine thresholds before combining.
+
+## Negative result: UCE-style protein-embedding featurization (CPU) does not help
+
+UCE (snap-stanford/UCE, Nature 2026) represents each gene by its **ESM2 protein-language-model
+embedding** and runs a transformer over the expressed genes. We tested the cheap, CPU-only
+version of that idea for actinn-jax: represent each cell as the **expression-weighted average
+of its genes' ESM2 embeddings** (5120-d, ~18k embeddable genes; human `gene_symbol_to_embedding_ESM2.pt`
+from the UCE Figshare bundle), then train actinn-jax's own MLP on it.
+`benchmark/explore/protein_embed_probe.py`; results `docs/results_protein_embed_probe.csv`.
+
+| dataset | protein-ESM2 (weighted mean) | raw 1000 HVG | raw 5000 HVG |
+|---|---|---|---|
+| immune_cell_atlas | 0.860 / F1 0.730 | 0.857 / 0.759 | 0.891 / 0.816 |
+| gtex_v9 | 0.851 / F1 0.321 | 0.861 / 0.410 | 0.891 / 0.455 |
+| tabula_sapiens | **0.225 / F1 0.117** | 0.405 / 0.147 | 0.303 / 0.135 |
+
+**It doesn't help and hurts the hard case.** Protein-mean ≈ raw-1000 accuracy on the easy
+datasets, is *below* raw-5000 everywhere, and **collapses on tabula_sapiens (0.225 < 0.405)** —
+the opposite of the domain-robustness hoped for. The weighted mean pools all genes into a
+single centroid in protein space, discarding the per-gene expression detail that separates
+fine cell types (gtex rare-class F1 0.321 vs 0.410 confirms the loss). UCE's value is in its
+**attention over the gene set**, not a portable averaging trick — capturing it needs the GPU
+transformer, not a CPU pooling. The protein-embedding table *does* map genes with zero
+name-matching (symbols → proteins), so it remains useful for cross-panel/species gene
+alignment — just not as an accuracy lever here.

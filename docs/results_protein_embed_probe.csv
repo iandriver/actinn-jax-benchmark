@@ -1,0 +1,4 @@
+dataset,method,dim,n_genes_used,accuracy,f1_macro,fit_s
+immune_cell_atlas,actinn-protein-esm2,5120,17912,0.8597,0.7297,516.7
+gtex_v9,actinn-protein-esm2,5120,17519,0.851,0.3209,173.7
+tabula_sapiens,actinn-protein-esm2,5120,19464,0.2254,0.1173,885.6
