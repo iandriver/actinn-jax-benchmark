@@ -6,10 +6,12 @@
 `benchmark/explore/make_figures.py`. This report is regenerated from those artifacts, not
 hand-entered.*
 
-> **Status:** results tables/figures marked `[[FILL]]` are populated from the committed
-> result CSVs once the matrix run completes. Method/dataset/metric definitions and the
-> already-published extension results (original-ACTINN comparison, two-stage, zonation,
-> HLiCA) are final.
+> **Status:** all in-house matrix results are final. §3.9 adds an independent external
+> validation on the community **Open Problems** `label_projection` benchmark, including a
+> **controlled same-hardware** run (every method on one AWS instance) and follow-up analyses
+> (standardization, gene-budget selection, a head-to-head vs. the leaderboard's top method,
+> and a foundation-model negative control). Definitions and the extension results
+> (original-ACTINN comparison, large→refined workflow, zonation, HLiCA) are final.
 
 ## Abstract
 
@@ -31,11 +33,22 @@ benchmarked method dominates it on both accuracy and speed.** (The sixth dataset
 cross-dataset lung, is a label-vocabulary mismatch — see §3.1 — where every method scores
 ~0.35 by exact match but ~0.75 by ontology-aware concordance.)
 The central finding is that actinn-jax is **Pareto-efficient**: it matches the accuracy of
-the strongest methods while being in the fastest-inference, lightest cluster, and —
-uniquely among the panel — it also supports atlas-scale (~800-type) references, a
-foundation-model-guided two-stage hierarchy, and within-cell-type resolution (hepatocyte
-zonation). It is not the single most accurate method on every dataset, and we report where
-it is not (small references; very few cells per type).
+the strongest methods while being in the fastest-inference, lightest cluster. **We are
+explicit that it is not the accuracy champion** — deep methods and boosted trees edge it by
+1–2 points where they run, and a benchmark claiming otherwise would be wrong — but no
+benchmarked method dominates it on *both* accuracy and cost, and its differentiators are
+practical: sub-second, memory-bounded inference and a **large→refined annotation workflow**
+that a census-scale broad model (~800 human cell types, with a calibrated abstain) hands off
+to a small focused model for the tissue at hand (e.g. a 48-type HLiCA liver reference that
+lifts held-out cross-study accuracy from 0.23/0.58 to 0.72/0.86, exact-CL/ontology), plus
+within-cell-type resolution (hepatocyte zonation). An **independent external validation** on
+the community Open Problems `label_projection` benchmark reproduces the picture: actinn-jax
+places 3rd of 17 on accuracy (1st among methods that complete every dataset), and a
+**controlled same-hardware** rerun shows it matching its PCA-space `mlp` sibling at ~2× the
+speed and beating xgboost's accuracy at ~5.5× less runtime and ~4× less memory. We report
+where it loses (small references, very few cells per type, and fine-grained cross-domain
+targets) and what closes the remaining gaps cheaply (opt-in standardization; a
+reference-guided gene budget).
 
 ## 1. Introduction
 
@@ -59,9 +72,16 @@ metrics, with the honest result reported even where actinn-jax loses.
    preprocessing, chunked atlas-scale prediction, and a cached reference model.
 2. A neutral 10-method × 6-dataset benchmark of accuracy, speed, and memory on Apple
    Silicon, with scaling curves and a rejection/abstain analysis.
-3. Three extensions unique to this pipeline in the panel: a scPRINT-guided coarse→fine
-   hierarchy, shipped atlas-scale references (~800 human cell types; a 48-type HLiCA
-   liver reference), and within-cell-type resolution (hepatocyte zonation).
+3. A **large→refined annotation workflow**: a shipped census-wide ~800-type human reference
+   (with a calibrated abstain) provides a broad first pass, then hands off to a small focused
+   reference for the tissue of interest — the refinement recovers large accuracy on
+   cross-study data where the broad model is weak — plus within-cell-type resolution
+   (hepatocyte zonation) and a foundation-model-guided coarse→fine hierarchy.
+4. An **independent external validation** on Open Problems `label_projection`, with a
+   controlled same-hardware speed/memory comparison, and a small set of cheap, honest
+   ablations that characterize *when* the gene-space model gains or loses to heavier methods
+   (input standardization; a reference-guided gene budget; a foundation-model negative
+   control).
 
 ## 2. Methods
 
@@ -78,6 +98,10 @@ the original's TensorFlow-1.x graph/session code. Key engineering:
   the inference cost alone.
 - **Chunked prediction** for atlas-scale queries; **`use_raw='auto'`** to pick raw counts
   from `.raw` (CELLxGENE convention).
+- **Optional reference-fit standardization** (`standardize=True`): z-score each selected
+  gene by the reference's frozen mean/std and apply it to the query — a cheap domain
+  alignment (§3.9). Opt-in, with a saved scaler that projects with the model; μ/σ persist in
+  the `.npz` (old models load standardization-off, backward-compatible).
 Measured against the original TF ACTINN it is **~3.3× faster and ~3.5× lighter** at equal
 accuracy ([RESULTS_actinn_orig.md](RESULTS_actinn_orig.md)); that comparison is included
 directly in this benchmark as the `actinn-orig` method.
@@ -256,19 +280,36 @@ Equal accuracy (0.752 vs. 0.754, within repeat noise), **~145× faster inference
 **3.6× less memory** — the reimplementation is a strict engineering win at no accuracy
 cost. See [RESULTS_actinn_orig.md](RESULTS_actinn_orig.md).
 
-### 3.6 Beyond flat classification (extensions unique to this pipeline)
+### 3.6 The large→refined annotation workflow
 
-These are established elsewhere in the repo and summarized here for completeness:
-- **Two-stage scPRINT-guided hierarchy** ([MODEL_FLOW.md](MODEL_FLOW.md),
-  [TWO_STAGE.md](TWO_STAGE.md)): a foundation model discovers a coarse→fine structure
-  offline; the fast CPU model uses it at inference. Beats a flat classifier on 3/4 datasets,
-  matches an expert hierarchy, beats a random-grouping control.
-- **Atlas-scale references**: a census-wide ~800-type human reference with a calibrated
-  abstain threshold ([REFINE.md](REFINE.md)); a focused 48-type HLiCA liver reference that
-  reaches cross-study exact-CL 0.72 / ontology 0.86 vs. 0.23 / 0.58 for the broad reference
-  on the same held-out cells ([HLICA_LIVER.md](HLICA_LIVER.md), [HLICA_EDGE_CASES.md](HLICA_EDGE_CASES.md)).
-- **Within-cell-type resolution**: hepatocyte zonation (portal→central) at ~0.99 within-1-
-  zone, generalizing across donors and datasets ([ZONATION.md](ZONATION.md)).
+The most useful thing actinn-jax ships is not a single classifier but a **two-tier
+workflow** that matches how annotation is actually done: get a broad call fast, then sharpen
+it where it matters. Because every stage is a cached `ReferenceModel` with sub-second,
+memory-bounded inference (§3.2, §3.4), the whole workflow runs on a laptop.
+
+**Tier 1 — broad, census-scale.** A shipped ~800-type human reference built from the
+CELLxGENE census gives any query a first-pass annotation across the whole body, with a
+**calibrated abstain threshold** so out-of-reference cells are flagged rather than
+force-labeled ([REFINE.md](REFINE.md), and the smooth abstain curve of §3.7). This is the
+"what am I looking at" pass — broad coverage, deliberately not fine-grained.
+
+**Tier 2 — refined, tissue-focused.** For the tissue the broad pass identifies, a small
+focused reference re-annotates at full resolution. The gain is large and it is the crux of
+the workflow: on held-out **cross-study** liver cells, the broad census model scores
+exact-CL **0.23** / ontology **0.58**, while a focused **48-type HLiCA liver** reference on
+the *same cells* reaches **0.72 / 0.86** ([HLICA_LIVER.md](HLICA_LIVER.md),
+[HLICA_EDGE_CASES.md](HLICA_EDGE_CASES.md)). Refinement is where fine-grained accuracy comes
+from; the broad model's job is to route to it, not to be right about subtypes itself.
+
+**Supporting mechanisms.** (i) A **foundation-model-guided coarse→fine hierarchy**
+([MODEL_FLOW.md](MODEL_FLOW.md), [TWO_STAGE.md](TWO_STAGE.md)): a foundation model discovers
+a coarse→fine structure *offline*, the fast CPU model uses it at inference — beats a flat
+classifier on 3/4 datasets, matches an expert hierarchy, beats a random-grouping control,
+and never depends on the foundation model at prediction time. (ii) **Within-cell-type
+resolution**: the same machinery resolves hepatocyte zonation (portal→central) at ~0.99
+within-one-zone, generalizing across donors and datasets ([ZONATION.md](ZONATION.md)) — a
+third tier below the cell-type label. Together these make actinn-jax a *pipeline* (broad →
+tissue → subtype/state), not just a classifier, at classical-method speed throughout.
 
 ### 3.7 Rejection / abstain
 
@@ -310,39 +351,124 @@ zero-shot labels. Foundation models are valuable here; their raw predictions are
 Our in-house benchmark is neutral but self-run. For an **independent** check, we ran
 actinn-jax through the community-standard [Open Problems](https://openproblems.bio/benchmarks/label_projection)
 label-projection task — their 6 datasets, splits, and metrics — and slotted it into their
-published v2.0.0 leaderboard (full detail: [OPENPROBLEMS.md](OPENPROBLEMS.md)). On a
-benchmark we did not design and cannot tune: **actinn-jax places 3rd of 17 on mean accuracy
-(0.837), 1st among all methods that complete every dataset, beats its PCA-space `mlp`
-sibling on both accuracy (0.837 vs 0.828) and macro-F1 (0.656 vs 0.648), and posts the best
-accuracy of any completing method on the hardest dataset (tabula_sapiens, 160 types: 0.394
-vs mlp 0.342).** It is upper-mid on macro-F1 and not the top method overall
-(scANVI+scArches surgery and xgboost score higher on the datasets they finish — but both
-fail tabula_sapiens). The foundation models again land at the bottom (scgpt_zeroshot 0.639,
-uce 0.131 ≈ random), reproducing §3.8 externally.
+published v2.0.0 leaderboard (full detail: [OPENPROBLEMS.md](OPENPROBLEMS.md)).
+
+**Placement.** On a benchmark we did not design and cannot tune, **actinn-jax places 3rd of
+17 on mean accuracy (0.837), 1st among all methods that complete every dataset**, beats its
+PCA-space `mlp` sibling, and posts the best accuracy of any completing method on the hardest
+dataset (tabula_sapiens, 160 types: 0.394 vs mlp 0.342). It is upper-mid on macro-F1 and
+**not the top method overall** — scANVI+scArches surgery and xgboost score higher on the
+datasets they finish, though both **fail to complete tabula_sapiens**, which is why they
+rank above actinn-jax only on a mean over the 5 easier datasets. The foundation models again
+land at the bottom (scgpt_zeroshot 0.639, uce 0.131 ≈ the random-labels control),
+reproducing §3.8 externally.
+
+**Controlled same-hardware speed & memory.** Leaderboard runtimes mix hardware, so we re-ran
+actinn-jax and the CPU tier through OP's *own* Nextflow pipeline on a **single AWS
+`r7i.8xlarge`** — identical hardware, harness, storage, and trace instrumentation for every
+method. This is the paper's cleanest cross-method cost comparison:
+
+| method (same box) | mean acc | macro-F1 | runtime/dataset | peak RSS |
+|---|---|---|---|---|
+| **actinn-jax** | 0.837 | 0.655 | **165 s** | 21.0 GB |
+| mlp | 0.838 | 0.664 | 327 s | 19.9 GB |
+| logistic_regression | 0.813 | 0.689 | 29 s | 20.0 GB |
+| knn | 0.793 | 0.648 | 11 s | 19.5 GB |
+| xgboost | 0.795 | 0.613 | 905 s | 80.7 GB |
+| cellmapper_linear | 0.776 | 0.553 | 58 s | 31.5 GB |
+| naive_bayes | 0.738 | 0.613 | 31 s | 19.5 GB |
+
+actinn-jax **ties its `mlp` sibling on accuracy at ~2× the speed** (165 vs 327 s) and
+**beats xgboost's accuracy at ~5.5× less runtime and ~4× less memory** (165 s / 21 GB vs
+905 s / 81 GB). The faster methods (knn, logistic) are less accurate; the more accurate
+heavyweight (xgboost) is far slower and heavier — the same Pareto-non-domination as the
+in-house benchmark, now on controlled hardware. (An earlier cross-hardware draft overstated
+the mlp speed gap as "8×"; the honest same-box figure is ~2×.)
+
+**Two cheap ablations, and their honest limits.** (i) *Input standardization* — z-scoring
+genes to the reference's frozen mean/std, a CPU-only domain-alignment inspired by scArches
+reference surgery — lifts mean accuracy +0.2 and macro-F1 +1.2 pt (largest on batch-shifted
+datasets: gtex macro-F1 +7.9). It is shipped **opt-in** (`standardize=True`) because it
+shifts the softmax calibration that the two-stage abstain thresholds are tuned against.
+(ii) *Gene budget* — OP feeds every method 1000 HVGs, which most starves a gene-space MLP.
+Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and there
+**matches scANVI+scArches's full-config leaderboard accuracy** (immune 0.891 ≈ 0.892) on CPU
+in minutes — the gap to the top method was largely a gene-budget artifact, not the VAE. But
+more genes is **not** a universal win: it *regresses* tabula_sapiens by ~10 pt (its
+284-cell test batch across 160 fine types overfits reference-specific genes) and saturates
+hypomap ([gene_budget_curve.png](figures/gene_budget_curve.png)). Crucially, this is
+**selectable without test labels**: held-out *reference* cross-validation rises for the
+datasets that benefit and is the one signal that *drops* for tabula_sapiens, and a trivial
+query-cells-per-class check independently flags it ([gene_budget_signals.png](figures/gene_budget_signals.png)) —
+so the budget can be set deterministically per dataset. (iii) *Negative control* — a
+CPU-only, UCE-style protein-embedding featurization (expression-weighted mean of ESM2 gene
+embeddings) does **not** help and hurts the hardest case: the pooling discards the per-gene
+detail that separates fine types, so the value of a foundation model like UCE stays locked
+in its GPU transformer, not a portable averaging trick.
 
 ## 4. Discussion
 
-[[FILL after numbers, but the thesis is fixed:]] actinn-jax is not the accuracy champion on
-every dataset, and a benchmark that claimed otherwise would be wrong. Its value is
-**Pareto-efficiency plus reach**: competitive accuracy at the speed/memory of the lightest
-classical methods, no heavy dependencies, a train-once cache, and — alone in this panel —
-atlas-scale references, a foundation-model-guided hierarchy, and sub-cell-type resolution.
-Practical guidance: for a one-off annotation against a small reference, SVM/CellTypist are
-equally good; actinn-jax pulls ahead when the reference is reused (caching), large
-(atlas-scale), or when the coarse→fine / zonation extensions matter. Foundation-model
-*zero-shot* labels (scPRINT) are the weakest option here — its **embeddings**, used to
-shape a small model, are where its value lies.
+**actinn-jax is not the accuracy champion, and we do not claim it is.** Deep probabilistic
+methods and boosted trees edge it by 1–2 points where they run, both in our panel (§3.1) and
+on Open Problems (§3.9); a benchmark that hid this would be wrong. What the evidence supports
+is narrower and, we argue, more useful: across two independent benchmarks and a controlled
+same-hardware rerun, **no method dominates actinn-jax on both accuracy and cost**, and its
+differentiators are the ones that decide what a working scientist runs on a laptop.
+
+*Speed and footprint.* Inference is **sub-second and flat** — independent of reference size
+and cardinality (§3.4) — and peak memory sits in the lightest cluster (~2 GB in-house;
+~21 GB through OP's heavier all-layer harness, still less than half of xgboost's 81 GB on the
+same box). Against methods of equal accuracy it is 2–200× faster; against methods of equal
+speed it is more accurate. With the train-once/map-many cache, the flat predict cost is all
+that recurs when a reference is reused.
+
+*The workflow is the product.* The largest practical gains come not from the flat classifier
+but from the **large→refined** pipeline (§3.6): a census-scale broad model with a calibrated
+abstain routes a query to a small focused reference that re-annotates at full resolution
+(cross-study liver 0.23/0.58 → 0.72/0.86), with zonation as a further tier. Every stage keeps
+classical-method speed, so the whole thing runs without a GPU.
+
+*Where it loses, and why.* actinn-jax trails on small references and very-few-cells-per-type
+sets (§3.1, §5), and — a finding from the OP analysis — it is sensitive to input budget under
+domain shift: more genes help most datasets but overfit a tiny, fine-grained, shifted query
+(tabula_sapiens). Encouragingly, the two cheapest levers are principled and label-free:
+**standardization** (a scArches-style domain alignment) and a **reference-CV-guided gene
+budget** both improve the model without peeking at test labels, and at a fair gene budget
+the gene-space MLP *matches the leaderboard's top method* on the datasets both complete —
+i.e. much of the apparent gap to heavier methods is representation budget, not model class.
+
+*Foundation models.* Their **zero-shot labels** are the weakest option in both benchmarks
+(scPRINT, scGPT, UCE ≈ random); their **embeddings/structure** are where the value lies, and
+our two-stage hierarchy uses exactly that. A cheap CPU shortcut to a foundation-model
+representation (protein-embedding pooling) did *not* transfer (§3.9), underscoring that the
+value is in the trained transformer, not a portable trick.
+
+**Practical guidance.** For a one-off annotation against a small reference, SVM/CellTypist
+are equally good. actinn-jax pulls ahead when the reference is **reused** (caching), **large**
+(atlas-scale), when annotation should proceed **broad→refined**, or when sub-cell-type state
+(zonation) matters — at classical-method speed and memory throughout.
 
 ## 5. Limitations
 
-- Single hardware family (Apple Silicon); no discrete-GPU or cloud numbers (deep/foundation
-  tiers would be faster on CUDA — out of scope for the "runs-on-a-laptop" question).
+- Single hardware family for the in-house panel (Apple Silicon); no discrete-GPU numbers
+  there (deep/foundation tiers would be faster on CUDA — out of scope for the
+  "runs-on-a-laptop" question). The §3.9 controlled run adds one cloud CPU box, but covers
+  the **CPU tier only** (GPU/R methods use OP's own cloud-CI trace, cross-hardware and
+  indicative; singler/seurat were excluded there for time — SingleR did not finish a single
+  dataset in >2 h on that instance).
 - Subsampled references (to keep the matrix tractable); the scaling section characterizes
   the size dependence directly.
-- Human only; six datasets; GPU foundation models beyond scPRINT (scGPT, Geneformer, popV)
-  not included in this local panel.
-- actinn-jax needs more cells/type than linear methods to reach parity (Section 3.1); on
-  very small references it trails.
+- Human only; six datasets per benchmark; GPU foundation models beyond scPRINT/UCE (scGPT,
+  Geneformer, popV) not run locally.
+- actinn-jax needs more cells/type than linear methods to reach parity (§3.1); on very small
+  references it trails.
+- **The gene budget is dataset-dependent, not a free parameter.** More genes help most
+  references but *overfit* a tiny, fine-grained, domain-shifted query (tabula_sapiens −10 pt);
+  our reference-CV + cells-per-class selection rule is validated on 6 datasets with a single
+  clean failure case, so it is directional evidence, not a tuned threshold.
+- **Standardization is shipped opt-in**, not default, because it shifts probability
+  calibration that the two-stage abstain thresholds are tuned against; combining the two
+  cleanly would require re-tuning those thresholds.
 
 ## Data & code availability
 
