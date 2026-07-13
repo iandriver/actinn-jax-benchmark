@@ -47,12 +47,13 @@ m = re.search(r"## Abstract\n(.*?)\n## 1\. Introduction", body, re.S)
 abstract = re.sub(r"\s+", " ", m.group(1)).strip()
 body = body[m.end()-len("## 1. Introduction"):]        # start body at Introduction
 
-# 3. handle internal .md links. If the link text is itself a doc filename
-# (a self-referential pointer), drop it; otherwise keep the readable text.
+# 3. handle internal .md/.png links (NOT image embeds, hence (?<!!)). If the
+# link text is itself a filename (a self-referential pointer), drop it;
+# otherwise keep the readable text.
 def linkrepl(m):
     text = m.group(1).strip()
-    return "" if text.endswith(".md") else text
-body = re.sub(r"\[([^\]]+)\]\([^)]*\.md(?:#[^)]*)?\)", linkrepl, body)
+    return "" if (text.endswith(".md") or text.endswith(".png")) else text
+body = re.sub(r"(?<!!)\[([^\]]+)\]\([^)]*\.(?:md|png)(?:#[^)]*)?\)", linkrepl, body)
 # tidy the parentheses/phrases left behind by dropped doc pointers
 body = re.sub(r"\s*See\s*\.", "", body)                       # "See ."
 body = re.sub(r"\(full detail:\s*", "(", body)                # "(full detail: X)" -> "(X)"
@@ -77,6 +78,16 @@ def figrepl(m):
     cap = CAPTIONS.get(fname, alt)
     return f"![{cap}]({FIGDIR / fname})"
 body = re.sub(r"!\[([^\]]*)\]\((figures/[^)]+)\)", figrepl, body)
+
+# 4a. add the two gene-budget figures (referenced only as links in §3.9) as
+# proper embedded figures at the end of the Open Problems section.
+GB = (f"\n\n![actinn-jax accuracy and macro-F1 versus input gene budget across all six "
+      f"Open Problems datasets. More genes help most datasets but regress the fine-grained, "
+      f"domain-shifted tabula_sapiens.]({FIGDIR/'gene_budget_curve.png'})\n\n"
+      f"![Label-free signals for setting the gene budget without test labels. Held-out "
+      f"reference cross-validation and query-cells-per-class both single out tabula_sapiens "
+      f"(where more genes hurt).]({FIGDIR/'gene_budget_signals.png'})\n\n")
+body = body.replace("\n## 4. Discussion", GB + "## 4. Discussion")
 
 # 4b. headings: promote one level (## main section -> #) and strip the manual
 # "N." / "N.M" numbers so pandoc --number-sections produces clean 1 / 1.1 numbering.
@@ -147,4 +158,21 @@ header-includes:
 """
 
 (ROOT / "manuscript" / "manuscript.md").write_text(FRONT + "\n" + body + "\n" + REFS)
-print("wrote manuscript/manuscript.md")
+print("wrote manuscript/manuscript.md (PDF via LaTeX)")
+
+# ---- portable variant for RTF / DOCX (Pages-editable): no raw LaTeX; the
+# unicode chars are kept literal (Word/Pages render them natively). ----
+FRONT_PORTABLE = f"""---
+title: "{TITLE}"
+author: "Ian Driver"
+date: ""
+abstract: |
+  {abstract}
+---
+
+**Ian Driver**$^{{1,\\ast}}$
+
+*$^{{1}}$ Affiliation to be confirmed.*  ·  *$^{{\\ast}}$ Correspondence: driver.ian@gmail.com*
+""".replace("$^{1,\\ast}$", "¹˒*").replace("$^{1}$", "¹").replace("$^{\\ast}$", "*")
+(ROOT / "manuscript" / "manuscript_portable.md").write_text(FRONT_PORTABLE + "\n" + body + "\n" + REFS)
+print("wrote manuscript/manuscript_portable.md (RTF/DOCX)")

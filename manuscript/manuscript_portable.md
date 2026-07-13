@@ -1,33 +1,14 @@
 ---
-title: |
-  actinn-jax: a fast, low-memory, CPU-first classifier for reference-based single-cell type annotation, with a large-to-refined workflow
-author:
-  - Ian Driver$^{1,\ast}$
+title: "actinn-jax: a fast, low-memory, CPU-first classifier for reference-based single-cell type annotation, with a large-to-refined workflow"
+author: "Ian Driver"
 date: ""
 abstract: |
   Reference-based cell-type annotation is a routine, high-volume step in single-cell analysis, and most labs run it on a laptop, not a GPU cluster. We present **actinn-jax**, a from-scratch JAX reimplementation of ACTINN (a 4-layer MLP classifier) with a sparse-aware pipeline and a train-once/map-many cached reference model, and benchmark it neutrally against **nine** other methods spanning every major method class — classical (SVM, kNN), regularized-linear (CellTypist), marker/correlation (SingleR, scmap), the original TensorFlow ACTINN, deep probabilistic (scANVI, scArches), and a foundation model (scPRINT) — across **six** datasets (within-dataset, cross-dataset, and cross-study; 8 to 86 cell types) on commodity Apple-Silicon hardware. We measure accuracy, macro-F1, ontology-aware concordance, training time, inference time, and peak memory. **Across the five datasets that share a label vocabulary between reference and query, actinn-jax ties the most accurate methods (mean accuracy 0.831, vs. scANVI 0.835 and scArches 0.833 — a five-way top cluster within 0.004) while predicting ~195× faster than scANVI (0.37 s vs. 73 s per query) and using 3.6× less memory than its own TensorFlow predecessor; no benchmarked method dominates it on both accuracy and speed.** (The sixth dataset, cross-dataset lung, is a label-vocabulary mismatch — see §3.1 — where every method scores ~0.35 by exact match but ~0.75 by ontology-aware concordance.) The central finding is that actinn-jax is **Pareto-efficient**: it matches the accuracy of the strongest methods while being in the fastest-inference, lightest cluster. **We are explicit that it is not the accuracy champion** — deep methods and boosted trees edge it by 1–2 points where they run, and a benchmark claiming otherwise would be wrong — but no benchmarked method dominates it on *both* accuracy and cost, and its differentiators are practical: sub-second, memory-bounded inference and a **large→refined annotation workflow** that a census-scale broad model (~800 human cell types, with a calibrated abstain) hands off to a small focused model for the tissue at hand (e.g. a 48-type HLiCA liver reference that lifts held-out cross-study accuracy from 0.23/0.58 to 0.72/0.86, exact-CL/ontology), plus within-cell-type resolution (hepatocyte zonation). An **independent external validation** on the community Open Problems `label_projection` benchmark reproduces the picture: actinn-jax places 3rd of 17 on accuracy (1st among methods that complete every dataset), and a **controlled same-hardware** rerun shows it matching its PCA-space `mlp` sibling at ~2× the speed and beating xgboost's accuracy at ~5.5× less runtime and ~4× less memory. We report where it loses (small references, very few cells per type, and fine-grained cross-domain targets) and what closes the remaining gaps cheaply (opt-in standardization; a reference-guided gene budget).
-geometry: margin=1in
-fontsize: 11pt
-linkcolor: RoyalBlue
-urlcolor: RoyalBlue
-header-includes:
-  - \usepackage{authblk}
-  - \renewcommand\Authands{, }
-  - \usepackage{newunicodechar}
-  - \newunicodechar{μ}{\ensuremath{\mu}}
-  - \newunicodechar{σ}{\ensuremath{\sigma}}
-  - \newunicodechar{≈}{\ensuremath{\approx}}
-  - \newunicodechar{×}{\ensuremath{\times}}
-  - \newunicodechar{→}{\ensuremath{\rightarrow}}
-  - \newunicodechar{≥}{\ensuremath{\ge}}
-  - \newunicodechar{≤}{\ensuremath{\le}}
-  - \newunicodechar{±}{\ensuremath{\pm}}
-  - \newunicodechar{≠}{\ensuremath{\neq}}
-  - \newunicodechar{≫}{\ensuremath{\gg}}
-  - \newunicodechar{²}{\textsuperscript{2}}
 ---
 
-\begin{center}\small $^{1}$ Affiliation to be confirmed. \\ $^{\ast}$ Correspondence: driver.ian@gmail.com\end{center}
+**Ian Driver**¹˒*
+
+*¹ Affiliation to be confirmed.*  ·  ** Correspondence: driver.ian@gmail.com*
 
 # Introduction
 
