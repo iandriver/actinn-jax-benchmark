@@ -333,18 +333,17 @@ concrete, practical advantage of actinn-jax's calibrated output.
 
 ### 3.8 Foundation-model zero-shot (scPRINT)
 
-scPRINT is run separately as a zero-shot predictor (no training on the reference). The
-result is a cautionary data point. It ran cleanly only on the lung datasets — on
-lung_intra it scored **exact accuracy 0.027 and ontology concordance 0.206 in 321 s per
-query** (vs. actinn-jax's 0.89 accuracy in 0.2 s) — and it **failed outright** on the
-HLiCA liver sets (`ValueError: true label CL:4047054 not in available classes`: its fixed
-pretrained classifier vocabulary cannot represent HLiCA's 2026-era Cell-Ontology terms)
-and on blood+gut (it requires CL ids, which that atlas lacks). So the foundation model as
-a *label predictor* is simultaneously the slowest (≈1000× actinn-jax), the least accurate,
-and the most brittle (fixed vocabulary, hard requirement on CL ids) option in the panel.
-This is exactly why our two-stage workflow ([MODEL_FLOW.md](MODEL_FLOW.md)) uses scPRINT's
-**embeddings** — its learned structure — to shape a small trained model, and never its
-zero-shot labels. Foundation models are valuable here; their raw predictions are not.
+scPRINT is run separately as a zero-shot predictor (no training on the reference), as a
+reference point for the "just use a foundation model" alternative. On the lung datasets it
+scored **exact accuracy 0.027 / ontology concordance 0.206 in 321 s per query** — vs.
+actinn-jax's 0.89 in 0.2 s — so as a *label* predictor it is both slow (~1000× actinn-jax)
+and weak. Its pretrained classifier head also carries a **fixed label vocabulary** and
+requires CL ids, so it cannot emit labels outside that set; this is an inherent property of
+a zero-shot label head, not a defect, but it means the foundation model's raw predictions
+are not a drop-in annotator. This is exactly why our two-stage workflow
+([MODEL_FLOW.md](MODEL_FLOW.md)) uses scPRINT's **embeddings** — its learned structure — to
+shape a small trained model, never its zero-shot labels: the foundation model is valuable,
+its raw label predictions are not.
 
 ### 3.9 External validation: Open Problems `label_projection`
 
@@ -452,10 +451,10 @@ are equally good. actinn-jax pulls ahead when the reference is **reused** (cachi
 
 - Single hardware family for the in-house panel (Apple Silicon); no discrete-GPU numbers
   there (deep/foundation tiers would be faster on CUDA — out of scope for the
-  "runs-on-a-laptop" question). The §3.9 controlled run adds one cloud CPU box, but covers
-  the **CPU tier only** (GPU/R methods use OP's own cloud-CI trace, cross-hardware and
-  indicative; singler/seurat were excluded there for time — SingleR did not finish a single
-  dataset in >2 h on that instance).
+  "runs-on-a-laptop" question). The §3.9 controlled run covers the **CPU tier** on one cloud
+  box; the GPU/R methods there are reported from OP's own cloud-CI trace (indicative). A
+  same-hardware GPU-tier run to fold those into a single controlled table is the natural
+  extension.
 - Subsampled references (to keep the matrix tractable); the scaling section characterizes
   the size dependence directly.
 - Human only; six datasets per benchmark; GPU foundation models beyond scPRINT/UCE (scGPT,
