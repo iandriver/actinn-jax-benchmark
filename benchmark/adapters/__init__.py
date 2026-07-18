@@ -16,6 +16,7 @@ from . import actinn_orig_adapter  # noqa: F401,E402  (lazy TF import; runs in .
 from . import r_adapter  # noqa: F401,E402  (SingleR/scmap/scPred; shell out to Rscript)
 from . import scvi_adapter  # noqa: F401,E402  (scANVI/scArches; lazy scvi import, runs in .venv-scvi)
 from . import scprint_adapter  # noqa: F401,E402  (scPRINT foundation model; runs in .venv-scprint)
+from . import protocloud_adapter  # noqa: F401,E402  (ProtoCloud VAE; lazy torch import, runs in .venv-protocloud)
 
 
 def get(name, **kwargs):

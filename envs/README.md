@@ -52,6 +52,23 @@ to load. Pinning harmony 0.1.1 did not resolve it cleanly. Left as a known gap.
 - `r-bioc` (`.Rlib`): Symphony + Azimuth (Seurat) for the remaining deep methods —
   same R bridge pattern. (Not yet wired.)
 
+### `protocloud` — ProtoCloud (Guo & Ding, Cell Genomics 2026)
+Prototype-based interpretable VAE for annotation with built-in uncertainty. Vendored
+by cloning the source (gitignored, not committed), then installed editable in its own
+env. ProtoCloud only uses **CUDA-or-CPU** (no Apple MPS), so on a Mac it runs on CPU.
+```
+git clone https://github.com/Ding-Group/ProtoCloud.git benchmark/vendor/ProtoCloud
+uv venv --python 3.12 .venv-protocloud
+uv pip install --python .venv-protocloud/bin/python torch numpy pandas scipy \
+  "scanpy>=1.10" "anndata>=0.10" scikit-learn scikit-misc matplotlib seaborn \
+  umap-learn matplotlib-venn pyyaml psutil pyarrow \
+  -e benchmark/vendor/ProtoCloud -e ../actinn-jax
+```
+The adapter (`benchmark/adapters/protocloud_adapter.py`) selects HVGs like the other
+deep adapters (ProtoCloud's `api.fit_model` does no gene selection) and surfaces its
+`pc_certainty == 'ambiguous'` flag as `Predictions.unassigned`. Point at it via
+`python: .venv-protocloud/bin/python`.
+
 ## Tier 3 — foundation models
 - `foundation`: PyTorch + scGPT / scBERT / scDeepSort / TOSICA, plus pretrained
   weights. Prefer MPS on Apple Silicon; expect to subsample queries.

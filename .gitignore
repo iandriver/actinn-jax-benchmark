@@ -28,3 +28,6 @@ results/
 .scprint_lamin/
 *.ckpt
 .venv-scprint/
+
+# vendored ProtoCloud source (clone separately; see envs/README.md)
+benchmark/vendor/ProtoCloud/
