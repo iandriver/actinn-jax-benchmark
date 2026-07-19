@@ -59,7 +59,7 @@ class ProtoCloud(AnnotationMethod):
     device = "cpu"                       # ProtoCloud uses cuda-or-cpu only (no MPS)
 
     def __init__(self, epochs=100, latent_dim=20, num_prototypes_per_class=6,
-                 test_ratio=0.1, seed=7, n_hvg=2000):
+                 test_ratio=0.1, seed=7, n_hvg=3000):   # 3000 HVGs per the paper (Fig 3)
         self.epochs = epochs
         self.latent_dim = latent_dim
         self.num_prototypes_per_class = num_prototypes_per_class

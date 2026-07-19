@@ -3,7 +3,7 @@
 # accuracy comparison is fair; ProtoCloud's fit time reflects CPU -- it targets GPU).
 output: results/protocloud_compare
 label: cell_type
-repeats: 1
+repeats: 3
 ontology_obo: null
 datasets:
   - name: pbmc3k_intra
