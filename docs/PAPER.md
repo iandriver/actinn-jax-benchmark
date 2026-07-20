@@ -486,17 +486,20 @@ are equally good. actinn-jax pulls ahead when the reference is **reused** (cachi
 - **Standardization is shipped opt-in**, not default, because it shifts probability
   calibration that the two-stage abstain thresholds are tuned against; combining the two
   cleanly would require re-tuning those thresholds.
-- **A tuned linear baseline erases the accuracy margin (measured, not hypothetical).** Our
-  classical tier (SVM, kNN, CellTypist) is untuned. Adding Souza & Mehta's pipeline
-  (normalize → ANOVA → standardize → PCA → logistic regression) and **scTOP**
-  ([`SIMPLE_BASELINES.md`](SIMPLE_BASELINES.md)) shows the linear pipeline **ties or beats
-  actinn-jax**: pbmc3k 0.913 acc / 0.829 macro-F1 (vs 0.913 / 0.795) and lung 0.898 / 0.904
-  (vs 0.894 / 0.901), fitting 3–4× faster. So the §3.1 margins over the classical tier
-  reflect *untuned* baselines, and actinn-jax's case rests on **cost profile and workflow**
-  — bounded sparse memory (2.5× lighter than that pipeline on lung: 2.0 vs 4.8 GB), the
-  cached reusable reference, and the broad→refined/abstain/novel-detection workflow — not on
-  winning raw accuracy against a well-built linear model. scTOP is cheaper still (1 s fit,
-  507 MB) and best-in-class at low cardinality, but degrades at 46 types (0.828).
+- **A tuned linear baseline is more accurate than actinn-jax (measured, all four
+  datasets).** Our classical tier (SVM, kNN, CellTypist) is untuned. Adding Souza & Mehta's
+  pipeline (normalize → ANOVA → standardize → PCA(220) → logistic regression) and **scTOP**
+  ([`SIMPLE_BASELINES.md`](SIMPLE_BASELINES.md)) shows the linear pipeline **beats
+  actinn-jax on mean accuracy (0.880 vs 0.867) and macro-F1 (0.860 vs 0.839) while fitting
+  3.7× faster** — a tie on pbmc3k, slight edges on lung and liver, and **+4.2 pt on the
+  86-type blood+gut set** (0.902 vs 0.860). It also beats ProtoCloud on 3 of 4. The §3.1
+  margins therefore reflect *untuned* baselines, and **actinn-jax's case rests on cost
+  profile and workflow, not accuracy**: bounded sparse memory (1.7 GB vs 3.6 GB mean, 2.6
+  vs 5.5 GB on blood+gut, and the gap grows because ANOVA/PCA densify cells × genes), the
+  cached reusable reference, and broad→refined / abstain / novel-detection. For one-shot
+  labels on laptop-sized data, the linear pipeline is the better default. scTOP is cheaper
+  still (1.2 s, 1.4 GB) with the best pbmc3k macro-F1 (0.837), but degrades with
+  cardinality (0.910 → 0.828 → 0.795; 0.649 on liver).
 - **Annotation only.** Cross-species transfer and disease-state prediction — the tasks where
   Souza & Mehta find the largest foundation-model deficits, and where a fast method would be
   most attractive — are outside this benchmark's scope (human, within/cross-dataset

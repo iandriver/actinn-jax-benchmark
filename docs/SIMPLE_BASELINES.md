@@ -11,70 +11,81 @@ weakest point. This adds both:
   gene selection → standardization → PCA(220) → multinomial logistic regression. Fit on
   the reference only, replayed on the query.
 
-Config: [`configs/simple_baselines.yaml`](../configs/simple_baselines.yaml); same
-subsampled splits as the ProtoCloud comparison, so all four methods are directly
-comparable. CPU throughout.
+Configs: [`simple_baselines.yaml`](../configs/simple_baselines.yaml) +
+[`simple_baselines_hlica.yaml`](../configs/simple_baselines_hlica.yaml). All four methods
+share the same subsampled splits as the ProtoCloud comparison. CPU throughout.
 
-## Results
+## Results — 4 datasets
 
-**pbmc3k — 8 immune types (1,981 ref / 657 query)**
-
-| method | accuracy | macro-F1 | fit (s) | predict (s) | peak mem (MB) |
+| dataset (types) | method | accuracy | macro-F1 | fit (s) | peak mem (MB) |
 |---|---|---|---|---|---|
-| actinn-jax | **0.913** | 0.795 | 5.8 | 0.24 | 892 |
-| **scTOP** | 0.910 | **0.837** | **1.0** | 0.64 | **507** |
-| **linear-anova-pca** | **0.913** | 0.829 | 1.6 | 0.08 | 1521 |
-| ProtoCloud | 0.880 | 0.770 | 44.9 | 0.41 | 1123 |
+| **pbmc3k** (8) | actinn-jax | **0.913** | 0.795 | 5.8 | 892 |
+| | scTOP | 0.910 | **0.837** | **1.0** | **507** |
+| | linear-anova-pca | **0.913** | 0.829 | 1.6 | 1521 |
+| | ProtoCloud | 0.880 | 0.770 | 44.9 | 1123 |
+| **lung** (46) | actinn-jax | 0.894 | 0.901 | 15.7 | **1957** |
+| | scTOP | 0.828 | 0.830 | **1.1** | 1599 |
+| | linear-anova-pca | 0.898 | 0.904 | 4.6 | 4837 |
+| | ProtoCloud | **0.932** | **0.932** | 167.2 | 1967 |
+| **liver** (36) | actinn-jax | 0.802 | 0.798 | 10.3 | 1541 |
+| | scTOP | 0.649 | 0.644 | **1.2** | **1349** |
+| | linear-anova-pca | **0.804** | **0.804** | 2.8 | 2681 |
+| | ProtoCloud | 0.695 | 0.689 | 100.5 | 1618 |
+| **blood+gut** (86) | actinn-jax | 0.860 | 0.860 | 19.1 | 2591 |
+| | scTOP | 0.795 | 0.789 | **1.3** | **2076** |
+| | linear-anova-pca | **0.902** | **0.903** | 4.8 | 5543 |
+| | ProtoCloud | 0.841 | 0.839 | 204.8 | 2065 |
 
-**Krasnow lung — 46 types (8,109 ref / 2,694 query)**
+**Means across the four datasets**
 
-| method | accuracy | macro-F1 | fit (s) | predict (s) | peak mem (MB) |
-|---|---|---|---|---|---|
-| actinn-jax | 0.894 | 0.901 | 15.7 | 0.36 | 1957 |
-| scTOP | 0.828 | 0.830 | **1.1** | 0.92 | 1599 |
-| **linear-anova-pca** | 0.898 | 0.904 | 4.6 | 0.30 | 4837 |
-| **ProtoCloud** | **0.932** | **0.932** | 167.2 | 1.15 | 1967 |
-
-(HLiCA liver and blood+gut are in the config but did not run — the external volume
-holding them was unmounted. They remain to be filled in.)
+| method | accuracy | macro-F1 | fit (s) | peak mem (MB) |
+|---|---|---|---|---|
+| **linear-anova-pca** | **0.880** | **0.860** | 3.5 | 3645 |
+| actinn-jax | 0.867 | 0.839 | 12.7 | **1745** |
+| ProtoCloud | 0.837 | 0.807 | 129.3 | 1693 |
+| scTOP | 0.796 | 0.775 | **1.2** | 1383 |
 
 ## Reading — including what this costs us
 
-**A tuned linear pipeline matches actinn-jax.** `linear-anova-pca` ties actinn-jax on
-pbmc3k accuracy (0.913) with a *better* macro-F1 (0.829 vs 0.795), and edges it on lung
-(0.898/0.904 vs 0.894/0.901) — while fitting 3–4× faster. This is a real result and it
-tempers the accuracy claims in §3.1: **against a properly-tuned linear baseline,
-actinn-jax's accuracy advantage over the classical tier largely disappears.** Our SVM/kNN
-numbers flattered the MLP because those baselines were untuned. This is exactly the
-comparison Souza & Mehta's paper implies, and it lands the way they predict.
+**The tuned linear pipeline is the most accurate method here, and it is not close on
+cost.** `linear-anova-pca` has the best mean accuracy (0.880) and macro-F1 (0.860),
+beating actinn-jax on every dataset — a tie on pbmc3k, slight edges on lung and liver, and
+a decisive **+4.2 points on the 86-type blood+gut set** (0.902 vs 0.860) — while fitting
+**3.7× faster**. It also beats ProtoCloud, a GPU-class deep generative model, on 3 of 4.
 
-**scTOP is astonishingly cheap and strong at low cardinality, and degrades with it.**
-1.0 s fit and 507 MB — the lightest method here — and the *best* macro-F1 on pbmc3k
-(0.837). But on 46 lung types it falls to 0.828 accuracy vs 0.894 for actinn-jax. A
-parameter-free class-average projection has no way to sharpen boundaries between many
-closely related types, which is the regime where a discriminative model still pays.
+This is a genuine correction to §3.1. Our reported margins over the "classical tier" were
+margins over *untuned* baselines (SVM, kNN, CellTypist). Against a linear pipeline built
+with the care Souza & Mehta describe, **actinn-jax does not win on accuracy.**
 
-**Where the linear pipeline is not free: memory.** On lung it peaks at **4.8 GB vs
-2.0 GB** for actinn-jax — 2.5×, because it densifies the full gene matrix for ANOVA/PCA.
-actinn-jax stays sparse and bounded. On a laptop, or at atlas scale, that gap matters more
-than the few seconds of fit time.
+**Its one clear advantage is memory.** actinn-jax averages **1745 MB vs 3645 MB** — 2.1×
+lighter — and the gap widens with the data: 5.5 GB for the linear pipeline on blood+gut vs
+2.6 GB. The reason is structural: ANOVA + PCA densify a (cells × genes) matrix, so the
+pipeline's footprint grows with both dimensions, while actinn-jax stays sparse and
+minibatched. At these subsampled sizes that is a 2× inconvenience; at atlas scale it is
+the difference between running and not. (We have not measured that regime here, so this is
+a projection from the trend, not a result.)
 
-**ProtoCloud** remains the accuracy leader on the fine-grained set (0.932) at 10–35× the
-fit cost.
+**scTOP is the cheapest annotation method we have benchmarked, and it degrades with
+cardinality.** 1.2 s fit and 1.4 GB — and on 8 immune types it has the *best* macro-F1 of
+any method (0.837). But accuracy falls off as classes multiply: 0.910 (8 types) → 0.828
+(46) → 0.795 (86) → 0.649 (liver, 36 closely-related types). A parameter-free projection
+onto class averages cannot sharpen boundaries between similar types; that is where a
+discriminative model still earns its keep.
+
+**ProtoCloud** wins only the finest-grained set (lung, 0.932) at 10–170× the fit cost.
 
 ## Consequence for actinn-jax's positioning
 
-Accuracy alone no longer distinguishes actinn-jax from a well-built linear pipeline on
-these datasets. What still does:
+Raw accuracy no longer distinguishes actinn-jax from a well-built linear pipeline — it is
+*behind* on these four datasets. What still holds:
 
-1. **Bounded, sparse memory** — 2.5× lighter than the linear pipeline on the larger set,
-   and the gap grows with genes × cells.
-2. **The cached reference** — `train_reference` → `save`/`load`, so repeated annotation
-   against one reference is amortized; the linear pipeline refits its scaler/PCA/classifier.
+1. **Bounded, sparse memory** — 2.1× lighter on average, widening with dataset size.
+2. **The cached reference** — `train_reference` → `save`/`load` amortizes across repeated
+   queries; the linear pipeline refits scaler/PCA/classifier each time.
 3. **The workflow** — broad→refined, abstain, tissue-aware refinement, novel-type
-   detection (§3.6, §3.7) — none of which the baselines provide.
+   detection (§3.6, §3.7), which no baseline here provides.
 4. **Cardinality robustness** relative to scTOP.
 
-The honest summary is that actinn-jax's case rests on **cost profile and workflow, not on
-beating a tuned linear model at raw accuracy**. Reporting it otherwise would not survive
-contact with this baseline.
+The honest summary: actinn-jax's case rests on **cost profile and workflow, not accuracy**.
+A reader who only needs one-shot labels on a laptop-sized dataset should probably reach for
+the linear pipeline first — and our paper should say so.

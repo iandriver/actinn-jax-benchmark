@@ -1,0 +1,22 @@
+# The two HLiCA datasets missing from results/simple_baselines (volume was unmounted).
+# Same methods + splits; merged into docs/SIMPLE_BASELINES.md.
+output: results/simple_baselines_hlica
+label: cell_type
+repeats: 1
+ontology_obo: null
+datasets:
+  - name: liver_intra
+    type: intra
+    path: /Volumes/IanSSD/hlica/liver_intra.h5ad
+    subsample_per_label: 300
+    test_frac: 0.25
+  - name: blood_gut_intra
+    type: intra
+    path: /Volumes/IanSSD/hlica/blood_gut_intra.h5ad
+    subsample_per_label: 200
+    test_frac: 0.25
+methods:
+  - name: actinn-jax
+  - name: sctop
+  - name: linear-anova-pca
+  - name: protocloud
