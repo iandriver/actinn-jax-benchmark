@@ -83,7 +83,10 @@ Raw accuracy no longer distinguishes actinn-jax from a well-built linear pipelin
 2. **The cached reference** — `train_reference` → `save`/`load` amortizes across repeated
    queries; the linear pipeline refits scaler/PCA/classifier each time.
 3. **The workflow** — broad→refined, abstain, tissue-aware refinement, novel-type
-   detection (§3.6, §3.7), which no baseline here provides.
+   detection (§3.6, §3.7). Neither scTOP nor the linear pipeline provides any of these;
+   ProtoCloud does provide uncertainty, attribution and a fine-tuning refinement path, so
+   the genuinely distinct pieces are the **shipped ready-to-run broad reference** and
+   **sub-second frozen-model refinement** (see [`PROTOCLOUD.md`](PROTOCLOUD.md)).
 4. **Cardinality robustness** relative to scTOP.
 
 The honest summary: actinn-jax's case rests on **cost profile and workflow, not accuracy**.

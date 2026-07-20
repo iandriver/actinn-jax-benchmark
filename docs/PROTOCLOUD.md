@@ -69,6 +69,34 @@ feature actinn-jax matches with `min_prob` when desired.
   abstain; per-cluster markers from `detect_novel_celltypes`). ProtoCloud's per-cell LRP
   gene relevance is genuinely richer.
 
+## Workflow comparison (checked against the source, not assumed)
+
+We previously described the large→refined workflow as "a workflow layer the baselines do
+not provide". Reading ProtoCloud's source, that was **too strong** and is corrected here.
+
+| step | actinn-jax | ProtoCloud |
+|---|---|---|
+| Annotate an **unknown** dataset with a shipped model, zero training | `bundled_reference("broad_human_v1")`, ~800 census types | **No equivalent.** Public API is `fit_model` / `predict_model` / `save_model` / `load` / `compute_prp`; no hosted weights and no download helper (scTOP ships a basis; ProtoCloud does not). You must train on an atlas first. |
+| Align a query to the model's gene space | automatic gene matching | **Yes** — `gene_subset(pretrain_model_pth)` |
+| Restrict a **frozen** model to plausible classes, no retraining | `refine_to_query` / `refine_to_tissue`, sub-second | **No equivalent** (no class-masking API) |
+| Refine to a focused model | train a small focused reference (fast, CPU) | **Yes, and arguably stronger** — `--pretrain_model_pth` + `--cont_train` fine-tune the model on new data; `--new_label` can use its own predictions as targets. Cost is a training run (~26 min CPU at 49k cells; far less on its target GPU). |
+| Abstain / uncertainty | `min_prob` | **Yes** — `pc_certainty`, per-class `cls_threshold`, `identify_TypeError` |
+| Novel-population screen | `detect_novel_celltypes`, one call | **Partially** — uncertainty + PRP supports it (their PRDM16⁺ DC result), but as an analysis workflow, not an API |
+| Gene attribution | per-cluster "vs rest" markers | **Yes, richer** — `compute_prp`, per-cell LRP relevance |
+
+**Conceding the substantive point:** ProtoCloud *does* have a refinement path, and it is the
+weight-updating kind that our own [`REFINE.md`](REFINE.md) concluded works better than
+masking ("retraining on a narrower, focused reference measurably outperforms masking"). It
+implements the approach we ourselves found more effective; we offer a cheap approximation
+of it plus a fast frozen-model mask.
+
+What is actually distinct to actinn-jax is narrower: **(1)** a shipped, ready-to-run broad
+reference — the "unknown data, no training, labels now" entry point, which ProtoCloud has
+no starting point for at all; **(2)** zero-retrain refinement (sub-second mask vs. a
+training run); **(3)** a one-call novel-population screen. (We confirmed the repository
+ships no weights and the API has no download function; we could not retrieve their Zenodo
+record to confirm it is code-only, so we do not claim that.)
+
 ## Honest caveats
 
 This comparison deliberately probes the **lightweight-CPU corner**, which is *not*

@@ -15,8 +15,8 @@ FIGDIR = ROOT / "docs" / "figures"
 src = (ROOT / "docs" / "PAPER.md").read_text()
 
 # ---- author block (PLACEHOLDER — replace with real details before submission) ----
-TITLE = ("actinn-jax: a fast, low-memory, CPU-first classifier for reference-based "
-         "single-cell type annotation, with a large-to-refined workflow")
+TITLE = ("Annotating single-cell data on a laptop: a 13-method benchmark and practical "
+         "low-memory workflows, with actinn-jax")
 AUTHORS = "Ian Driver$^{1,\\ast}$"                       # TODO confirm
 AFFIL = "$^{1}$ Affiliation to be confirmed."            # TODO confirm
 CORR = "$^{\\ast}$ Correspondence: driver.ian@gmail.com" # TODO confirm
@@ -27,7 +27,7 @@ lines = src.splitlines()
 out, i = [], 0
 while i < len(lines):
     l = lines[i]
-    if l.startswith("# actinn-jax"):        # H1 title line
+    if l.startswith("# ") and i == 0:        # H1 title line
         i += 1; continue
     if l.startswith("*In-repo benchmark report"):   # italic note (until blank)
         while i < len(lines) and lines[i].strip():
