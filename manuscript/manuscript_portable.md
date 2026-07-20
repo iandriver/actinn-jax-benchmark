@@ -448,13 +448,17 @@ are equally good. actinn-jax pulls ahead when the reference is **reused** (cachi
 - **Standardization is shipped opt-in**, not default, because it shifts probability
   calibration that the two-stage abstain thresholds are tuned against; combining the two
   cleanly would require re-tuning those thresholds.
-- **No parameter-free or tuned-linear baseline.** Our classical tier (SVM, kNN, CellTypist)
-  is deliberately untuned, but Souza & Mehta show that a *carefully preprocessed* linear
-  pipeline (per-cell normalization → ANOVA gene selection → standardization → PCA → logistic
-  regression) and **scTOP**, a parameter-free normalized-expression projection, both rival
-  foundation models. Those are precisely the class actinn-jax competes with on speed, so they
-  are the most informative comparison currently missing here; a stronger linear baseline could
-  narrow — or close — the margins we report in §3.1. Adding both is the top follow-up.
+- **A tuned linear baseline erases the accuracy margin (measured, not hypothetical).** Our
+  classical tier (SVM, kNN, CellTypist) is untuned. Adding Souza & Mehta's pipeline
+  (normalize → ANOVA → standardize → PCA → logistic regression) and **scTOP**
+  (`SIMPLE_BASELINES.md`) shows the linear pipeline **ties or beats
+  actinn-jax**: pbmc3k 0.913 acc / 0.829 macro-F1 (vs 0.913 / 0.795) and lung 0.898 / 0.904
+  (vs 0.894 / 0.901), fitting 3–4× faster. So the §3.1 margins over the classical tier
+  reflect *untuned* baselines, and actinn-jax's case rests on **cost profile and workflow**
+  — bounded sparse memory (2.5× lighter than that pipeline on lung: 2.0 vs 4.8 GB), the
+  cached reusable reference, and the broad→refined/abstain/novel-detection workflow — not on
+  winning raw accuracy against a well-built linear model. scTOP is cheaper still (1 s fit,
+  507 MB) and best-in-class at low cardinality, but degrades at 46 types (0.828).
 - **Annotation only.** Cross-species transfer and disease-state prediction — the tasks where
   Souza & Mehta find the largest foundation-model deficits, and where a fast method would be
   most attractive — are outside this benchmark's scope (human, within/cross-dataset
