@@ -17,9 +17,12 @@ src = (ROOT / "docs" / "PAPER.md").read_text()
 # ---- author block (PLACEHOLDER — replace with real details before submission) ----
 TITLE = ("Annotating single-cell data on a laptop: a 13-method benchmark and practical "
          "low-memory workflows, with actinn-jax")
-AUTHORS = "Ian Driver$^{1,\\ast}$"                       # TODO confirm
-AFFIL = "$^{1}$ Affiliation to be confirmed."            # TODO confirm
-CORR = "$^{\\ast}$ Correspondence: driver.ian@gmail.com" # TODO confirm
+# "Independent Researcher" is the standard bioRxiv affiliation for unaffiliated authors.
+# Add a city/country if you want (e.g. "Independent Researcher, Oakland, CA, USA"), and
+# swap in an institution/company here if one is in place before submission.
+AUTHORS = "Ian Driver$^{\\ast}$"
+AFFIL = "Independent Researcher"
+CORR = "$^{\\ast}$ Correspondence: driver.ian@gmail.com"
 
 lines = src.splitlines()
 
@@ -173,9 +176,9 @@ abstract: |
   {abstract}
 ---
 
-**Ian Driver**$^{{1,\\ast}}$
+**Ian Driver**
 
-*$^{{1}}$ Affiliation to be confirmed.*  ·  *$^{{\\ast}}$ Correspondence: driver.ian@gmail.com*
-""".replace("$^{1,\\ast}$", "¹˒*").replace("$^{1}$", "¹").replace("$^{\\ast}$", "*")
+*Independent Researcher*  ·  *Correspondence: driver.ian@gmail.com*
+"""
 (ROOT / "manuscript" / "manuscript_portable.md").write_text(FRONT_PORTABLE + "\n" + body + "\n" + REFS)
 print("wrote manuscript/manuscript_portable.md (RTF/DOCX)")
