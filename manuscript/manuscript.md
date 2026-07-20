@@ -423,6 +423,24 @@ our two-stage hierarchy uses exactly that. A cheap CPU shortcut to a foundation-
 representation (protein-embedding pooling) did *not* transfer (§3.9), underscoring that the
 value is in the trained transformer, not a portable trick.
 
+*Concurrent evidence that expressivity saturates.* Two independent lines support this
+reading. First, a head-to-head against **ProtoCloud** — a prototype-based, self-explaining
+VAE with built-in uncertainty and gene-level attribution, i.e. a strictly richer model than
+ours — is close and splits both ways: mean accuracy 0.867 (actinn-jax) vs 0.837 across four
+of our datasets, ProtoCloud ahead on the finest-grained set, actinn-jax training ~8.5× faster
+on CPU (`PROTOCLOUD.md`). Second, and more broadly, Souza & Mehta report that
+**parameter-free linear representations** match or exceed single-cell foundation models across
+cross-species transfer, human cell-type classification and disease-state prediction — on
+Tabula Sapiens 2.0 their normalize→ANOVA→PCA→logistic-regression pipeline reaches mean
+macro-F1 0.899 against 0.907–0.910 for TranscriptFormer variants — and they offer a geometric
+explanation: the biologically realized cell manifold is well approximated by a **linear
+subspace**, so once noise is suppressed performance *saturates* and extra expressivity buys
+little. That is a principled account of why a four-layer MLP over normalized gene space stays
+competitive, and it matches our own finding that the residual gap to heavier methods was mostly
+**representation budget, not model class** (§3.9). Their further result that simple methods do
+*best* out-of-distribution — novel cell types and unseen organisms — also rhymes with the
+rejection behavior we depend on (§3.7).
+
 **Practical guidance.** For a one-off annotation against a small reference, SVM/CellTypist
 are equally good. actinn-jax pulls ahead when the reference is **reused** (caching), **large**
 (atlas-scale), when annotation should proceed **broad→refined**, or when sub-cell-type state
@@ -449,6 +467,17 @@ are equally good. actinn-jax pulls ahead when the reference is **reused** (cachi
 - **Standardization is shipped opt-in**, not default, because it shifts probability
   calibration that the two-stage abstain thresholds are tuned against; combining the two
   cleanly would require re-tuning those thresholds.
+- **No parameter-free or tuned-linear baseline.** Our classical tier (SVM, kNN, CellTypist)
+  is deliberately untuned, but Souza & Mehta show that a *carefully preprocessed* linear
+  pipeline (per-cell normalization → ANOVA gene selection → standardization → PCA → logistic
+  regression) and **scTOP**, a parameter-free normalized-expression projection, both rival
+  foundation models. Those are precisely the class actinn-jax competes with on speed, so they
+  are the most informative comparison currently missing here; a stronger linear baseline could
+  narrow — or close — the margins we report in §3.1. Adding both is the top follow-up.
+- **Annotation only.** Cross-species transfer and disease-state prediction — the tasks where
+  Souza & Mehta find the largest foundation-model deficits, and where a fast method would be
+  most attractive — are outside this benchmark's scope (human, within/cross-dataset
+  annotation).
 
 # Data & code availability {-}
 
@@ -477,3 +506,6 @@ two repositories. HLiCA data © Edgar et al. 2026 (CC-BY 4.0), [doi:10.64898/202
 12. Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis. openproblems.bio (2024).
 13. Bradbury J, et al. JAX: composable transformations of Python+NumPy programs (2018). github.com/google/jax.
 14. Edgar R, et al. The Human Liver Cell Atlas (HLiCA). doi:10.64898/2026.06.30.735539.
+15. Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. *bioRxiv* (2026), doi:10.64898/2026.02.11.705358.
+16. Guo K, Ding J. ProtoCloud: a prototypical self-explaining model for single-cell analysis. *Cell Genomics* 6(6):101217 (2026), doi:10.1016/j.xgen.2026.101217.
+17. Yampolskaya M, Souza H, et al. scTOP: cell identity from single-cell data via parameter-free projection. github.com/Emergent-Behaviors-in-Biology/scTOP.
