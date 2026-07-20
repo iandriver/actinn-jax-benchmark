@@ -45,6 +45,19 @@ the core env and call `Rscript` (set `R_LIBS` if `.Rlib` isn't at the repo root)
 `harmony::HarmonyMatrix`, which modern harmony (>=1.0) no longer exports, so it fails
 to load. Pinning harmony 0.1.1 did not resolve it cleanly. Left as a known gap.
 
+### Simple/parameter-free baselines — `sctop`, `linear-anova-pca`
+Both are CPU and pure-Python. `linear-anova-pca` (the Souza & Mehta normalize → ANOVA →
+standardize → PCA → logistic-regression pipeline) needs only scikit-learn, already in the
+core env. `sctop` needs one package:
+```
+uv pip install sctop          # (into whichever env runs the benchmark)
+```
+**Note on scTOP:** it is rank-based and therefore very sensitive to the long tail of
+near-all-zero genes — unfiltered (33k genes, 97% zeros) its bases go degenerate and every
+cell collapses onto the rarest type. The adapter filters to genes expressed in ≥10% of
+reference cells (`min_expr_frac`, a scale-free default), which restores expected
+performance. Do not benchmark scTOP without that filter.
+
 ## Tier 2 — deep reference mapping
 - `.venv-scvi`: `scvi-tools` (scANVI, scArches) — `uv pip install scvi-tools scanpy
   anndata pyarrow pyyaml psutil`. Uses Apple **MPS** when available. Point the methods

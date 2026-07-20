@@ -12,6 +12,8 @@ from . import actinn_jax_adapter  # noqa: F401,E402
 from . import celltypist_adapter  # noqa: F401,E402
 from . import svm_adapter  # noqa: F401,E402
 from . import knn_adapter  # noqa: F401,E402
+from . import linear_adapter  # noqa: F401,E402  (Souza & Mehta tuned linear pipeline)
+from . import sctop_adapter  # noqa: F401,E402  (scTOP parameter-free; lazy sctop import)
 from . import actinn_orig_adapter  # noqa: F401,E402  (lazy TF import; runs in .venv-tf)
 from . import r_adapter  # noqa: F401,E402  (SingleR/scmap/scPred; shell out to Rscript)
 from . import scvi_adapter  # noqa: F401,E402  (scANVI/scArches; lazy scvi import, runs in .venv-scvi)

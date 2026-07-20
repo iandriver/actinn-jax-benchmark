@@ -1,0 +1,32 @@
+# actinn-jax vs the "simple methods rival heavy models" baselines: scTOP
+# (parameter-free) and the Souza & Mehta tuned linear pipeline, plus ProtoCloud.
+# Same subsampled splits as configs/protocloud_compare.yaml so all four are comparable.
+output: results/simple_baselines
+label: cell_type
+repeats: 1
+ontology_obo: null
+datasets:
+  - name: pbmc3k_intra
+    type: builtin
+    builtin: pbmc3k
+    test_frac: 0.25
+  - name: lung_intra
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 300
+    test_frac: 0.25
+  - name: liver_intra
+    type: intra
+    path: /Volumes/IanSSD/hlica/liver_intra.h5ad
+    subsample_per_label: 300
+    test_frac: 0.25
+  - name: blood_gut_intra
+    type: intra
+    path: /Volumes/IanSSD/hlica/blood_gut_intra.h5ad
+    subsample_per_label: 200
+    test_frac: 0.25
+methods:
+  - name: actinn-jax
+  - name: sctop
+  - name: linear-anova-pca
+  - name: protocloud
