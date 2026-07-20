@@ -1,0 +1,38 @@
+# Atlas-scale memory/time scaling. Same dataset (Krasnow lung, 65,662 cells, 46 types)
+# at increasing reference sizes, so peak memory is measured as a function of scale
+# rather than projected. Sizes ascend: partial results survive a failure at the top end,
+# and a method that OOMs/times out is itself the result.
+output: results/scaling_memory
+label: cell_type
+repeats: 1
+ontology_obo: null
+datasets:
+  - name: lung_100
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 100
+    test_frac: 0.25
+  - name: lung_300
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 300
+    test_frac: 0.25
+  - name: lung_1000
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 1000
+    test_frac: 0.25
+  - name: lung_3000
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 3000
+    test_frac: 0.25
+  - name: lung_full
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    test_frac: 0.25
+methods:
+  - name: actinn-jax
+  - name: sctop
+  - name: linear-anova-pca
+  - name: protocloud

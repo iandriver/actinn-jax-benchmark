@@ -74,10 +74,15 @@ feature actinn-jax matches with `min_prob` when desired.
 This comparison deliberately probes the **lightweight-CPU corner**, which is *not*
 ProtoCloud's home turf:
 
-1. **Scale.** ProtoCloud's paper uses 10k–400k-cell atlases; we subsample to 200–300
-   cells/type. ProtoCloud is a data-hungry VAE with a rare-type augmentation *designed for
-   scale* — its relative accuracy should improve with more cells (the lung win, the
-   largest/finest set here, is consistent with that).
+1. **Scale — since confirmed, and it reverses the conclusion.** ProtoCloud's paper uses
+   10k–400k-cell atlases; the table above subsamples to 200–300 cells/type. We predicted
+   its relative accuracy should improve with more cells, and a scaling sweep
+   ([`SCALING_MEMORY.md`](SCALING_MEMORY.md)) confirms it emphatically: on the lung
+   reference from 3k → 49k cells ProtoCloud goes from **worst (0.722) to best (0.976)**,
+   clear of actinn-jax (0.936) and a tuned linear pipeline (0.939). **At atlas scale
+   ProtoCloud is the most accurate method we have benchmarked**; the "close and splits both
+   ways" reading below holds only for subsampled references. Its cost at 49k cells is
+   1,541 s vs 81.5 s on CPU (19×) — a gap the GPU it targets would largely close.
 2. **Hardware.** CPU, not the V100 the method targets. Fair for accuracy, unflattering for
    ProtoCloud's wall-clock.
 3. **Their datasets, not ours.** ProtoCloud reports matching/beating 8 methods on 8

@@ -462,6 +462,17 @@ are equally good. actinn-jax pulls ahead when the reference is **reused** (cachi
   labels on laptop-sized data, the linear pipeline is the better default. scTOP is cheaper
   still (1.2 s, 1.4 GB) with the best pbmc3k macro-F1 (0.837), but degrades with
   cardinality (0.910 → 0.828 → 0.795; 0.649 on liver).
+- **At atlas scale the deep model wins, and our memory argument is smaller than claimed**
+  (`SCALING_MEMORY.md`). Scaling the lung reference 3k → 49k cells:
+  (i) **all four methods complete** — we had projected the linear pipeline would need
+  ~32 GB and fail; it used **13.2 GB**, so that projection is retracted; (ii) the
+  linear/actinn-jax memory ratio is **bounded at ~2–3× and does not diverge** (2.15× at
+  full scale), so there is no scaling cliff; (iii) **ProtoCloud goes from worst (0.722 at
+  3k) to best (0.976 at 49k)**, well clear of actinn-jax (0.936) and the linear pipeline
+  (0.939) — our earlier "accuracy is close" reading was an artifact of subsampling, and a
+  data-hungry VAE pulls ahead once given a real atlas (at 19× CPU fit cost); (iv) scTOP
+  does not benefit from scale at all (0.819 → 0.846) and *loses* its memory edge (1.22×
+  actinn-jax at 49k). **actinn-jax is not the accuracy leader at any scale tested here.**
 - **Annotation only.** Cross-species transfer and disease-state prediction — the tasks where
   Souza & Mehta find the largest foundation-model deficits, and where a fast method would be
   most attractive — are outside this benchmark's scope (human, within/cross-dataset
