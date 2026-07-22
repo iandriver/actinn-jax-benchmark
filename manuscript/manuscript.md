@@ -27,7 +27,7 @@ header-includes:
   - \newunicodechar{²}{\textsuperscript{2}}
 ---
 
-\begin{center}\small Independent Researcher \\ $^{\ast}$ Correspondence: driver.ian@gmail.com\end{center}
+\begin{center}\small Independent Researcher, Detroit, MI, USA \\ $^{\ast}$ Correspondence: driver.ian@gmail.com\end{center}
 
 # Introduction
 

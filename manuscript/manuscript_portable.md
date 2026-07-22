@@ -8,7 +8,7 @@ abstract: |
 
 **Ian Driver**
 
-*Independent Researcher*  ·  *Correspondence: driver.ian@gmail.com*
+*Independent Researcher, Detroit, MI, USA*  ·  *Correspondence: driver.ian@gmail.com*
 
 # Introduction
 
