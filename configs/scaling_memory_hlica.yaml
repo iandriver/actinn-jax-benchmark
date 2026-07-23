@@ -1,0 +1,33 @@
+# HLiCA liver atlas scaling sweep -- the high-cell-count, 36-type complement to the
+# 46-type Krasnow lung sweep in scaling_memory.yaml. Full atlas (524,699 cells) at
+# ascending reference sizes; top (~44k ref) matches lung_full so the two are comparable.
+output: results/scaling_memory_hlica
+label: cell_type
+repeats: 1
+ontology_obo: null
+datasets:
+  - name: hlica_100
+    type: intra
+    path: /Volumes/IanSSD/hlica/all_cells.h5ad
+    subsample_per_label: 100
+    test_frac: 0.25
+  - name: hlica_300
+    type: intra
+    path: /Volumes/IanSSD/hlica/all_cells.h5ad
+    subsample_per_label: 300
+    test_frac: 0.25
+  - name: hlica_1000
+    type: intra
+    path: /Volumes/IanSSD/hlica/all_cells.h5ad
+    subsample_per_label: 1000
+    test_frac: 0.25
+  - name: hlica_2000
+    type: intra
+    path: /Volumes/IanSSD/hlica/all_cells.h5ad
+    subsample_per_label: 2000
+    test_frac: 0.25
+methods:
+  - name: actinn-jax
+  - name: sctop
+  - name: linear-anova-pca
+  - name: protocloud

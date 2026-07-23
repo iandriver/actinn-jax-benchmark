@@ -557,6 +557,10 @@ model — stronger than masking, but a training run), so we do not claim workflo
   data-hungry VAE pulls ahead once given a real atlas (at 19× CPU fit cost); (iv) scTOP
   does not benefit from scale at all (0.819 → 0.846) and *loses* its memory edge (1.22×
   actinn-jax at 49k). **actinn-jax is not the accuracy leader at any scale tested here.**
+  **This replicates on the HLiCA liver atlas** (36 types, 525k cells, sweep to 47k ref):
+  same bounded ~2× memory band, the same ProtoCloud reversal (0.581 → 0.907) and scTOP
+  stagnation (0.657 → 0.583) — and there scTOP even *crosses over* to heavier than
+  actinn-jax (1.41×) at scale, so it is not the lightest method at atlas scale either.
 - **Annotation only.** Cross-species transfer and disease-state prediction — the tasks where
   Souza & Mehta find the largest foundation-model deficits, and where a fast method would be
   most attractive — are outside this benchmark's scope (human, within/cross-dataset
