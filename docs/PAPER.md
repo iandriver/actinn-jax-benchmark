@@ -98,7 +98,14 @@ actinn-jax loses — which, on accuracy, is often.**
    Silicon, with a rejection/abstain analysis and a **five-point scaling sweep to 49k
    reference cells**. The panel deliberately includes the baselines most likely to beat us —
    a tuned linear pipeline, scTOP, and ProtoCloud — and **two of them do**; we report that,
-   and retract two earlier claims of our own that the scaling data falsified (§5).
+   and retract two earlier claims of our own that the scaling data falsified (§5). The sweep
+   also surfaced the worst number in the whole study as *ours* — a 359 s fit on a 47k-cell,
+   32k-gene liver reference — which profiling traced to an unconditional per-batch host sync
+   and ACTINN's inherited fixed batch of 128 (pathological at atlas scale: ~24k tiny update
+   steps). Both are fixed upstream (batch now scales with the reference), giving **1.8–2.1×
+   faster fits at 20k–49k cells with accuracy unchanged** and small references bit-identical.
+   We consider a benchmark that finds and repairs a flaw in its own method to be working as
+   intended.
 3. **Demonstrated end-to-end workflows** for jobs where cost is the binding constraint,
    all CPU: annotate an unknown human dataset from a **shipped census-wide ~800-type
    reference** with a calibrated abstain and no training; **tissue-aware refinement** (halves

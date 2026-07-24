@@ -1,0 +1,31 @@
+output: results/scaling_aj_retune
+label: cell_type
+repeats: 1
+ontology_obo: null
+datasets:
+  - name: lung_1000
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 1000
+    test_frac: 0.25
+  - name: lung_3000
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 3000
+    test_frac: 0.25
+  - name: lung_full
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    test_frac: 0.25
+  - name: hlica_1000
+    type: intra
+    path: /Volumes/IanSSD/hlica/all_cells.h5ad
+    subsample_per_label: 1000
+    test_frac: 0.25
+  - name: hlica_2000
+    type: intra
+    path: /Volumes/IanSSD/hlica/all_cells.h5ad
+    subsample_per_label: 2000
+    test_frac: 0.25
+methods:
+  - name: actinn-jax

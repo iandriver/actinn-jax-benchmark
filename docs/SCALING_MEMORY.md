@@ -63,10 +63,34 @@ on every qualitative conclusion, so the findings are not lung-specific.
 | 25,081 | 0.825 | 0.612 | 0.846 | **0.907** |
 | 46,915 | 0.824 | 0.583 | 0.863 | **0.905** |
 
-**Fit time (s):** at 46,915 cells — scTOP **10.7**, linear 35.5, actinn-jax 359.0, ProtoCloud
-3,207.7. (actinn-jax's fit grows super-linearly here — 359 s vs 81 s for a similar lung
-size — because the liver atlas has ~32k genes and its gene-filter/normalization step is not
-as tightly bounded as prediction; still <1/9 of ProtoCloud.)
+**Fit time (s):** at 46,915 cells — scTOP **10.7**, linear 35.5, actinn-jax 359.0 →
+**48.5 after the fix below**, ProtoCloud 3,207.7.
+
+> **This sweep found a real inefficiency in actinn-jax, since fixed.** The 359 s above was
+> the worst fit time in either sweep. Profiling showed our first explanation (gene
+> filter/normalization not tightly bounded) was **wrong**: normalize + filter + column
+> select together cost only ~2.4 s. The cost was in training — ACTINN's inherited fixed
+> batch of 128 turns a 47k-cell reference into ~24k tiny update steps, where per-step
+> dispatch dominates and CPU BLAS is badly under-used. Two changes
+> ([actinn-jax@`auto_batch_size`](https://github.com/iandriver/actinn-jax)): a per-batch
+> `float(loss)` host sync that ran even when not printing (it blocked the next batch's
+> densify from overlapping device compute) is now guarded, and the batch size scales with
+> the reference (clamped [128, 1024], keeping ≥100 steps/epoch). Re-measured:
+>
+> | dataset | n_ref | fit before | fit after | speedup | accuracy |
+> |---|---:|---:|---:|---:|---|
+> | lung_1000 | 19,569 | 37.6 s | 20.8 s | 1.81× | 0.904 → 0.905 |
+> | lung_3000 | 32,870 | 56.6 s | 31.6 s | 1.79× | 0.912 → 0.913 |
+> | lung_full | 49,264 | 81.5 s | 39.2 s | 2.08× | 0.936 → 0.935 |
+> | hlica_1000 | 25,081 | 58.8 s | 29.7 s | 1.98× | 0.825 → 0.825 |
+> | hlica_2000 | 46,915 | 359.0 s | **48.5 s** | 7.40× | 0.824 → 0.822 |
+>
+> Accuracy is unchanged (±0.002). **Caveat on the 7.4×:** the 359 s baseline was measured
+> while three other method subprocesses and an unrelated user job competed for RAM, so it
+> is contention-inflated. A controlled back-to-back measurement on the same 47k reference
+> gives the honest figure — **70.8 s → 43.3 s (1.6×)** — and references below ~12.8k cells
+> keep batch 128 and are bit-identical to before. The tables above retain the original
+> as-measured numbers; only this box reports the post-fix timings.
 
 The HLiCA sweep reproduces every lung conclusion on a completely different tissue and
 cardinality: linear pipeline most accurate at small scale and cheapest-per-accuracy;
