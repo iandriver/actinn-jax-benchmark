@@ -236,9 +236,8 @@ datasets:
 predict.) The four fast methods — SVM, kNN, actinn-jax, CellTypist — predict in well under
 a second; the deep/correlation/foundation tiers are 25–200× slower. actinn-jax predicts in
 **0.37 s vs. scANVI's 73 s at statistically tied accuracy** (~195×), and is far lighter
-than the memory-heavy tiers (original ACTINN 7.7 GB, scmap 8.5 GB). Of the methods that
-match its accuracy, none matches its speed; of the methods that match its speed (SVM, kNN),
-none matches its accuracy — i.e. actinn-jax is Pareto-non-dominated.
+than the memory-heavy tiers (original ACTINN 7.7 GB, scmap 8.5 GB).
+
 
 ## The accuracy × speed frontier
 
@@ -251,6 +250,13 @@ average (up to ~2 points on the 86-type blood+gut set, zero-to-negative on the l
 cross-dataset sets) at 50–200× the inference cost — the trade the frontier is meant to
 expose.
 
+**The frontier moved once we added a tuned linear baseline.** `linear-anova-pca` sits
+*above and to the left* of actinn-jax — more accurate and faster to fit — so the fast
+frontier is properly occupied by the linear pipeline, with actinn-jax retaining the
+lightest-memory corner. The figure above predates that method; read it as the frontier
+*within the original ten*, and `SIMPLE_BASELINES.md` /
+`SCALING_MEMORY.md` for the current one.
+
 ## Scaling
 
 ![Fit and predict time versus reference size and cardinality; predict time stays flat and sub-second.](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_scaling.png)
@@ -258,8 +264,10 @@ expose.
 Training time grows with reference size and with #cell types for all trained methods —
 actinn-jax's fit goes 13 s → 141 s → 254 s as the reference grows 965 → 14.8k → 24k
 cells, comparable to CellTypist (4 s → 75 s → 246 s) and somewhat above SVM (9 s → 55 s →
-80 s); kNN is lazy (fit is trivial but it pays at predict and is the least accurate). The
-decisive result is the other axis: **actinn-jax's predict time stays flat and sub-second
+80 s); kNN is lazy (fit is trivial but it pays at predict and is the least accurate).
+
+
+The decisive result is the other axis: **actinn-jax's predict time stays flat and sub-second
 across the entire range — ~0.3–1.4 s whether the reference has 1k or 24k cells, or 5 or 86
 types.** Inference cost does not grow with reference size or cardinality, and with the
 train-once/map-many cache the fit cost is paid once and the flat predict cost is all that
@@ -378,8 +386,11 @@ method. This is the paper's cleanest cross-method cost comparison:
 actinn-jax **ties its `mlp` sibling on accuracy at ~2× the speed** (165 vs 327 s) and
 **beats xgboost's accuracy at ~5.5× less runtime and ~4× less memory** (165 s / 21 GB vs
 905 s / 81 GB). The faster methods (knn, logistic) are less accurate; the more accurate
-heavyweight (xgboost) is far slower and heavier — the same Pareto-non-domination as the
-in-house benchmark, now on controlled hardware. (An earlier cross-hardware draft overstated
+heavyweight (xgboost) is far slower and heavier — Pareto-non-domination **within Open
+Problems' method set**, on controlled hardware. That set contains no carefully-tuned linear
+pipeline; where we added one ourselves it dominates actinn-jax on accuracy and fit time
+(§3.2 box, `SIMPLE_BASELINES.md`), so this should be read as a
+statement about the OP panel, not a general one. (An earlier cross-hardware draft overstated
 the mlp speed gap as "8×"; the honest same-box figure is ~2×.)
 
 **Two cheap ablations, and their honest limits.** (i) *Input standardization* — z-scoring
@@ -410,19 +421,26 @@ in its GPU transformer, not a portable averaging trick.
 
 # Discussion
 
-**actinn-jax is not the accuracy champion, and we do not claim it is.** Deep probabilistic
-methods and boosted trees edge it by 1–2 points where they run, both in our panel (§3.1) and
-on Open Problems (§3.9); a benchmark that hid this would be wrong. What the evidence supports
-is narrower and, we argue, more useful: across two independent benchmarks and a controlled
-same-hardware rerun, **no method dominates actinn-jax on both accuracy and cost**, and its
-differentiators are the ones that decide what a working scientist runs on a laptop.
+**actinn-jax is not the accuracy champion, and it is not undominated either.** Deep
+probabilistic methods and boosted trees edge it by 1–2 points where they run, both in our
+panel (§3.1) and on Open Problems (§3.9). More decisively, a **tuned linear pipeline beats
+it on accuracy *and* fit time** across four datasets (0.880/0.860 vs 0.867/0.839, 3.7×
+faster), and **ProtoCloud is far more accurate at atlas scale** (0.976 vs 0.936 at 49k lung
+cells; 0.905 vs 0.824 at 47k liver cells). An earlier draft of this paper claimed no method
+dominated actinn-jax on both accuracy and cost; the wider panel refutes that, and we retract
+it rather than defend it. A benchmark that hid this would be worthless.
 
-*Speed and footprint.* Inference is **sub-second and flat** — independent of reference size
-and cardinality (§3.4) — and peak memory sits in the lightest cluster (~2 GB in-house;
-~21 GB through OP's heavier all-layer harness, still less than half of xgboost's 81 GB on the
-same box). Against methods of equal accuracy it is 2–200× faster; against methods of equal
-speed it is more accurate. With the train-once/map-many cache, the flat predict cost is all
-that recurs when a reference is reused.
+What the evidence does support is narrower: actinn-jax is the **lightest of the accurate
+methods**, and it carries the workflow layer.
+
+*Footprint.* Inference is **sub-second and flat** — independent of reference size and
+cardinality (§3.4) — and peak memory is the lowest among the accurate methods at every
+scale tested: ~2.1× lighter than the linear pipeline (6.1 vs 13.2 GB at 49k lung cells;
+6.5 vs 12.6 GB at 47k liver cells), and lighter than scTOP above ~25k cells, where scTOP's
+rank processing densifies and crosses over (9.3 vs 6.5 GB at 47k). That advantage is
+bounded at ~2–3× rather than widening, and it is the axis on which actinn-jax wins
+outright. With the train-once/map-many cache, the flat predict cost is all that recurs when
+a reference is reused — the linear pipeline refits scaler/PCA/classifier per query.
 
 *The workflow is the product.* The largest practical gains come not from the flat classifier
 but from the **large→refined** pipeline (§3.6): a census-scale broad model with a calibrated
