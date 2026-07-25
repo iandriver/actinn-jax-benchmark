@@ -13,12 +13,15 @@ plt.rcParams.update({"figure.dpi": 140, "font.size": 10, "axes.spines.top": Fals
 
 # colorblind-safe (Okabe-Ito); actinn-jax gets the strong vermillion, others muted
 COLOR = {"actinn-jax": "#D55E00", "svm": "#0072B2", "knn": "#56B4E9",
-         "celltypist": "#009E73", "actinn-orig": "#E69F00", "singler": "#CC79A7",
+         "celltypist": "#009E73", "linear-anova-pca": "#E69F00", "sctop": "#F0E442",
+         "protocloud": "#DC267F", "singler": "#CC79A7",
          "scmap-cluster": "#999999", "scanvi": "#5D3A9B", "scarches": "#8C6D31",
          "scprint": "#000000"}
 def c(m): return COLOR.get(m, "#777777")
 
-main = pd.read_csv(f"{REPO}/results/paper/results.csv")
+# Unified 11-method matrix (actinn-orig dropped; linear-anova-pca/scTOP/ProtoCloud merged
+# onto the same splits — see docs/results_paper_matrix_unified.csv).
+main = pd.read_csv(f"{REPO}/docs/results_paper_matrix_unified.csv")
 main = main[main.get("accuracy").notna()] if "accuracy" in main else main
 frames = [main]
 sp = f"{REPO}/results/paper_scprint/results.csv"

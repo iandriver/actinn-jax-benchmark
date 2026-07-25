@@ -1,5 +1,14 @@
 # Simple baselines: scTOP and a tuned linear pipeline
 
+> **Superseded by the unified matrix.** The head-to-head numbers below are from the initial
+> **4-dataset, per-label-subsampled** probe. Both methods have since been run across the
+> **full 6-dataset paper matrix on the identical `paper.yaml` splits** as every other method;
+> those are the authoritative figures ([`PAPER.md`](PAPER.md) §3.1–§3.2, raw in
+> [`results_paper_matrix_unified.csv`](results_paper_matrix_unified.csv)). On the full matrix
+> the linear pipeline leads accuracy at **0.839 vs actinn-jax 0.831** (5-dataset mean) and
+> fits **4× faster**; scTOP is **0.739** (mid-pack). This doc is kept as the original probe;
+> the conclusions are unchanged, only the exact numbers differ with the larger splits.
+
 Souza & Mehta ([bioRxiv 2026](https://doi.org/10.64898/2026.02.11.705358)) show that
 parameter-free and carefully-tuned linear methods rival single-cell foundation models.
 That is the same class actinn-jax lives in, so their absence from our benchmark was its

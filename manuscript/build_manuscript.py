@@ -15,7 +15,7 @@ FIGDIR = ROOT / "docs" / "figures"
 src = (ROOT / "docs" / "PAPER.md").read_text()
 
 # ---- author block (PLACEHOLDER — replace with real details before submission) ----
-TITLE = ("Annotating single-cell data on a laptop: a 13-method benchmark and practical "
+TITLE = ("Annotating single-cell data on a laptop: a 12-method benchmark and practical "
          "low-memory workflows, with actinn-jax")
 # "Independent Researcher" is the standard bioRxiv affiliation for unaffiliated authors.
 # Swap in an institution/company here if one is in place before submission.

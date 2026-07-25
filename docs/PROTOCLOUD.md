@@ -1,5 +1,14 @@
 # actinn-jax vs ProtoCloud
 
+> **Superseded by the unified matrix.** The head-to-head below is the initial 4-dataset,
+> per-label-subsampled probe. ProtoCloud has since been run across the **full 6-dataset paper
+> matrix on the identical `paper.yaml` splits** ([`PAPER.md`](PAPER.md) §3.1–§3.2, raw in
+> [`results_paper_matrix_unified.csv`](results_paper_matrix_unified.csv)): it is **mid-pack
+> on the subsampled matrix (0.790 vs actinn-jax 0.831)** but **wins lung outright** and is
+> the **decisive** winner only at atlas scale ([`SCALING_MEMORY.md`](SCALING_MEMORY.md)). The
+> qualitative reading here — richer model, close-and-regime-dependent, ~9× slower CPU fit —
+> is unchanged; the exact matrix numbers below reflect the smaller splits.
+
 [ProtoCloud](https://doi.org/10.1016/j.xgen.2026.101217) (Guo & Ding, *Cell Genomics*
 2026; code [Ding-Group/ProtoCloud](https://github.com/Ding-Group/ProtoCloud)) is a
 prototype-based, self-explaining variational autoencoder for single-cell annotation. It
