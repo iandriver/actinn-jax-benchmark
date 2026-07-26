@@ -99,7 +99,54 @@ workflow still has something to offer.
 - It strengthens §3.7/§3.8 and §4: an independent group reaches the same conclusion about
   foundation-model labels and about training-data saturation.
 
-## If we benchmark it
+## Measured head-to-head
+
+Adapter: [`benchmark/adapters/panhuman_adapter.py`](../benchmark/adapters/panhuman_adapter.py),
+env `.venv-panhuman`, config [`panhuman_compare.yaml`](../configs/panhuman_compare.yaml),
+raw numbers in [`results_panhuman_compare.csv`](results_panhuman_compare.csv). One repeat,
+same splits as the paper matrix.
+
+| dataset | method | exact | **ontology** | fit (s) | predict (s) | peak mem (MB) |
+|---|---|---:|---:|---:|---:|---:|
+| lung_intra | actinn-jax | 0.894 | **0.917** | 16.0 | 0.36 | 1804 |
+| lung_intra | Pan-human Azimuth | 0.408† | **0.700** | 7.3‡ | 4.8 | 1623 |
+| liver_intra | actinn-jax | 0.802 | **0.846** | 8.3 | 0.29 | 1217 |
+| liver_intra | Pan-human Azimuth | 0.227† | **0.521** | 4.6‡ | 2.6 | 1685 |
+| liver_cross | actinn-jax | 0.686 | **0.731** | 9.8 | 0.38 | 2308 |
+| liver_cross | Pan-human Azimuth | 0.153† | **0.408** | 4.4‡ | 3.5 | 2112 |
+
+† Exact-CL-id match, **not** the same quantity as actinn-jax's exact-label-string match —
+Pan-human Azimuth predicts into its own typology. Only the **ontology** column compares.
+‡ No training happens; "fit" is model loading only.
+
+**Read this comparison carefully — it is not a fair fight, and it is not news.** actinn-jax
+is trained on a reference drawn from the same dataset and the same label vocabulary it is
+scored against; Pan-human Azimuth has never seen these datasets and answers in a different
+vocabulary. A reference-trained model *should* win here. What the numbers do establish:
+
+- **It is far better than zero-shot foundation labels.** On lung it reaches 0.700 ontology
+  concordance where scPRINT manages 0.206 (§3.7) — the difference between a curated
+  supervised model and a zero-shot foundation head, which is the paper's thesis.
+- **The gap is genuine disagreement, not a vocabulary ceiling.** We tested that: for every
+  truth type in lung (46/46) and liver (36/36) there is a CL id reachable from Pan-human
+  Azimuth's typology by an exact, ancestor or descendant relation, so the ceiling on
+  ontology concordance is **1.000** on both. Our initial hypothesis — that HLiCA's
+  liver-specialist vocabulary was simply not representable in 382 leaves — is **refuted**.
+  The residual misses are *sibling-level*: `IgG memory B cell` → `Plasma cell`,
+  `endothelial cell of sinusoid` → `Capillary EC`. Both are close, neither is an ancestor.
+- **The right calls are common and the naming differs harmlessly.** `regulatory T cell` →
+  `Treg cell`, `non-classical monocyte` → `CD16 monocyte`, `periportal region hepatocyte` →
+  `Hepatocyte` all score as exact-match failures and ontology-match successes, which is what
+  the metric is for. 253 of the 446 crosswalk entries are `skos:narrowMatch`, mapping their
+  label to a *broader* CL term, so ancestor-crediting is doing real work here.
+- **Cost:** ~2.6–4.8 s per query vs actinn-jax's ~0.3 s, at comparable memory. Its
+  throughput claim (~1,000 cells/s) holds on our hardware.
+
+Sanity checks that rule out adapter error: gene-panel overlap was **~90%** (4,598/5,055) on
+Ensembl-keyed atlases via the `feature_name` column, and 1,330/1,332 predictions mapped to a
+CL id.
+
+## What has not been tested yet
 
 `panhumanpy` is pip-installable with public weights, so a head-to-head against our shipped
 `broad_human_v1` is feasible. One design point decides whether the comparison is meaningful:

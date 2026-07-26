@@ -19,6 +19,7 @@ from . import r_adapter  # noqa: F401,E402  (SingleR/scmap/scPred; shell out to 
 from . import scvi_adapter  # noqa: F401,E402  (scANVI/scArches; lazy scvi import, runs in .venv-scvi)
 from . import scprint_adapter  # noqa: F401,E402  (scPRINT foundation model; runs in .venv-scprint)
 from . import protocloud_adapter  # noqa: F401,E402  (ProtoCloud VAE; lazy torch import, runs in .venv-protocloud)
+from . import panhuman_adapter  # noqa: F401,E402  (Pan-human Azimuth; lazy keras/TF import, runs in .venv-panhuman)
 
 
 def get(name, **kwargs):

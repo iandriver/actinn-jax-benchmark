@@ -1,0 +1,35 @@
+# Pan-human Azimuth vs actinn-jax on the datasets that carry Cell Ontology ids.
+#
+# Pan-human Azimuth predicts labels from its OWN fixed typology, so its exact-label
+# accuracy against a dataset's vocabulary is meaningless (the same artifact as lung_cross
+# in PAPER.md 3.1). The driver therefore scores it in CL-id space. The column that is
+# comparable across both methods is **ontology_concordance** -- for panhuman-azimuth the
+# `accuracy` column is exact-CL-id match, which is NOT the same quantity as actinn-jax's
+# exact-label-string match. Compare ontology_concordance only.
+#
+# Run with a python that has pronto (the driver loads the OBO):
+#   .venv-protocloud/bin/python -m benchmark.driver configs/panhuman_compare.yaml
+output: results/panhuman_compare
+label: cell_type
+repeats: 1
+ontology_obo: /tmp/cl-basic.obo
+
+datasets:
+  - name: lung_intra
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 300
+    test_frac: 0.25
+  - name: liver_intra
+    type: intra
+    path: /Volumes/IanSSD/hlica/liver_intra.h5ad
+    test_frac: 0.25
+  - name: liver_cross
+    type: cross
+    ref_path: /Volumes/IanSSD/hlica/liver_ref_xstudy.h5ad
+    query_path: /Volumes/IanSSD/hlica/liver_query_xstudy.h5ad
+
+methods:
+  - name: actinn-jax
+  - name: panhuman-azimuth
+    python: .venv-panhuman/bin/python
