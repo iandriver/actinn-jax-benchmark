@@ -108,16 +108,51 @@ same splits as the paper matrix.
 
 | dataset | method | exact | **ontology** | fit (s) | predict (s) | peak mem (MB) |
 |---|---|---:|---:|---:|---:|---:|
-| lung_intra | actinn-jax | 0.894 | **0.917** | 16.0 | 0.36 | 1804 |
-| lung_intra | Pan-human Azimuth | 0.408† | **0.700** | 7.3‡ | 4.8 | 1623 |
-| liver_intra | actinn-jax | 0.802 | **0.846** | 8.3 | 0.29 | 1217 |
-| liver_intra | Pan-human Azimuth | 0.227† | **0.521** | 4.6‡ | 2.6 | 1685 |
-| liver_cross | actinn-jax | 0.686 | **0.731** | 9.8 | 0.38 | 2308 |
-| liver_cross | Pan-human Azimuth | 0.153† | **0.408** | 4.4‡ | 3.5 | 2112 |
+| lung_intra | actinn-jax | 0.894 | **0.917** | 12.8 | 0.37 | 2092 |
+| lung_intra | Pan-human Azimuth | 0.408† | **0.700** | 4.9‡ | 3.07 | 2025 |
+| liver_intra | actinn-jax | 0.802 | **0.846** | 8.3 | 0.27 | 1660 |
+| liver_intra | Pan-human Azimuth | 0.227† | **0.521** | 4.1‡ | 2.22 | 1652 |
+| liver_cross | actinn-jax | 0.686 | **0.731** | 10.6 | 0.36 | 2311 |
+| liver_cross | Pan-human Azimuth | 0.153† | **0.408** | 4.2‡ | 3.36 | 2105 |
 
 † Exact-CL-id match, **not** the same quantity as actinn-jax's exact-label-string match —
 Pan-human Azimuth predicts into its own typology. Only the **ontology** column compares.
-‡ No training happens; "fit" is model loading only.
+‡ No training happens; "fit" is TensorFlow import plus weight loading.
+
+**Peak memory is a tie** — 1.65–2.1 GB for both, on every dataset. Whatever separates these
+two methods, it is not footprint.
+
+## Cost as the query grows
+
+[`results_panhuman_cost.csv`](results_panhuman_cost.csv), from
+[`panhuman_cost.py`](../benchmark/explore/panhuman_cost.py): one lung reference of 4,000
+cells, query size swept, each (method, size) in a fresh subprocess under the harness's own
+`ResourceMonitor`.
+
+| n query | actinn-jax predict | cells/s | PHA predict | cells/s |
+|---:|---:|---:|---:|---:|
+| 1,000 | 0.25 s | 3,978 | 2.15 s | 466 |
+| 4,000 | 0.39 s | 10,305 | 3.72 s | 1,076 |
+| 16,000 | 1.10 s | 14,610 | 11.07 s | 1,445 |
+| 40,000 | 2.86 s | 13,997 | 25.59 s | 1,563 |
+
+- **Their published throughput holds.** The paper quotes ~1,000 cells/s on a MacBook Air
+  (M2, 16 GB); we measure **1,076–1,563 cells/s** once the query reaches 4k cells, so the
+  claim is accurate and, at scale, slightly conservative. Below ~1k cells fixed overhead
+  dominates and throughput falls to 466 cells/s — the quoted figure describes the amortized
+  regime, which is the regime that matters. Extrapolating 1M cells at 1,563 cells/s gives
+  ~11 minutes, the same order as their reported ~1,100 s.
+- **actinn-jax predicts ~9× faster** at 40k cells (2.86 s vs 25.59 s). Both are linear in
+  query size; neither degrades.
+- **Peak memory in that sweep is not a clean per-method number** — each worker loads the
+  full 65k-cell lung atlas (596 MB on disk, ~4 GB resident) before subsetting, and that
+  baseline is identical for both methods. Use the per-dataset table above for footprint.
+
+One adapter note that affects these numbers: the high-level `AzimuthNN` class takes the
+query in its constructor and so reloads the weights on **every** call. An earlier version of
+this adapter paid that per prediction, inflating predict time by ~0.4–1.7 s. It now drives
+the low-level `AzimuthNN_base`, loading once in `fit` — verified to yield labels identical to
+the high-level path, and the accuracy columns above are unchanged from before the fix.
 
 **Read this comparison carefully — it is not a fair fight, and it is not news.** actinn-jax
 is trained on a reference drawn from the same dataset and the same label vocabulary it is

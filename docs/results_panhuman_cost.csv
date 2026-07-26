@@ -1,0 +1,9 @@
+method,n_query,fit_s,predict_s,cells_per_s,peak_mem_mb
+actinn-jax,1000,7.43,0.25,3978,4542
+panhuman-azimuth,1000,5.48,2.15,466,4652
+actinn-jax,4000,7.27,0.39,10305,5152
+panhuman-azimuth,4000,5.22,3.72,1076,5290
+actinn-jax,16000,7.25,1.1,14610,6100
+panhuman-azimuth,16000,5.61,11.07,1445,5092
+actinn-jax,40000,7.25,2.86,13997,6388
+panhuman-azimuth,40000,5.23,25.59,1563,7347

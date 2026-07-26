@@ -78,21 +78,28 @@ class PanHumanAzimuth(AnnotationMethod):
         self.refine = refine
 
     def fit(self, ref, label_key):
-        """No training. Constructs the base model so weights are fetched/cached here
-        rather than inside the timed prediction."""
+        """No training. Loads the pretrained weights, so model loading is attributed
+        here rather than to prediction -- the same load-once/annotate-many accounting
+        the other pretrained methods get."""
         import panhumanpy as ph
-        ph.AzimuthNN_base(eval_batch_size=self.eval_batch_size)
+        self._base = ph.AzimuthNN_base(eval_batch_size=self.eval_batch_size)
 
     def predict(self, query):
-        import panhumanpy as ph
-
         a, feature_col = _to_panhuman_input(query)
-        az = ph.AzimuthNN(
-            a,
-            feature_names_col=feature_col,
-            eval_batch_size=self.eval_batch_size,
-            refine=self.refine,
-        )
+
+        # Drive the low-level class rather than the high-level `AzimuthNN`, which takes
+        # the query in its constructor and therefore reloads the weights on every call
+        # (~0.4 s). Verified to produce labels identical to the high-level path.
+        az = self._base
+        az.query_adata(a, feature_names_col=feature_col)
+        az.process_query()
+        az.run_inference_model()
+        az.calibrate_predictions()
+        az.process_outputs(mode="minimal")
+        for lvl in (("broad", "medium", "fine") if self.refine is True
+                    else tuple(self.refine or ())):
+            az.refine_labels(lvl)
+        az.update_cells_meta()
         meta = az.cells_meta
 
         # When panhumanpy cannot make the levels agree it sets `full_consistent_hierarchy`
