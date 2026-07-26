@@ -358,6 +358,18 @@ the *same cells* reaches **0.72 / 0.86** ([HLICA_LIVER.md](HLICA_LIVER.md),
 [HLICA_EDGE_CASES.md](HLICA_EDGE_CASES.md)). Refinement is where fine-grained accuracy comes
 from; the broad model's job is to route to it, not to be right about subtypes itself.
 
+**The two tiers switch; they do not stack** — we tested this and it is worth stating
+plainly, because the opposite is the natural assumption. On the leakage-free cross-study
+liver split, substituting the stronger **Pan-human Azimuth** as tier 1 lifts the broad pass
+(ontology 0.380 vs 0.338 for our own broad model) but changes nothing downstream. Using that
+tier-1 call to *narrow* tier 2's classes — the zero-retrain masking actinn-jax ships — makes
+the result **worse**, 0.731 → 0.708: tier 1's coarse call matches the true lineage on 85.8%
+of cells, and the 14% it misses cost more than the 86% it gets right can gain, since a wrong
+mask discards the correct class outright. A **perfect** coarse call would add only **+2.8
+points** (0.759). Once tier 2 covers the tissue, there is almost no accuracy left for a broad
+model to contribute; its value is choosing which focused reference to load and covering cells
+none of them claims ([`PAN_HUMAN_AZIMUTH.md`](PAN_HUMAN_AZIMUTH.md)).
+
 **Supporting mechanisms.** (i) A **foundation-model-guided coarse→fine hierarchy**
 ([MODEL_FLOW.md](MODEL_FLOW.md), [TWO_STAGE.md](TWO_STAGE.md)): a foundation model discovers
 a coarse→fine structure *offline*, the fast CPU model uses it at inference — beats a flat

@@ -146,20 +146,64 @@ Sanity checks that rule out adapter error: gene-panel overlap was **~90%** (4,59
 Ensembl-keyed atlases via the `feature_name` column, and 1,330/1,332 predictions mapped to a
 CL id.
 
-## What has not been tested yet
+## Pan-human Azimuth as tier 1: the hand-off does not stack
 
-`panhumanpy` is pip-installable with public weights, so a head-to-head against our shipped
-`broad_human_v1` is feasible. One design point decides whether the comparison is meaningful:
-**exact-label accuracy would be a vocabulary artifact**, exactly as in the lung_cross case
-(§3.1 †) — their 382-leaf typology is not our datasets' vocabulary, and their own paper says
-comparisons across label spaces are "inherently challenging". The fair metric is our
-**ontology-aware concordance**, and they publish a Cell Ontology crosswalk for every node,
-so both sides can be projected into CL and scored. The datasets carrying CL ids
-(lung_intra, lung_cross, liver_intra, liver_cross) are the ones to use.
+Script: [`panhuman_tier1_refine.py`](../benchmark/explore/panhuman_tier1_refine.py) (tier-1
+predictions dumped by [`panhuman_tier1_dump.py`](../benchmark/explore/panhuman_tier1_dump.py),
+since Keras and JAX cannot share a process). Numbers in
+[`results_panhuman_tier1.csv`](results_panhuman_tier1.csv). Leakage-free cross-study liver
+split: reference = 6 HLiCA studies, query = a withheld study, tier 2 trained only on the
+reference. Ontology-aware concordance throughout.
 
-The interesting question is not which is more accurate on a broad call — theirs is trained
-on 9.7M curated cells and ours on the census — but **whether the broad→refined hand-off
-still buys anything when the broad tier is theirs instead of ours**: run Pan-human Azimuth
-for tier 1, then refine with a focused actinn-jax reference, and see whether the liver
-0.23/0.58 → 0.72/0.86 gain survives. If it does, the workflow claim stands on a stronger
-broad model than our own.
+| arm | ontology |
+|---|---:|
+| tier 1 only — `broad_human_v1` (ours) | 0.338 |
+| tier 1 only — Pan-human Azimuth | 0.380 |
+| **tier 2 only — actinn-jax on the liver reference** | **0.731** |
+| tier 1 scopes tier 2 — PHA's coarse call masks tier-2 classes | 0.708 |
+| oracle scope — a *perfect* coarse call masks tier-2 classes | 0.759 |
+
+Three results, one of them against us:
+
+1. **Pan-human Azimuth is the better broad model** — 0.380 vs 0.338 for our shipped
+   `broad_human_v1` on the same cells. Modest, but it is better resourced and it shows.
+2. **The hand-off is worth a lot, and that reproduces.** Either broad model scores ~0.34–0.38;
+   the focused reference reaches **0.731**. Switching to a tissue-specific reference roughly
+   doubles concordance, which is the §3.5 claim, here on a leakage-free split.
+3. **But the two stages do not stack.** Using tier 1's coarse call to narrow tier 2's classes
+   — the zero-retrain masking actinn-jax ships — makes things **worse**: 0.731 → **0.708**.
+   Pan-human Azimuth's coarse call agrees with the truth's coarse lineage on 85.8% of cells,
+   and the 14% it gets wrong cost more than the 86% it gets right can gain, because a wrong
+   mask removes the correct class from consideration entirely.
+
+The ceiling arm is the informative one: even a **perfect** coarse call buys only
+**+2.8 points** (0.731 → 0.759). Once tier 2 is trained on a reference that covers the
+tissue, there is almost nothing left for a broad model to contribute to *accuracy*.
+
+**What this means for the paper.** §3.5 already says the broad model's job "is to route to
+[the focused reference], not to be right about subtypes itself" — this measures that and
+finds it is the whole story. The value of the two-tier workflow is **switching**: knowing
+which focused reference to load, and covering cells no focused reference claims. It is not
+fusion, and we should not imply the tiers combine to beat either alone. Substituting a
+stronger tier 1 improves the broad pass and changes nothing downstream.
+
+**Caveats.** One split, one tissue, one fusion mechanism (a hard mask by coarse CL lineage).
+A softer combination — probability blending, or routing only low-confidence cells — might
+recover the +2.8, but it cannot exceed it. The tier-1-only arms are also still scored against
+a liver-specialist vocabulary neither broad model was built for.
+
+## Still open
+
+- **Routing across tissues.** Everything above assumes we already know to load the liver
+  reference. The workflow's real tier-1 job is choosing *which* focused reference to load on
+  a query of unknown provenance, and neither the paper nor this doc measures routing accuracy
+  directly. Pan-human Azimuth's coarse call was right about lineage on 85.8% of cells, which
+  is a lower bound on how well it would route.
+- **Cells no focused reference claims.** The other stated tier-1 job is coverage — flagging
+  cells outside the focused reference's scope. Pan-human Azimuth's trained `Unassigned` class
+  is a better mechanism for this than our threshold, and comparing the two is untested.
+- **Softer fusion.** The masking here is a hard lineage filter. Probability blending or
+  routing only low-confidence cells might recover part of the +2.8-point oracle headroom,
+  but cannot exceed it.
+- **Other tissues.** One split, one tissue. Whether the +2.8 ceiling is liver-specific or
+  general is unknown; lung (46 types, CL-annotated) is the obvious second test.

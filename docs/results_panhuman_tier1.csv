@@ -1,0 +1,6 @@
+arm,description,ontology_concordance
+tier1_only_ours,broad_human_v1 (our shipped broad model) alone,0.338
+tier1_only_pha,Pan-human Azimuth fine call alone,0.380
+tier2_only,actinn-jax trained on the cross-study liver reference,0.731
+tier1_scopes_tier2,tier 2 masked to classes compatible with PHA's coarse call,0.708
+oracle_scope,tier 2 masked using a perfect coarse call (ceiling),0.759
