@@ -6,7 +6,26 @@
 - strips internal *.md links to plain text; keeps external http links
 - rewrites figure paths to absolute; upgrades key figure captions
 - appends a formatted References section
-Run: python manuscript/build_manuscript.py && (cd manuscript && pandoc ...)
+
+Run this script first, then build the three deliverables from `manuscript/`:
+
+    python manuscript/build_manuscript.py
+    cd manuscript
+    pandoc manuscript.md          -o actinn-jax_preprint.pdf  --pdf-engine=tectonic \
+        --number-sections --resource-path=.:../docs:../docs/figures
+    pandoc manuscript_portable.md -o actinn-jax_preprint.rtf  --standalone \
+        --template=rtf-with-abstract.rtf.template --resource-path=.:../docs:../docs/figures
+    pandoc manuscript_portable.md -o actinn-jax_preprint.docx \
+        --resource-path=.:../docs:../docs/figures
+
+The RTF flags are load-bearing and easy to lose:
+  * ``--standalone`` -- without it pandoc emits a *fragment*: no {\\rtf1 header,
+    no title block. The file opens but starts abruptly at the author name.
+  * ``--template`` -- pandoc's stock RTF template has no ``$abstract$`` variable,
+    so the abstract is silently dropped. The local template adds it.
+PDF (via LaTeX) and DOCX imply standalone and need neither flag.
+After building, sanity-check the RTF: it should start with ``{\\rtf1`` and contain
+both the title and the first line of the abstract.
 """
 import re, pathlib
 
@@ -167,6 +186,9 @@ print("wrote manuscript/manuscript.md (PDF via LaTeX)")
 
 # ---- portable variant for RTF / DOCX (Pages-editable): no raw LaTeX; the
 # unicode chars are kept literal (Word/Pages render them natively). ----
+# The author name comes from the `author:` field via the title block, so the body
+# carries only the affiliation/correspondence line -- repeating the name here would
+# print it twice in the RTF/DOCX.
 FRONT_PORTABLE = f"""---
 title: "{TITLE}"
 author: "Ian Driver"
@@ -175,9 +197,7 @@ abstract: |
   {abstract}
 ---
 
-**Ian Driver**
-
-*Independent Researcher, Detroit, MI, USA*  ·  *Correspondence: driver.ian@gmail.com*
+*{AFFIL}*  ·  *Correspondence: driver.ian@gmail.com*
 """
 (ROOT / "manuscript" / "manuscript_portable.md").write_text(FRONT_PORTABLE + "\n" + body + "\n" + REFS)
 print("wrote manuscript/manuscript_portable.md (RTF/DOCX)")
