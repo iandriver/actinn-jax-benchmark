@@ -3,7 +3,7 @@ title: "Annotating single-cell data on a laptop: a 12-method benchmark and pract
 author: "Ian Driver"
 date: ""
 abstract: |
-  Reference-based cell-type annotation is a routine, high-volume step in single-cell analysis, and most labs run it on a laptop, not a GPU cluster. We present **actinn-jax**, a from-scratch JAX reimplementation of ACTINN (a 4-layer MLP classifier) with a sparse-aware pipeline and a train-once/map-many cached reference model, and use it as the occasion for a neutral benchmark of **twelve** methods spanning every major class — classical (SVM, kNN), regularized-linear (CellTypist), a carefully-tuned linear pipeline, parameter-free projection (scTOP), marker/correlation (SingleR, scmap), deep probabilistic (scANVI, scArches), an interpretable prototype VAE (ProtoCloud), and a foundation model (scPRINT) — across **six** datasets (within-dataset, cross-dataset and cross-study; 8 to 86 cell types) plus a five-point **scaling sweep to 49k reference cells**, measuring accuracy, macro-F1, ontology-aware concordance, training and inference time, and peak memory on commodity Apple-Silicon hardware. **Accuracy differences among the leading methods are small; their cost differences are not.** The top of the accuracy table is a five-way cluster spanning 0.008 (0.831–0.839), led by a carefully preprocessed **linear pipeline** (normalize → ANOVA → PCA → logistic regression, 0.839) rather than by a deep model, with scANVI, scArches, actinn-jax (0.831) and CellTypist alongside it. **Those same five methods differ by ~200× in inference time** (0.35 s to 73 s) **and 2.7× in peak memory** (1.6 to 4.3 GB). The linear pipeline is the most accurate-per-second option on laptop-sized data, fitting 4× faster than actinn-jax (4.0 vs. 16.0 s). At atlas scale the ordering changes: **ProtoCloud** rises from worst at 3k reference cells (0.722) to best at 49k (**0.976**, vs. 0.936 for actinn-jax and 0.939 for the linear pipeline). No method leads everywhere, and methods separated by less than a percentage point of accuracy are separated by two orders of magnitude in cost. Because several methods now annotate quickly, accurately, and with a usable handle on unknown cells, the useful contribution is not another ranking but an account of **which tool fits which job, and what the surrounding workflow looks like**. We report the benchmark as a decision aid (accuracy-per-second, accuracy-per-byte, and behaviour from 3k to 49k reference cells), then use actinn-jax to demonstrate **end-to-end workflows that a low, flat cost profile makes practical**: annotating an unknown human dataset from a **shipped census-scale reference** (~800 cell types, calibrated abstain) with no training; **tissue-aware refinement** that halves spurious cross-tissue labels on a liver query; a **broad→refined hand-off** to a small focused reference (held-out cross-study liver 0.23/0.58 → 0.72/0.86, exact-CL/ontology); within-cell-type resolution (hepatocyte zonation); and a **cluster-level novel-cell-type screen** that recovers a withheld pulmonary ionocyte population and its marker ASCL3. What enables this is inference that is **sub-second and flat** — independent of reference size and cardinality — over a cached reference that is trained once and reused, at the lowest peak memory of the methods we carried to atlas scale (6.1 vs. 13.2 GB for the linear pipeline at 49k cells). The components are not all unique: ProtoCloud also provides uncertainty, gene attribution and a retraining-based refinement path; the ready-to-run broad reference, sub-second frozen-model refinement, and one-call novelty screen are what actinn-jax adds.
+  Reference-based cell-type annotation is a routine, high-volume step in single-cell analysis, and most labs run it on a laptop, not a GPU cluster. We present **actinn-jax**, a from-scratch JAX reimplementation of ACTINN (a 4-layer MLP classifier) with a sparse-aware pipeline and a train-once/map-many cached reference model, and use it as the occasion for a neutral benchmark of **twelve** methods spanning every major class — classical (SVM, kNN), regularized-linear (CellTypist), a carefully-tuned linear pipeline, parameter-free projection (scTOP), marker/correlation (SingleR, scmap), deep probabilistic (scANVI, scArches), an interpretable prototype VAE (ProtoCloud), and a foundation model (scPRINT) — across **six** datasets (within-dataset, cross-dataset and cross-study; 8 to 86 cell types) plus a five-point **scaling sweep to 49k reference cells**, measuring accuracy, macro-F1, ontology-aware concordance, training and inference time, and peak memory on commodity Apple-Silicon hardware. **Accuracy differences among the leading methods are small; their cost differences are not.** The top of the accuracy table is a five-way cluster spanning 0.008 (0.831–0.839), led by a carefully preprocessed **linear pipeline** (normalize → ANOVA → PCA → logistic regression, 0.839) rather than by a deep model, with scANVI, scArches, actinn-jax (0.831) and CellTypist alongside it. **Those same five methods differ by ~200× in inference time** (0.35 s to 73 s) **and 2.7× in peak memory** (1.6 to 4.3 GB). The linear pipeline is the most accurate-per-second option on laptop-sized data, fitting 4× faster than actinn-jax (4.0 vs. 16.0 s). At atlas scale the ordering changes: **ProtoCloud** rises from worst at 3k reference cells (0.722) to best at 49k (**0.976**, vs. 0.936 for actinn-jax and 0.939 for the linear pipeline). No method leads everywhere, and methods separated by less than a percentage point of accuracy are separated by two orders of magnitude in cost. Because several methods now annotate quickly, accurately, and with a usable handle on unknown cells, the useful contribution is not another ranking but an account of **which tool fits which job, and what the surrounding workflow looks like**. We report the benchmark as a decision aid (accuracy-per-second, accuracy-per-byte, and behaviour from 3k to 49k reference cells), then use actinn-jax to demonstrate **end-to-end workflows that a low, flat cost profile makes practical**: annotating an unknown human dataset from a **shipped census-scale reference** (~800 cell types, calibrated abstain) with no training; **tissue-aware refinement** that halves spurious cross-tissue labels on a liver query; a **broad→refined hand-off** to a small focused reference (held-out cross-study liver 0.23/0.58 → 0.72/0.86, exact-CL/ontology); within-cell-type resolution (hepatocyte zonation); and a **cluster-level novel-cell-type screen** that recovers a withheld pulmonary ionocyte population and its marker ASCL3. What enables this is inference that is **sub-second and flat** — independent of reference size and cardinality — over a cached reference that is trained once and reused, at the lowest peak memory of the methods we carried to atlas scale (6.1 vs. 13.2 GB for the linear pipeline at 49k cells). The components are not unique: ProtoCloud provides uncertainty, gene attribution and a retraining-based refinement path, and **Pan-human Azimuth** ships a pretrained, calibrated, hierarchical pan-human annotator that runs on a laptop — a better-resourced broad tier than ours. What the workflow adds is the **hand-off into a label set the broad model was never trained on**: refinement against a user's own focused reference, and resolution below any fixed typology's leaves.
 ---
 
 *Independent Researcher, Detroit, MI, USA*  ·  *Correspondence: driver.ian@gmail.com*
@@ -47,9 +47,12 @@ by the same metrics, and reported as measured — including where actinn-jax is 
    spurious cross-tissue labels on a liver query); a **broad→refined hand-off** to a small
    focused reference (cross-study liver 0.23/0.58 → 0.72/0.86); within-cell-type resolution
    (hepatocyte zonation); and a **one-call novel-cell-type screen** (recovers a withheld
-   pulmonary ionocyte population and its marker ASCL3). ProtoCloud also offers uncertainty,
-   attribution and a retraining-based refine; the pieces distinct to actinn-jax are the
-   ready-to-run broad reference, sub-second frozen-model refinement, and the novelty screen.
+   pulmonary ionocyte population and its marker ASCL3). We are precise about what is not
+   ours: ProtoCloud offers uncertainty, attribution and a retraining-based refine, and
+   Pan-human Azimuth ships a pretrained hierarchical pan-human annotator with trained
+   abstention, so the broad tier itself is not a distinguishing feature. What is distinct is
+   **refinement into a label set no pretrained model carries** — the user's own focused
+   reference, and states below a fixed typology's leaves.
 4. An **independent external validation** on Open Problems `label_projection`, with a
    controlled same-hardware speed/memory comparison, and a set of cheap ablations that
    characterize *when* the gene-space model gains or loses to heavier methods (input
@@ -438,7 +441,14 @@ i.e. much of the apparent gap to heavier methods is representation budget, not m
 (scPRINT, scGPT, UCE ≈ random); their **embeddings/structure** are where the value lies, and
 our two-stage hierarchy uses exactly that. A cheap CPU shortcut to a foundation-model
 representation (protein-embedding pooling) did *not* transfer (§3.8), underscoring that the
-value is in the trained transformer, not a portable trick.
+value is in the trained transformer, not a portable trick. The concurrent **Pan-human
+Azimuth** effort reaches the same conclusion from a far larger curated corpus: a
+7M-parameter supervised hierarchical MLP over a 5,055-gene panel yields cleaner annotations
+than scGPT and SCimilarity, whose labels they find fragmented and mis-transferred. Their
+stated theme — that training-data quality and organization matter as much as architecture or
+scale — and their finding that accuracy **saturates past ~5M training cells**
+(`PAN_HUMAN_AZIMUTH.md`) are independent support, from a group with
+no stake in our conclusion, for both halves of our reading.
 
 *When extra expressivity pays.* Two lines of evidence bear on this. First, **ProtoCloud** —
 a prototype-based, self-explaining VAE with built-in uncertainty and gene-level attribution,
@@ -471,10 +481,20 @@ cases its cost profile is shaped for: when **memory is the binding constraint** 
 than the linear pipeline at scale, with memory-bounded chunked inference), when a reference
 is **reused** across many queries (the cached model amortizes the fit), and when the job is
 the **multi-stage workflow** rather than a single label — broad→refined hand-off, tissue-aware
-refinement, calibrated abstain, novel-cell-type screening. ProtoCloud also provides
-uncertainty, gene attribution and a refinement path (fine-tuning a pretrained model — stronger
-than masking, but a training run), so the pieces without a counterpart in the baselines are
-the ready-to-run broad reference and sub-second frozen-model refinement.
+refinement, calibrated abstain, novel-cell-type screening.
+
+For the **broad tier specifically, prefer a purpose-built pan-human model**: **Pan-human
+Azimuth** (`PAN_HUMAN_AZIMUTH.md`) ships a pretrained hierarchical
+classifier over a harmonized organism-wide typology (8 levels, 382 leaf types, trained on
+9.7M curated cells), with abstention learned rather than thresholded and calibration
+measured at ECE 0.0044, running at ~1,000 cells/s on a laptop. It is better resourced than
+our shipped reference and we do not claim to improve on it. The part of our workflow it
+cannot perform is the **hand-off**: its typology is fixed, so it cannot re-annotate into a
+user's own focused label set (the HLiCA liver reference, cross-study 0.23/0.58 → 0.72/0.86)
+or resolve states below a leaf (hepatocyte zonation). ProtoCloud likewise provides
+uncertainty, gene attribution and a refinement path (fine-tuning a pretrained model). What
+survives as distinct to actinn-jax is therefore not the broad reference but **refinement
+into label sets no pretrained model carries**, at a cost that keeps the chain on a laptop.
 
 # Limitations
 
@@ -557,3 +577,4 @@ two repositories. HLiCA data © Edgar et al. 2026 (CC-BY 4.0), [doi:10.64898/202
 15. Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. *bioRxiv* (2026), doi:10.64898/2026.02.11.705358.
 16. Guo K, Ding J. ProtoCloud: a prototypical self-explaining model for single-cell analysis. *Cell Genomics* 6(6):101217 (2026), doi:10.1016/j.xgen.2026.101217.
 17. Yampolskaya M, Souza H, et al. scTOP: cell identity from single-cell data via parameter-free projection. github.com/Emergent-Behaviors-in-Biology/scTOP.
+18. Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026), doi:10.64898/2026.07.16.738997.
