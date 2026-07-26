@@ -1,0 +1,40 @@
+__merge__: /src/api/comp_method.yaml
+name: "svm_sgd"
+label: SVM (SGD hinge)
+summary: "Linear SVM (hinge loss) trained by SGD on standardized log-normalized expression."
+description: |
+  A linear support vector machine, one of the most consistently top-ranked classical
+  baselines in cell-type annotation comparisons (Abdelaal et al. 2019). Trained with an
+  SGD hinge-loss solver rather than liblinear's LinearSVC: the two share a decision rule,
+  but liblinear's coordinate-descent solver does not scale to atlas-sized multiclass
+  problems (tens of thousands of cells x thousands of genes x dozens of classes), which
+  matters for a benchmark that reports runtime.
+references:
+  doi:
+    - 10.1186/s13059-019-1795-z
+links:
+  repository: https://github.com/iandriver/actinn-jax-benchmark
+  documentation: https://github.com/iandriver/actinn-jax-benchmark#readme
+info:
+  preferred_normalization: log_cp10k
+arguments:
+  - name: "--n_hvg"
+    type: "integer"
+    default: 1000
+    description: "Restrict to the top-N highly-variable genes provided in var['hvg'] (0 = use all genes)."
+resources:
+  - type: python_script
+    path: script.py
+engines:
+  - type: docker
+    image: openproblems/base_python:1
+    setup:
+      - type: python
+        packages:
+          - scanpy
+          - scikit-learn
+runners:
+  - type: executable
+  - type: nextflow
+    directives:
+      label: [midtime, highmem, midcpu]

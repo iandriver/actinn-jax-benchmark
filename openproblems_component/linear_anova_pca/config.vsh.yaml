@@ -1,0 +1,52 @@
+__merge__: /src/api/comp_method.yaml
+name: "linear_anova_pca"
+label: linear-anova-pca
+summary: "A carefully-tuned linear pipeline: per-cell normalization, ANOVA gene selection, standardization, PCA, and multinomial logistic regression."
+description: |
+  The parameter-free linear recipe of Souza & Mehta (bioRxiv 2026), who report that it
+  matches or exceeds single-cell foundation models across cross-species transfer, human
+  cell-type classification and disease-state prediction (on Tabula Sapiens 2.0 it reaches
+  mean macro-F1 0.899 against 0.907-0.910 for TranscriptFormer variants). The pipeline is
+  normalize -> ANOVA F-test gene selection -> standardize -> PCA -> multinomial logistic
+  regression, with every step fit on the reference only and replayed on the query.
+
+  It is included here because the task's method set otherwise contains no *tuned* linear
+  pipeline: its untuned relatives (logistic_regression, knn) are easy to beat, which can
+  overstate the margin of heavier models over simple ones.
+references:
+  doi:
+    - 10.64898/2026.02.11.705358
+links:
+  repository: https://github.com/iandriver/actinn-jax-benchmark
+  documentation: https://github.com/iandriver/actinn-jax-benchmark#readme
+info:
+  preferred_normalization: log_cp10k
+arguments:
+  - name: "--n_hvg"
+    type: "integer"
+    default: 1000
+    description: "Restrict to the top-N highly-variable genes provided in var['hvg'] (0 = use all genes)."
+  - name: "--n_genes"
+    type: "integer"
+    default: 20000
+    description: "Number of genes kept by the ANOVA F-test (capped at the number available)."
+  - name: "--n_pcs"
+    type: "integer"
+    default: 220
+    description: "Number of principal components (paper: 220)."
+resources:
+  - type: python_script
+    path: script.py
+engines:
+  - type: docker
+    image: openproblems/base_python:1
+    setup:
+      - type: python
+        packages:
+          - scanpy
+          - scikit-learn
+runners:
+  - type: executable
+  - type: nextflow
+    directives:
+      label: [midtime, highmem, midcpu]

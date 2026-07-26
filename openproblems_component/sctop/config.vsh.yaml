@@ -1,0 +1,45 @@
+__merge__: /src/api/comp_method.yaml
+name: "sctop"
+label: scTOP
+summary: "Parameter-free classification by projecting rank z-scored expression onto per-cell-type bases (order parameters)."
+description: |
+  scTOP (Yampolskaya, Souza & Mehta) represents each cell as a rank-based z-scored
+  expression vector and classifies it by projecting onto a basis built the same way from
+  the reference class averages; the predicted type is the largest projection. There is no
+  training and no fitted parameters beyond the class averages, which makes it the
+  parameter-free end of the method spectrum. Souza & Mehta report it beating single-cell
+  foundation models on out-of-distribution transfer.
+
+  Note: scTOP is rank-based and therefore sensitive to the long tail of near-all-zero
+  genes, where ranks are dominated by ties at zero and the per-type bases go degenerate.
+  Genes must be expressed in at least `min_expr_frac` of reference cells.
+links:
+  repository: https://github.com/Emergent-Behaviors-in-Biology/scTOP
+  documentation: https://github.com/Emergent-Behaviors-in-Biology/scTOP#readme
+info:
+  preferred_normalization: log_cp10k
+arguments:
+  - name: "--n_hvg"
+    type: "integer"
+    default: 1000
+    description: "Restrict to the top-N highly-variable genes provided in var['hvg'] (0 = use all genes)."
+  - name: "--min_expr_frac"
+    type: "double"
+    default: 0.10
+    description: "Drop genes expressed in fewer than this fraction of reference cells (guards against degenerate ranks)."
+resources:
+  - type: python_script
+    path: script.py
+engines:
+  - type: docker
+    image: openproblems/base_python:1
+    setup:
+      - type: python
+        packages:
+          - scanpy
+          - sctop
+runners:
+  - type: executable
+  - type: nextflow
+    directives:
+      label: [midtime, highmem, midcpu]

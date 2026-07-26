@@ -1,0 +1,43 @@
+__merge__: /src/api/comp_method.yaml
+name: "celltypist"
+label: CellTypist
+summary: "Regularized multinomial logistic regression for cell-type annotation, trained with CellTypist's SGD path."
+description: |
+  CellTypist (Dominguez Conde et al., Science 2022) trains an L2-regularized logistic
+  regression over log-CP10k expression and is one of the most widely used reference-based
+  annotators in practice. Here it is trained with `use_SGD=True` and pre-selected features
+  rather than CellTypist's built-in feature selection, which re-trains an SGD over all
+  genes single-threaded and dominates runtime on atlas-scale references.
+
+  It differs from the task's existing `logistic_regression` baseline in operating on gene
+  space with CellTypist's own training path and probability calibration, rather than on
+  the task's PCA embedding.
+references:
+  doi:
+    - 10.1126/science.abl5197
+links:
+  repository: https://github.com/Teichlab/celltypist
+  documentation: https://github.com/Teichlab/celltypist#readme
+info:
+  preferred_normalization: log_cp10k
+arguments:
+  - name: "--n_hvg"
+    type: "integer"
+    default: 1000
+    description: "Restrict to the top-N highly-variable genes provided in var['hvg'] (0 = use all genes)."
+resources:
+  - type: python_script
+    path: script.py
+engines:
+  - type: docker
+    image: openproblems/base_python:1
+    setup:
+      - type: python
+        packages:
+          - scanpy
+          - celltypist
+runners:
+  - type: executable
+  - type: nextflow
+    directives:
+      label: [midtime, highmem, midcpu]

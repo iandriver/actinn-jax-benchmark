@@ -1,7 +1,9 @@
 import anndata as ad
+import celltypist
 import numpy as np
 import pandas as pd
-import actinn_jax as aj
+import scanpy as sc
+import scipy.sparse as sp
 
 ## VIASH START
 par = {
@@ -10,39 +12,45 @@ par = {
     "output": "output.h5ad",
     "n_hvg": 1000,
 }
-meta = {"name": "actinn_jax"}
+meta = {"name": "celltypist"}
 ## VIASH END
 
 print("Load input data", flush=True)
 input_train = ad.read_h5ad(par["input_train"])
 input_test = ad.read_h5ad(par["input_test"])
 
-# actinn-jax is a gene-space method: it trains on raw counts with its own CP10k+log2
-# normalization and gene filter. Optionally restrict to the task-provided HVGs (the same
-# feature set the PCA-based baselines use) to keep atlas-scale training tractable.
 if par.get("n_hvg") and "hvg" in input_train.var:
     hvg = input_train.var["hvg"].values.astype(bool)
     input_train = input_train[:, hvg].copy()
     input_test = input_test[:, hvg].copy()
 
 
-def counts_adata(adata, label=None):
-    b = ad.AnnData(X=adata.layers["counts"].copy(),
-                   obs=adata.obs.copy(), var=adata.var.copy())
-    b.var_names = adata.var_names
+def lognorm_counts(adata, label=None):
+    """CellTypist expects log1p of CP10k-normalized counts with genes in var_names."""
+    out = ad.AnnData(
+        X=sp.csr_matrix(adata.layers["counts"]).astype(np.float32),
+        obs=adata.obs.copy(),
+        var=pd.DataFrame(index=pd.Index(adata.var_names).str.upper()),
+    )
+    out.var_names_make_unique()
+    sc.pp.normalize_total(out, target_sum=1e4)
+    sc.pp.log1p(out)
     if label is not None:
-        b.obs["label"] = adata.obs[label].astype(str).values
-    return b
+        out.obs["label"] = adata.obs[label].astype(str).values
+    return out
 
 
-print("Train actinn-jax on the reference", flush=True)
-ref = counts_adata(input_train, label="label")
-model = aj.train_reference(ref, train_label_name="label")
+print("Train CellTypist", flush=True)
+train = lognorm_counts(input_train, label="label")
+model = celltypist.train(
+    train, labels="label", use_SGD=True, feature_selection=False,
+    check_expression=False,
+)
 
 print("Predict on test data", flush=True)
-query = counts_adata(input_test)
-frame, _ = model.predict_frame(query, use_raw=False)
-label_pred = frame.loc[list(input_test.obs_names), "celltype"].to_numpy()
+test = lognorm_counts(input_test)
+res = celltypist.annotate(test, model=model, majority_voting=False)
+label_pred = res.predicted_labels["predicted_labels"].to_numpy()
 
 print("Create output data", flush=True)
 output = ad.AnnData(
