@@ -27,8 +27,33 @@ Rough cost: build containers ~20 min + sync 63 GB in-region ~5 min + methods ~2�
 ## 2. Provision (spot) — needs your AWS confirmation
 
 Credentials for IAM user `Ian` (acct `418696582915`) are configured locally, but region
-default is `us-east-1` — **launch explicitly in us-west-2**. Fill the two account-specific
-blanks (`KEY_NAME`, `SG_ID`) and run:
+default is `us-east-1` — **launch explicitly in us-west-2**.
+
+**Access is via SSM Session Manager, not SSH.** The first run used an SSH key plus a
+security group pinned to one IP, and both rotted: the private key was gone from the laptop
+by the next run (AWS only ever hands it out once) and the home IP had changed. SSM avoids
+the whole class of problem — no key pair, no inbound port, no allowlist — and needs only an
+instance profile. A minimal one exists for this purpose:
+
+| | |
+|---|---|
+| role / instance profile | `actinn-op-bench-ssm` |
+| policy | `AmazonSSMManagedInstanceCore` only — no inline policies, no S3/CodeCommit grants |
+
+Deliberately *not* reusing `options-lab-ssm` (carries an unrelated CodeCommit grant) or
+`rustar-bench-ec2` (S3/SNS for a different project, and no SSM). Recreate with:
+
+```bash
+aws iam create-role --role-name actinn-op-bench-ssm --assume-role-policy-document \
+  '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ec2.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+aws iam attach-role-policy --role-name actinn-op-bench-ssm \
+  --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+aws iam create-instance-profile --instance-profile-name actinn-op-bench-ssm
+aws iam add-role-to-instance-profile --instance-profile-name actinn-op-bench-ssm \
+  --role-name actinn-op-bench-ssm
+```
+
+Launch (Ubuntu's AMIs ship the SSM agent preinstalled; no key or SG needed):
 
 ```bash
 REGION=us-west-2
@@ -39,12 +64,21 @@ aws ec2 run-instances --region $REGION --image-id $AMI \
   --instance-type r7i.8xlarge \
   --instance-market-options 'MarketType=spot' \
   --block-device-mappings '[{"DeviceName":"/dev/sda1","Ebs":{"VolumeSize":500,"VolumeType":"gp3"}}]' \
-  --key-name KEY_NAME --security-group-ids SG_ID \
+  --iam-instance-profile Name=actinn-op-bench-ssm \
   --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=actinn-op-bench}]'
 ```
 
-(Security group must allow inbound SSH from your IP. No IAM role needed — S3 read is
-`--no-sign-request` on the public bucket.)
+Drive it without a shell session (good for scripted steps, no plugin required):
+
+```bash
+aws ssm send-command --region us-west-2 --instance-ids i-XXXX \
+  --document-name AWS-RunShellScript --parameters 'commands=["whoami","nproc"]' \
+  --query 'Command.CommandId' --output text
+```
+
+…or open an interactive shell with `aws ssm start-session --target i-XXXX` (needs
+`session-manager-plugin`, already installed locally). S3 reads stay `--no-sign-request`
+against the public bucket, so the instance needs no S3 permissions of its own.
 
 ## 3. Set up the box
 
