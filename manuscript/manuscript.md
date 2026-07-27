@@ -404,6 +404,25 @@ Problems' method set**, on controlled hardware. That set contains no carefully-t
 pipeline, and where we add one ourselves it leads on accuracy and fit time (§3.1, §3.2), so
 this is a statement about the OP panel rather than a general one.
 
+**Extension: our four added methods on the same harness.** We later ported the tuned linear
+pipeline, scTOP, the SGD-SVM and CellTypist into Open Problems components and ran them
+through the same pipeline on a fresh `r7i.8xlarge`
+([`results_openproblems_samehw_v2.csv`](results_openproblems_samehw_v2.csv), raw trace
+archived alongside). All four run correctly on a harness we did not write, which is the
+main thing this establishes; peak memory sits in the same 13–20 GB band as the incumbent
+methods (xgboost is the outlier at 55 GB). **We do not report cross-method runtimes from
+this run, and the reader should not infer them from the CSV.** Two confounds make the
+wall-clock numbers non-comparable: the run used a higher task concurrency (6 vs 2), and the
+methods differ enormously in how many cores they take — measured `%cpu` ranges from **49%
+for CellTypist (half a core) and 117% for `mlp` (effectively single-threaded) to 2338% for
+the linear pipeline (23 cores)**. Wall-clock under those conditions measures threading and
+contention as much as algorithmic cost. It also disagrees with the controlled run above for
+two methods (`mlp` 327 s → 769 s, `cellmapper_linear` 58 s → 717 s), which we flag rather
+than reconcile: the table above, run at low concurrency, remains the cost comparison we
+stand behind. Coverage was partial when a wall-clock budget stopped the run — six datasets
+for the SVM and CellTypist, four for scTOP, three for the linear pipeline — so per-method
+means over different dataset subsets would not be comparable either.
+
 **Three cheap ablations, and their limits.** (i) *Input standardization* — z-scoring
 genes to the reference's frozen mean/std, a CPU-only domain-alignment inspired by scArches
 reference surgery — lifts mean accuracy +0.2 and macro-F1 +1.2 pt (largest on batch-shifted
@@ -537,6 +556,14 @@ into label sets no pretrained model carries**, at a cost that keeps the chain on
   box; the GPU/R methods there are reported from OP's own cloud-CI trace (indicative). A
   same-hardware GPU-tier run to fold those into a single controlled table is the natural
   extension.
+- **Wall-clock comparisons across methods are only meaningful at matched concurrency, and
+  we learned this the expensive way.** A follow-up run that added our four components to the
+  OP harness (§3.8) used higher task concurrency and produced runtimes that disagree with
+  the controlled run by up to 12× for the same method. Measured `%cpu` across methods spans
+  49% to 2338% — some are single-threaded, some saturate 23 cores — so any wall-clock
+  ranking silently ranks threading and scheduler contention alongside algorithm. The
+  controlled low-concurrency run is the one we report; the extension establishes only that
+  the components run and what memory they need.
 - Subsampled references (to keep the matrix tractable); the scaling section characterizes
   the size dependence directly.
 - Human only; six datasets per benchmark; GPU foundation models beyond scPRINT/UCE (scGPT,
