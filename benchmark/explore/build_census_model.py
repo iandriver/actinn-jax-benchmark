@@ -1,4 +1,4 @@
-"""Build the shipped census-wide HierarchicalReferenceModel + calibrate abstain.
+"""Stage 3/3 of the broad-reference build: train, calibrate, and ship the model.
 
 The scPRINT embedding (QC-filtered subset, carrying cell_type) gives per-type centroids
 -> coarse hierarchy. actinn-jax is trained SEPARATELY on the full reference by label +
@@ -6,17 +6,23 @@ that hierarchy (no per-cell alignment needed). Core .venv (actinn_jax).
 
 Calibration holds out whole cell types (OOD) + a within-type test split, and sweeps
 min_prob to show in-distribution accuracy vs OOD-flag rate. Then ships the full model to
-references/broad_human_v1.
+references/broad_human_v1 alongside a ``build_info.json`` recording the census release,
+the sizes and the calibration table -- so a shipped reference can answer "what am I built
+from?" without anyone having to remember. See docs/UPDATE_BROAD_REFERENCE.md.
 """
-import os, sys, time, warnings; warnings.filterwarnings("ignore")
+import json, os, subprocess, sys, time, warnings; warnings.filterwarnings("ignore")
 import numpy as np, scanpy as sc
-sys.path.insert(0, "/Users/iandriver/Downloads/actinn-jax")
+
+WORK = os.environ.get("ACTINN_REF_WORK", "/tmp/actinn_ref_build")
+PKG = os.environ.get("ACTINN_JAX_REPO", os.path.expanduser("~/Downloads/actinn-jax"))
+sys.path.insert(0, PKG)
 import actinn_jax as aj
 
-REF = "/tmp/census_wide_ref.h5ad"
-EMB = "/tmp/census_wide_emb.npz"
-OUT = "/Users/iandriver/Downloads/actinn-jax/actinn_jax/references/broad_human_v1"
-N_HVG = 4000
+REF = os.environ.get("REF_H5AD", f"{WORK}/census_wide_ref.h5ad")
+EMB = os.environ.get("REF_EMB", f"{WORK}/census_wide_emb.npz")
+NAME = os.environ.get("REF_NAME", "broad_human_v1")
+OUT = os.environ.get("REF_OUT", f"{PKG}/actinn_jax/references/{NAME}")
+N_HVG = int(os.environ.get("N_HVG", 4000))
 
 ref = sc.read_h5ad(REF)
 z = np.load(EMB, allow_pickle=True)
@@ -61,9 +67,13 @@ p_ind = pf_ind["celltype_probability"].values
 lab_ind, true_ind = pf_ind["celltype"].values, labels[test]
 p_ood = pf_ood["celltype_probability"].values
 print("min_prob | in-dist acc(kept) | in-dist kept | OOD flagged", flush=True)
+calibration = []
 for thr in (0.0, 0.3, 0.5, 0.7, 0.9):
     kept = p_ind >= thr
     acc = float((lab_ind[kept] == true_ind[kept]).mean()) if kept.sum() else float("nan")
+    calibration.append({"min_prob": thr, "accuracy_kept": round(acc, 4),
+                        "coverage": round(float(kept.mean()), 4),
+                        "ood_flagged": round(float((p_ood < thr).mean()), 4)})
     print(f"  {thr:>4} | {acc:.3f} | {kept.mean():.3f} | {float((p_ood < thr).mean()):.3f}", flush=True)
 
 # ---- ship: full reference, full hierarchy ----
@@ -74,6 +84,39 @@ ng = len(set(model.type_to_group.values()))
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 model.save(OUT)
 sz = sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT)) / 1e6
+
+
+def _git_sha(repo):
+    try:
+        return subprocess.run(["git", "-C", repo, "rev-parse", "--short", "HEAD"],
+                              capture_output=True, text=True, timeout=10).stdout.strip()
+    except Exception:
+        return None
+
+
+release = {}
+if os.path.exists(f"{WORK}/census_release.json"):
+    with open(f"{WORK}/census_release.json") as fh:
+        release = json.load(fh)
+
+with open(os.path.join(OUT, "build_info.json"), "w") as fh:
+    json.dump({
+        "name": NAME,
+        "built_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "census_release": release,
+        "reference_h5ad": REF,
+        "n_cells": int(ref.n_obs), "n_types": len(model.classes),
+        "n_coarse_groups": ng, "n_tissues": int(ref.obs["tissue"].nunique())
+        if "tissue" in ref.obs else None,
+        "n_hvg": N_HVG, "size_mb": round(sz, 1),
+        "calibration": calibration,
+        "benchmark_sha": _git_sha(os.path.dirname(os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__))))),
+        "actinn_jax_sha": _git_sha(PKG),
+        "actinn_jax_version": getattr(aj, "__version__", None),
+    }, fh, indent=2)
+
 print(f"shipped {len(model.classes)} types / {ng} coarse groups / {sz:.1f}MB in {time.time()-t:.0f}s",
       flush=True)
+print(f"wrote {OUT}/build_info.json", flush=True)
 print("CENSUS_MODEL_DONE", flush=True)

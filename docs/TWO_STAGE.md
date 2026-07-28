@@ -7,9 +7,10 @@
 > CELLxGENE census (**~800 cell types / 314 tissues / 440 datasets**, with an abstain
 > threshold for out-of-distribution cells) that annotates unknown data on CPU out of the
 > box — ships in [**actinn-jax**](https://github.com/iandriver/actinn-jax)
-> (`actinn_jax.hierarchy`, `examples/`). Build scripts: `benchmark/explore/fetch_census_wide.py`,
-> `embed_broad.py`, `build_census_model.py` (Tabula-Sapiens-only variant:
-> `fetch_broad_reference.py` + `build_from_emb.py`).
+> (`actinn_jax.hierarchy`, `examples/`). **To rebuild that reference, see
+> [UPDATE_BROAD_REFERENCE.md](UPDATE_BROAD_REFERENCE.md)** — one driver over
+> `fetch_census_wide.py` → `embed_broad.py` → `build_census_model.py`, plus a verification
+> gate (Tabula-Sapiens-only variant: `fetch_broad_reference.py` + `build_from_emb.py`).
 
 **Question:** can the scPRINT foundation model's broad, all-cell-types knowledge make
 a *fast, non-GPU* classifier better — best of both worlds — rather than being used

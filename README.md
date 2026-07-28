@@ -111,6 +111,12 @@ Heavier methods get their own environment under [`envs/`](envs).
   original TensorFlow ACTINN (3.3× faster, 3.5× less memory single-run).
 - **[docs/METHODS_SURVEY.md](docs/METHODS_SURVEY.md)** — cited methods landscape.
 - **[docs/TWO_STAGE.md](docs/TWO_STAGE.md)** — scPRINT (broad) shaping a fast CPU classifier: a scPRINT-discovered coarse→fine hierarchy beats flat (macro-F1 0.71 vs 0.68), pure-CPU inference.
+- **[docs/UPDATE_BROAD_REFERENCE.md](docs/UPDATE_BROAD_REFERENCE.md)** — how to rebuild the
+  shipped census-wide reference: one driver, four stages, and a verification gate that
+  scores the rebuilt model before you keep it.
+- **[docs/PANHUMAN_DISTILL.md](docs/PANHUMAN_DISTILL.md)** — distilling Pan-human Azimuth
+  into an actinn-jax reference: 85.6% label agreement and matching accuracy at ~13× its
+  throughput, with no GPU and no labels in the build.
 
 Tier-1 (classical) complete; deep + foundation tiers next. See the full
 [benchmark plan](https://github.com/iandriver/actinn-jax/blob/main/BENCHMARK_PLAN.md).

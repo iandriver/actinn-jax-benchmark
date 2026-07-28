@@ -1,5 +1,14 @@
-"""Embed the broad reference with scPRINT (standalone; scPRINT venv, no actinn_jax/jax).
-Saves /tmp/broad_emb.npz with the (n_cells, 256) embedding aligned to the h5ad order.
+"""Stage 2/3 of the broad-reference build: embed the reference with scPRINT.
+
+Standalone (scPRINT venv, no actinn_jax/jax). Saves an npz holding the (n_cells, 256)
+embedding plus the cell-type label carried through scPRINT's QC -- which drops cells, so
+the embedding is NOT positionally aligned to the input h5ad and the label has to travel
+with it. Stage 3 uses the pair to discover the coarse hierarchy.
+
+This is the only step that wants a GPU/MPS. Paths default to ``$ACTINN_REF_WORK`` (still
+overridable as argv) and the checkpoint to ``$SCPRINT_CKPT``; see
+docs/UPDATE_BROAD_REFERENCE.md. The default output name previously disagreed with what
+stage 3 read, so a hand-run pipeline could silently build from a stale embedding.
 """
 import os, sys, warnings, time, contextlib; warnings.filterwarnings("ignore")
 import numpy as np, scanpy as sc, anndata as ad, scipy.sparse as sp, torch
@@ -22,9 +31,13 @@ try:
 except Exception:
     additional_preprocess = None
 
-REF = sys.argv[1] if len(sys.argv) > 1 else "/tmp/broad_human_ref.h5ad"
-OUTNPZ = sys.argv[2] if len(sys.argv) > 2 else "/tmp/broad_emb.npz"
-CKPT = "/Users/iandriver/Downloads/actinn-jax-benchmark/medium-v1.5.ckpt"
+WORK = os.environ.get("ACTINN_REF_WORK", "/tmp/actinn_ref_build")
+REF = sys.argv[1] if len(sys.argv) > 1 else f"{WORK}/census_wide_ref.h5ad"
+OUTNPZ = sys.argv[2] if len(sys.argv) > 2 else f"{WORK}/census_wide_emb.npz"
+CKPT = os.environ.get(
+    "SCPRINT_CKPT",
+    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__)))), "medium-v1.5.ckpt"))
 SCHEMA = ("cell_type_ontology_term_id","assay_ontology_term_id","disease_ontology_term_id",
           "self_reported_ethnicity_ontology_term_id","sex_ontology_term_id",
           "development_stage_ontology_term_id","tissue_ontology_term_id")
