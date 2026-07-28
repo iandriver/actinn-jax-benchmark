@@ -204,6 +204,9 @@ def main():
     with open(os.path.join(a.out, "build_info.json"), "w") as fh:
         json.dump({"name": os.path.basename(a.out),
                    "built_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                   # Pan-human Azimuth is human-only, so any model distilled from it is.
+                   # Recorded so the package can refuse a cross-species query outright.
+                   "organism": "homo_sapiens",
                    "teacher": {
                        "model": "Pan-human Azimuth",
                        "citation": "Sarkar, Li, Molla, ... Satija. Organism-scale "

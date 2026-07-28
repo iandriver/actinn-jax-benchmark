@@ -1,0 +1,4 @@
+hierarchy,n_groups,n_classes,ontology,n_scored,fit_s,predict_s,cells_per_s
+ontology,29,867,0.6164,2161,31.6,1.35,1597
+random,29,867,0.5386,2161,26.6,1.64,1319
+flat,1,867,0.547,2161,17.7,0.13,16051

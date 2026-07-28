@@ -23,18 +23,33 @@ EMB = os.environ.get("REF_EMB", f"{WORK}/census_wide_emb.npz")
 NAME = os.environ.get("REF_NAME", "broad_human_v1")
 OUT = os.environ.get("REF_OUT", f"{PKG}/actinn_jax/references/{NAME}")
 N_HVG = int(os.environ.get("N_HVG", 4000))
+HIERARCHY = os.environ.get("HIERARCHY", "scprint")     # scprint | ontology
+OBO = os.environ.get("ONTOLOGY_OBO", "/tmp/cl-basic.obo")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 ref = sc.read_h5ad(REF)
-z = np.load(EMB, allow_pickle=True)
-emb, emb_ct = z["emb"], z["cell_type"].astype(str)           # QC-filtered survivors + labels
 labels = ref.obs["cell_type"].astype(str).to_numpy()
 types = np.array(sorted(set(labels)))
 N_GROUPS = max(8, int(round(np.sqrt(len(types)))))
-print(f"ref {ref.shape} | {len(types)} types | emb {emb.shape} ({len(set(emb_ct))} embedded types) "
-      f"| G={N_GROUPS}", flush=True)
 
-# hierarchy from embedded per-type centroids (covers embedded types; rest -> fallback)
-grp = aj.discover_hierarchy(emb, emb_ct, n_groups=N_GROUPS)
+# HIERARCHY=scprint (default) clusters scPRINT embeddings of per-type centroids -- the one
+# GPU step of the build. HIERARCHY=ontology clusters Cell Ontology lineage instead: free,
+# deterministic, and species-independent, which is what makes a pan-mouse reference
+# buildable at all (see ontology_hierarchy.py and docs/PAN_MOUSE.md).
+if HIERARCHY == "ontology":
+    from ontology_hierarchy import ontology_hierarchy
+    grp, info = ontology_hierarchy(ref.obs["cell_type_ontology_term_id"], labels,
+                                   n_groups=N_GROUPS, obo=OBO)
+    print(f"ref {ref.shape} | {len(types)} types | ontology hierarchy from "
+          f"{info['n_cl_terms']} CL terms over {info['n_types_with_cl']} types "
+          f"| G={N_GROUPS}", flush=True)
+else:
+    z = np.load(EMB, allow_pickle=True)
+    emb, emb_ct = z["emb"], z["cell_type"].astype(str)       # QC-filtered survivors + labels
+    print(f"ref {ref.shape} | {len(types)} types | emb {emb.shape} "
+          f"({len(set(emb_ct))} embedded types) | G={N_GROUPS}", flush=True)
+    # covers embedded types; the rest fall into build_hierarchical_reference's catch-all
+    grp = aj.discover_hierarchy(emb, emb_ct, n_groups=N_GROUPS)
 
 
 def hvg_subset(ad_train, n=N_HVG):
@@ -109,6 +124,8 @@ with open(os.path.join(OUT, "build_info.json"), "w") as fh:
         "n_coarse_groups": ng, "n_tissues": int(ref.obs["tissue"].nunique())
         if "tissue" in ref.obs else None,
         "n_hvg": N_HVG, "size_mb": round(sz, 1),
+        "hierarchy_source": HIERARCHY,
+        "organism": release.get("organism", "homo_sapiens"),
         "calibration": calibration,
         "benchmark_sha": _git_sha(os.path.dirname(os.path.dirname(
             os.path.dirname(os.path.abspath(__file__))))),
