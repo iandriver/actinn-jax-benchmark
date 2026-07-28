@@ -586,12 +586,14 @@ into label sets no pretrained model carries**, at a cost that keeps the chain on
   tuning effort on SVM or CellTypist would likely narrow them further. scTOP is cheaper still
   on time (~1 s) but competitive only at small, low cardinality — best pbmc macro-F1 (0.837),
   degrading to 0.649 on liver.
-- **Two claims from earlier drafts are retracted** (`SCALING_MEMORY.md`).
-  (i) We projected the linear pipeline would need ~32 GB and fail at atlas scale; measured, it
-  used **13.2 GB** and completed — `SelectKBest(k=20000)` caps the dense matrix well below the
-  full gene set. (ii) We claimed the memory gap widens structurally with data; it is **bounded
-  at ~2–3×** (2.15× at full scale), so there is no scaling cliff and no regime tested where
-  the linear pipeline stops being usable.
+- **actinn-jax's memory advantage is bounded, and the linear pipeline scales further than
+  extrapolation suggests** (`SCALING_MEMORY.md`). Extrapolating the
+  linear pipeline's small-reference footprint predicts ~32 GB and failure at atlas scale;
+  measured, it uses **13.2 GB** and completes, because `SelectKBest(k=20000)` caps the dense
+  matrix well below the full gene set. The linear/actinn-jax memory ratio is likewise
+  **bounded at ~2–3×** (2.15× at full scale) rather than widening with data, so there is no
+  scaling cliff and no regime tested where the linear pipeline stops being usable. Memory
+  projections in this setting should be measured, not extrapolated.
 - **At atlas scale the ordering changes and the deep model leads.** Scaling the lung reference
   3k → 49k cells, **ProtoCloud goes from worst (0.722) to best (0.976)**, clear of actinn-jax
   (0.936) and the linear pipeline (0.939), at 19× the CPU fit cost; scTOP gains nothing from
