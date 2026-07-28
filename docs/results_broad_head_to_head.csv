@@ -1,0 +1,4 @@
+model,n_classes,ontology,n_scored,mapped_to_cl,predict_s,cells_per_s
+actinn-jax broad_human_v1 (shipped),798,0.3378,3396,1.0,1.15,2962.0
+actinn-jax distilled from PHA,324,0.4064,3396,1.0,0.34,10021.0
+Pan-human Azimuth (teacher),47,0.3804,3396,0.9052,,

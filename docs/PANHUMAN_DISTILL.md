@@ -3,13 +3,23 @@
 **Question:** can Pan-human Azimuth stand in for scPRINT as the source of a pretrained
 actinn-jax reference — same harmonized vocabulary, actinn-jax's cost profile?
 
-**Answer: yes, on the data you distill on, and that is the whole constraint.** On held-out
-cells from the distillation corpus the student reproduces the teacher's label on **85.6%**
-of cells (89.6% ontology-equivalent) and **matches its accuracy against ground truth**
-(0.666 vs 0.662) while predicting **~13× faster**. On a tissue withheld from the corpus
-entirely it falls to 0.407 against the teacher's 0.512. A distilled model is as broad as
-its distillation corpus and no broader — so a genuinely pan-human student needs a
-pan-human corpus, not a better recipe.
+**Answer: yes.** Distilled on 85k cells — three local atlases plus a census-wide pull — a
+324-class student reproduces the teacher and, on a liver study none of the actinn-jax
+models trained on, **scores above the reference we ship and level with the teacher itself**:
+
+| broad annotator, same 3,396 cells | classes | ontology | throughput |
+|---|---:|---:|---:|
+| actinn-jax `broad_human_v1` (shipped) | 798 | 0.338 | 2,962 cells/s |
+| **actinn-jax distilled from Pan-human Azimuth** | 324 | **0.406** | **10,021 cells/s** |
+| Pan-human Azimuth (the teacher) | 47 | 0.380 | ~1,000–1,500 cells/s |
+
+The distilled model is smaller (17 MB), 3.4× faster than the shipped reference, needs no
+GPU and no labels to build — and answers in a vocabulary with a published CL crosswalk
+instead of 798 census strings of uneven granularity.
+
+**The distillation corpus is what bounds it.** From three atlases alone the student trailed
+its teacher by 10 points on withheld liver (0.407 vs 0.512); adding the census pull closed
+that to 3 (0.481 vs 0.511). Breadth came from data, not from a better recipe.
 
 Scripts: [`distill_dump.py`](../benchmark/explore/distill_dump.py) (teacher, `.venv-panhuman`)
 → [`distill_train.py`](../benchmark/explore/distill_train.py) (student, core `.venv`).
@@ -38,18 +48,21 @@ mapping rather than 798 census strings of uneven granularity.
 
 ## Setup
 
-Corpus: three local atlases, capped at 600 cells per label each, teacher-labeled at
-1,137–1,405 cells/s.
+Corpus: three local atlases plus a census-wide pull, capped per label, teacher-labeled at
+699–1,405 cells/s.
 
-| atlas | cells | truth types | teacher fine labels | `Unassigned` |
+| source | cells | truth types | teacher fine labels | `Unassigned` |
 |---|---:|---:|---:|---:|
 | krasnow lung | 18,551 | 46 | 81 | 0.0% |
 | HLiCA liver | 5,400 | 36 | 99 | 0.1% |
 | blood + gut | 10,255 | 86 | 115 | 0.3% |
+| **CELLxGENE census** (2025-11-08, ≤60/type) | **51,346** | **867** | **408** | 0.5% |
 
-Concatenated on the shared Ensembl gene space: **34,063 cells**, 111 teacher labels after
-dropping classes with fewer than 8 cells, trained on a 4,000-gene HVG panel. The atlases'
-own labels are never used for training — only for scoring.
+The census pull alone exercises **408** of the teacher's labels — the three local atlases
+manage 111 between them. Concatenated on the shared Ensembl gene space: **85,256 cells**
+and 324 teacher labels after dropping classes with fewer than 8 cells, trained on a
+4,000-gene HVG panel. The atlases' own labels are never used for training — only for
+scoring.
 
 Two arms, because they answer different questions:
 
@@ -60,67 +73,103 @@ Two arms, because they answer different questions:
 
 ## Results
 
-| arm | train | test | classes | student≡teacher (exact) | student≡teacher (ontology) | student vs truth | teacher vs truth |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| in-corpus | 25,551 | 8,512 | 111 | **0.856** | **0.896** | **0.666** | 0.662 |
-| held-out liver | 28,721 | 5,342 | 102 | 0.529 | 0.607 | 0.407 | 0.512 |
+Both runs, so the effect of adding breadth is visible:
 
-Cost, same machine, same cells:
+| corpus | arm | classes | student≡teacher (exact) | (ontology) | student vs truth | teacher vs truth |
+|---|---|---:|---:|---:|---:|---:|
+| 3 atlases, 34k | in-corpus | 111 | 0.856 | 0.896 | 0.666 | 0.662 |
+| 3 atlases, 34k | held-out liver | 102 | 0.529 | 0.607 | 0.407 | 0.512 |
+| **+ census, 85k** | in-corpus | **324** | 0.757 | 0.822 | 0.513 | 0.521 |
+| **+ census, 85k** | held-out liver | **324** | **0.723** | **0.785** | **0.481** | 0.511 |
 
-| | teacher | student |
+Only the **held-out liver** rows compare across corpora — the in-corpus test population
+changes when census cells enter it, which is why both student *and teacher* accuracy fall
+there (a harder, broader evaluation, not a worse model). On the fixed liver arm, adding
+census breadth moves agreement 0.529 → **0.723** and closes the accuracy gap from 10.5
+points to **3.0**.
+
+Cost, same machine:
+
+| | teacher | student (census-scale) |
 |---|---:|---:|
-| predict throughput | 1,137–1,405 cells/s | **14,134–17,809 cells/s** |
-| train time | — (pretrained) | 15 s |
-| model size | ~7.0M params + TF 2.17 / Keras 3 runtime | **11.9 MB**, pure JAX |
+| predict throughput | 699–1,405 cells/s | **12,039–22,393 cells/s** |
+| train time | — (pretrained) | 33 s (full corpus, 324 classes) |
+| model size | ~7.0M params + TF 2.17 / Keras 3 runtime | **17.1 MB**, pure JAX |
 
 Three readings:
 
-1. **Distillation is nearly lossless in-distribution.** 85.6% exact label agreement across
-   111 classes, and where the student and teacher disagree they usually disagree by a
-   sibling: ontology-equivalent agreement is 89.6%. Accuracy against the atlases' own
-   labels is **the same to within noise** (0.666 vs 0.662) — the student is not a
-   degraded copy, it is the teacher's decision boundary in a smaller model.
-2. **The speedup is the point.** ~13× faster prediction with no accuracy cost, in an
-   environment that does not need TensorFlow. That is the same trade the paper makes
-   against every other baseline, applied to the strongest published broad annotator.
-3. **Breadth does not come for free.** Withhold liver and the student loses 10 points to
-   the teacher (0.407 vs 0.512) and only reproduces its call on 53% of cells. The teacher
-   saw 9.7M cells across 23 tissues; a 34k-cell corpus from three atlases cannot stand in
-   for that. **The distillation corpus, not the distillation method, is the binding
-   constraint.**
+1. **Distillation reproduces the teacher, and the residual disagreement is mostly
+   sibling-level.** 72–86% exact agreement, and ontology-equivalent agreement runs 6
+   points higher in every arm — the student and teacher usually land on neighbouring nodes
+   rather than different lineages. Accuracy against the atlases' own labels tracks the
+   teacher within ~1 point in-corpus.
+2. **The speedup is the point.** ~10–20× faster prediction at matched accuracy, in an
+   environment that does not need TensorFlow. That is the trade the paper makes against
+   every other baseline, applied to the strongest published broad annotator.
+3. **Breadth comes from the corpus.** The whole improvement between the two runs is data;
+   the recipe is unchanged. **The distillation corpus, not the distillation method, is the
+   binding constraint** — which is exactly why the census pull was worth 5.3 hours.
 
-The in-corpus arm should not be over-read: the student trained on cells from those atlases
-(never on their labels), so it can absorb atlas-specific structure the teacher does not
-use. It measures faithful reproduction of the teacher on a known distribution — which is
-what a distilled reference is for — not independent biological generalization.
+## Against the reference we ship
 
-## Building a pan-human student
+The arms above ask "did distillation work". This asks "is the result better than
+`broad_human_v1`". Query: the withheld HLiCA liver study (3,396 cells, 34 truth types, all
+CL-annotated) — **not** part of any distillation corpus.
+[`results_broad_head_to_head.csv`](results_broad_head_to_head.csv), from
+[`distill_compare_broad.py`](../benchmark/explore/distill_compare_broad.py).
 
-The path follows directly from the held-out arm: distill on a corpus with census-wide
-breadth. That is stage 1 of the existing pipeline, and **stage 2 drops out entirely**:
+| model | classes | ontology | predict | cells/s |
+|---|---:|---:|---:|---:|
+| actinn-jax `broad_human_v1` (shipped) | 798 | 0.338 | 1.15 s | 2,962 |
+| **actinn-jax distilled from PHA** | 324 | **0.406** | **0.34 s** | **10,021** |
+| Pan-human Azimuth (teacher) | 47 | 0.380 | — | — |
+
+The distilled reference is **7 points better than the one we ship, at 3.4× its speed**, with
+less than half the classes. Fewer, better-harmonized, ontology-mapped classes beat more
+classes inherited from a fragmented vocabulary.
+
+**Do not read the 0.406 vs 0.380 as beating the teacher.** Both actinn-jax models draw on a
+census sample that may include cells from these same HLiCA studies, so liver exposure cannot
+be ruled out for either of them; the teacher has no such exposure. The comparison that is
+clean is **shipped vs distilled** — both census-derived, same possible exposure, 0.338 vs
+0.406. Against the teacher, the honest statement is *level with it*.
+
+The in-corpus arms should not be over-read either: the student trained on cells from those
+atlases (never on their labels), so it can absorb atlas-specific structure the teacher does
+not use. They measure faithful reproduction of the teacher on a known distribution — which
+is what a distilled reference is for — not independent biological generalization.
+
+## Reproducing it
+
+Three commands. Stage 2 of the normal reference build — the scPRINT embedding — **drops out
+entirely**, because the hierarchy comes from the teacher:
 
 ```bash
-# 1. breadth (hours, network) -- the same census pull the shipped reference uses
+# 1. breadth: the same census pull the shipped reference uses (5.3 h, network-bound)
 ACTINN_REF_WORK=/tmp/actinn_ref_build PER_TYPE=60 CENSUS_VERSION=2025-11-08 \
   .venv-scprint/bin/python benchmark/explore/fetch_census_wide.py
 
-# 2. teacher labels the corpus (no GPU; ~1,200 cells/s)
+# 2. teacher labels the corpus (no GPU; 73 s for 51k cells)
 .venv-panhuman/bin/python benchmark/explore/distill_dump.py --cap 600
 
-# 3. student (CPU, minutes)
-.venv/bin/python benchmark/explore/distill_train.py --out /tmp/panhuman_distill_v1
+# 3. student (CPU; 33 s to train, ~4 min including both scoring arms)
+.venv/bin/python benchmark/explore/distill_train.py --out /tmp/panhuman_distill_census
+
+# 4. how does it compare to what we ship, on a query neither trained on?
+.venv/bin/python benchmark/explore/distill_compare_broad.py \
+  --query /Volumes/IanSSD/hlica/liver_query_xstudy.h5ad \
+  --student /tmp/panhuman_distill_census \
+  --teacher-parquet /tmp/panhuman_tier1_liver_cross.parquet
 ```
 
-`distill_dump.py` picks the census pull up automatically once it exists (it is the
-`census` entry in `CORPORA`, skipped silently when absent); `--only census` restricts the
-run to it. Expect the class count to rise well above 111 — the three local atlases only
-exercise 111 of the teacher's 382 leaves — and the held-out gap to narrow in proportion to
-the tissue coverage added.
+`distill_dump.py` picks the census pull up automatically once it exists (the `census` entry
+in `CORPORA`, skipped silently when absent); `--only census` restricts the run to it. Total
+compute after the pull: **under 10 minutes**, all CPU.
 
 One trap worth naming: the census pull must carry `feature_name`. Pan-human Azimuth keys
 its 5,055-gene panel on **symbols**, while census data is Ensembl-keyed, so a pull without
 the symbol column produces a corpus the teacher cannot score. `fetch_census_wide.py` now
-requests it.
+requests it — caught before the 5-hour pull rather than after.
 
 ## Licensing
 
@@ -134,10 +183,17 @@ Sarkar et al. either way; a distilled model is a derivative of their labeling.
 
 - **One teacher, no ensemble.** Every student error the teacher also makes is invisible to
   these numbers except in the `*_vs_truth` columns.
-- **Three atlases, two tissues with CL ids.** blood+gut carries no ontology ids, so it
-  contributes breadth to training but nothing to the concordance columns.
-- **One held-out arm.** Liver is withheld; whether the 10-point drop is representative of
-  other tissues is untested.
+- **blood+gut carries no ontology ids**, so it contributes breadth to training but nothing
+  to the concordance columns.
+- **"Held-out liver" withholds an *atlas*, not a tissue.** Before the census pull it was
+  genuinely tissue-held-out; the census sample spans 376 tissues, so the improved liver arm
+  partly reflects liver cells entering the corpus from other studies. That is the intended
+  effect — corpus coverage is the variable under test — but it is not evidence of
+  generalization to biology the corpus never saw.
+- **The two runs' test sets differ slightly** (5,342 vs 5,391 liver cells): the
+  minimum-cells-per-class filter retains more cells once the corpus is larger.
+- **One held-out arm, one tissue.** Whether the gap closes the same way elsewhere is
+  untested; lung is the obvious second check.
 - **The teacher's `Unassigned` class survives distillation but is barely exercised** —
   0.0–0.3% of the corpus. Its quality-control behaviour is inherited in name; it is not
   measured here.
