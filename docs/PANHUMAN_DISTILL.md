@@ -141,3 +141,11 @@ Sarkar et al. either way; a distilled model is a derivative of their labeling.
 - **The teacher's `Unassigned` class survives distillation but is barely exercised** —
   0.0–0.3% of the corpus. Its quality-control behaviour is inherited in name; it is not
   measured here.
+- **Hard targets only.** actinn-jax trains on labels, so the teacher's calibrated
+  probabilities — the part of a distillation that usually carries the most information,
+  especially for classes with few cells — are discarded. Soft-target training would need a
+  loss change in the package, and would likely close part of the held-out gap.
+- **Three of eight levels used.** The student takes `azimuth_broad` as its hierarchy and
+  `azimuth_fine` as its leaves. The teacher's deeper levels (up to 382 classes) are
+  available in the same dump and would give a finer student at the cost of more cells per
+  class.

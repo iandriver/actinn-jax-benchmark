@@ -16,8 +16,8 @@ installed reference on an atlas that was never part of it.
 
 | stage | environment | output | cost |
 |---|---|---|---|
-| 1 `fetch` | `.venv-scprint` | `census_wide_ref.h5ad` + `census_release.json` | hours, network-bound |
-| 2 `embed` | `.venv-scprint` | `census_wide_emb.npz` | ~1 h on MPS/GPU — the only accelerated step |
+| 1 `fetch` | `.venv-scprint` | `census_wide_ref.h5ad` + `census_release.json` | network-bound; ~30 s per 10-dataset batch |
+| 2 `embed` | `.venv-scprint` | `census_wide_emb.npz` | the only accelerated step; scPRINT runs ~22 ms/cell on MPS |
 | 3 `build` | actinn-jax `.venv` | the shipped reference + `build_info.json` | minutes, CPU |
 | 4 `verify` | actinn-jax `.venv` | a score you can compare against the previous build | ~1 min |
 
