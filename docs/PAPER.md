@@ -57,9 +57,11 @@ at the lowest peak memory of the methods we carried to atlas scale (6.1 vs. 13.2
 linear pipeline at 49k cells). The components are not unique: ProtoCloud provides
 uncertainty, gene attribution and a retraining-based refinement path, and **Pan-human
 Azimuth** ships a pretrained, calibrated, hierarchical pan-human annotator that runs on a
-laptop — a better-resourced broad tier than ours. What the workflow adds is the **hand-off
-into a label set the broad model was never trained on**: refinement against a user's own
-focused reference, and resolution below any fixed typology's leaves.
+laptop — a better-resourced broad tier than ours, and one we can **distil into a tier-1
+model of comparable accuracy at ~9× its throughput, built with no GPU and no labeled data**.
+What the workflow adds is the **hand-off into a label set the broad model was never trained
+on**: refinement against a user's own focused reference, and resolution below any fixed
+typology's leaves.
 
 ## 1. Introduction
 
@@ -103,7 +105,8 @@ by the same metrics, and reported as measured — including where actinn-jax is 
    pulmonary ionocyte population and its marker ASCL3). We are precise about what is not
    ours: ProtoCloud offers uncertainty, attribution and a retraining-based refine, and
    Pan-human Azimuth ships a pretrained hierarchical pan-human annotator with trained
-   abstention, so the broad tier itself is not a distinguishing feature. What is distinct is
+   abstention, so the broad tier itself is not a distinguishing feature — we distil that
+   model into a tier-1 reference rather than compete with it. What is distinct is
    **refinement into a label set no pretrained model carries** — the user's own focused
    reference, and states below a fixed typology's leaves.
 4. An **independent external validation** on Open Problems `label_projection`, with a
@@ -350,6 +353,33 @@ CELLxGENE census gives any query a first-pass annotation across the whole body, 
 force-labeled ([REFINE.md](REFINE.md), and the smooth abstain curve of §3.6). This is the
 "what am I looking at" pass — broad coverage, deliberately not fine-grained.
 
+**Tier 1 can be built from a model instead of from labels.** The census route above needs a
+foundation model on a GPU to discover its hierarchy. A pretrained pan-human annotator
+already has one — Pan-human Azimuth publishes an 8-level typology with every node mapped to
+a Cell Ontology term — so labelling a corpus with it and training actinn-jax on those labels
+transfers both the vocabulary and the structure. That build needs **no accelerator and no
+labeled input**, only raw human counts: under ten minutes of CPU on 85k cells drawn from
+three atlases plus a census-wide sample ([PANHUMAN_DISTILL.md](PANHUMAN_DISTILL.md)). On
+3,396 withheld cross-study liver cells:
+
+| tier-1 model | classes | ontology | cells/s |
+|---|---:|---:|---:|
+| census-built (`broad_human_v1`) | 798 | 0.338 | 2,962 |
+| Pan-human Azimuth | 382 | 0.380 | 1,076–1,563 |
+| **distilled (`panhuman_distill_v1`)** | 324 | **0.406** | **8,937–10,021** |
+
+This makes the entry point both better and ~3× faster than building it from the census
+directly, and it answers in a harmonized, ontology-mapped vocabulary rather than raw census
+strings. Withholding a whole atlas from the corpus, the distilled model tracks the one it
+was distilled from to within **1.5 points** on lung (0.695 vs 0.710) and **3.0** on liver
+(0.481 vs 0.511) — the corpus, not the recipe, is what bounds it. Two caveats keep this
+modest. The 0.406/0.380 ordering is one query, and both actinn-jax models draw on a census
+sample that may include these studies while Pan-human Azimuth does not, so read the distilled
+model as *comparable to* the one it distils rather than better. And it does **not** inherit
+that model's trained abstention: its confidence separates right from wrong poorly (90.5%
+coverage at `p ≥ 0.5` moves concordance only 0.406 → 0.427), so the calibrated tier-1 abstain
+of §3.6 belongs to the census-built reference until this one is recalibrated.
+
 **Tier 2 — refined, tissue-focused.** For the tissue the broad pass identifies, a small
 focused reference re-annotates at full resolution. The gain is large and it is the crux of
 the workflow: on held-out **cross-study** liver cells, the broad census model scores
@@ -585,13 +615,23 @@ Azimuth** ([`PAN_HUMAN_AZIMUTH.md`](PAN_HUMAN_AZIMUTH.md)) ships a pretrained hi
 classifier over a harmonized organism-wide typology (8 levels, 382 leaf types, trained on
 9.7M curated cells), with abstention learned rather than thresholded and calibration
 measured at ECE 0.0044, running at ~1,000 cells/s on a laptop. It is better resourced than
-our shipped reference and we do not claim to improve on it. The part of our workflow it
-cannot perform is the **hand-off**: its typology is fixed, so it cannot re-annotate into a
-user's own focused label set (the HLiCA liver reference, cross-study 0.23/0.58 → 0.72/0.86)
-or resolve states below a leaf (hepatocyte zonation). ProtoCloud likewise provides
-uncertainty, gene attribution and a refinement path (fine-tuning a pretrained model). What
-survives as distinct to actinn-jax is therefore not the broad reference but **refinement
-into label sets no pretrained model carries**, at a cost that keeps the chain on a laptop.
+our census-built reference and we make no claim to improve on its annotations. What we do
+with it instead is **use it**: distilling its labels and its hierarchy into actinn-jax
+produces a tier-1 model of comparable accuracy at roughly nine times its throughput, built
+without a GPU and without labeled data (§3.5). A curated pan-human model is the right thing
+to start from; a small fast model is the right thing to iterate with.
+
+The part of any fixed typology that cannot be performed is the **hand-off**: it cannot
+re-annotate into a user's own focused label set (the HLiCA liver reference, cross-study
+0.23/0.58 → 0.72/0.86) or resolve states below a leaf (hepatocyte zonation). ProtoCloud
+likewise provides uncertainty, gene attribution and a refinement path (fine-tuning a
+pretrained model). What survives as distinct to actinn-jax is therefore not the breadth of
+the broad reference but **the chain it enables** — start pan-human, re-annotate into label
+sets no pretrained model carries, screen what none of them claims — at a cost that keeps
+every stage on a laptop. The distillation recipe is not specific to this teacher or to
+humans: it needs a pretrained annotator whose typology can be read off its outputs, so
+extending the same entry point to other organisms is a matter of finding one (or building
+the tier-1 reference from a labeled census slice, as §3.5's census route does).
 
 ## 5. Limitations
 
@@ -615,6 +655,13 @@ into label sets no pretrained model carries**, at a cost that keeps the chain on
   Geneformer, popV) not run locally.
 - actinn-jax needs more cells/type than linear methods to reach parity (§3.1); on very small
   references it trails.
+- **The distilled tier-1 reference inherits a vocabulary, not a calibration.** Pan-human
+  Azimuth's abstention is trained (and its ECE measured at 0.0044); the distilled student
+  learns hard labels only, so it carries none of that — its confidence barely separates right
+  from wrong (§3.5). Recalibrating it, or distilling from soft targets, is the obvious next
+  step and would need a loss change in the package. Its evaluation is also two withheld
+  *atlases*, not withheld tissue: the census-wide corpus spans 376 tissues, so nothing here
+  measures behaviour on biology the corpus never saw.
 - **The gene budget is dataset-dependent, not a free parameter.** More genes help most
   references but *overfit* a tiny, fine-grained, domain-shifted query (tabula_sapiens −10 pt);
   our reference-CV + cells-per-class selection rule is validated on 6 datasets with a single
@@ -659,7 +706,18 @@ matrix for the three later-added methods on the identical splits), adapters
 (`benchmark/adapters/`), result CSVs (`results/paper*/`, `docs/results_*.csv`, unified matrix
 in `docs/results_paper_matrix_unified.csv`), figure scripts, and the actinn-jax package
 ([github.com/iandriver/actinn-jax](https://github.com/iandriver/actinn-jax)) are in these
-two repositories. HLiCA data © Edgar et al. 2026 (CC-BY 4.0), [doi:10.64898/2026.06.30.735539].
+two repositories. Rebuilding the shipped broad reference is a single documented command
+(`benchmark/explore/update_broad_reference.sh`, [UPDATE_BROAD_REFERENCE.md](UPDATE_BROAD_REFERENCE.md));
+the distilled tier-1 reference is built by `distill_dump.py` → `distill_train.py`
+([PANHUMAN_DISTILL.md](PANHUMAN_DISTILL.md)) and ships as
+`actinn_jax.bundled_reference("panhuman_distill_v1")`.
+
+HLiCA data © Edgar et al. 2026 (CC-BY 4.0), [doi:10.64898/2026.06.30.735539]. The distilled
+reference derives from **Pan-human Azimuth** (Sarkar, Li, Molla, … Satija, bioRxiv 2026,
+[doi:10.64898/2026.07.16.738997](https://doi.org/10.64898/2026.07.16.738997)); its weights are
+© the authors under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), obtained via
+`panhumanpy` (MIT) and [Zenodo](https://doi.org/10.5281/zenodo.20401417). Attribution is a
+condition of that licence and travels inside the shipped model's `build_info.json`.
 
 [Abdelaal 2019]: https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1795-z
 [Huang 2024]: https://academic.oup.com/bib/article/25/5/bbae392/7730135
