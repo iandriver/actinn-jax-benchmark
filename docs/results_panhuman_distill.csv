@@ -1,0 +1,3 @@
+arm,n_train,n_test,n_classes,n_groups,fidelity_exact,fidelity_ontology,student_vs_truth,teacher_vs_truth,n_scored,fit_s,predict_s,cells_per_s
+in_corpus,25551,8512,111,41,0.8556,0.8958,0.6663,0.6615,5927,14.8,0.48,17809
+heldout_liver,28721,5342,102,33,0.5286,0.6073,0.407,0.512,5342,14.8,0.38,14134
