@@ -101,14 +101,17 @@ claims or our method's interests — ProtoCloud overtaking actinn-jax at atlas s
 rather than widening memory advantage, a better-resourced broad annotator than our own — they
 are reported in those terms.
 
-**A twelfth method is a cost.** Adding one more entry to a crowded field is not by itself a
-service to it ([xkcd 927]). actinn-jax exists because the original ACTINN no longer installs
-or runs on current toolchains, not because the field lacked a classifier, and nothing here
-argues that it should displace the methods it is measured against — on accuracy it sits
-inside a five-way cluster that it does not lead. What we think is worth adding is the
-comparison itself, the cost axes it reports, and a workflow that composes existing pieces;
-where a better-resourced model already exists, the productive move is to build on it rather
-than to compete with it (§3.5).
+**On adding a twelfth method to a crowded field.** We are adding one, and we think it earns
+its place: the original ACTINN no longer installs or runs on current toolchains, and the
+reimplementation's flat, sub-second, memory-bounded inference over a cached reference is what
+makes the multi-stage workflow of §3.5 practical on a laptop. What we are *not* doing is the
+move that makes method papers hard to trust — concluding that the new method wins. It does
+not: on accuracy it sits inside a five-way cluster it does not lead, the panel was assembled
+to include the baselines most likely to beat it, and they do. A field with a dozen working
+methods ([xkcd 927]) is a good reason to be specific about what a new entry is *for* — here,
+a cost profile that lets several models be chained — rather than to claim it supersedes what
+exists. Where a better-resourced model already exists, the productive move is to build on it
+(§3.5).
 
 **Contributions.**
 1. A modern, dependency-light (no TensorFlow) JAX reimplementation of ACTINN with sparse
