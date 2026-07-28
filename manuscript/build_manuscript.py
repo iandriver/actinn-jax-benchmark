@@ -148,6 +148,7 @@ REFS = """
 16. Guo K, Ding J. ProtoCloud: a prototypical self-explaining model for single-cell analysis. *Cell Genomics* 6(6):101217 (2026), doi:10.1016/j.xgen.2026.101217.
 17. Yampolskaya M, Souza H, et al. scTOP: cell identity from single-cell data via parameter-free projection. github.com/Emergent-Behaviors-in-Biology/scTOP.
 18. Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026), doi:10.64898/2026.07.16.738997.
+19. Munroe R. Standards. *xkcd* 927. xkcd.com/927.
 """
 
 FRONT = f"""---

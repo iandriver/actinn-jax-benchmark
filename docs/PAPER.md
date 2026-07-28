@@ -42,10 +42,13 @@ of accuracy are separated by two orders of magnitude in cost.
 
 Because several methods now annotate quickly, accurately, and with a usable handle on unknown
 cells, the useful contribution is not another ranking but an account of **which tool fits
-which job, and what the surrounding workflow looks like**. We report the benchmark as a
-decision aid (accuracy-per-second, accuracy-per-byte, and behaviour from 3k to 49k reference
-cells), then use actinn-jax to demonstrate **end-to-end workflows that a low, flat cost
-profile makes practical**: annotating an unknown human dataset from a **shipped census-scale
+which job, and what the surrounding workflow looks like**. Every method is run on every
+dataset through one harness on identical splits, the panel deliberately includes the
+baselines most likely to beat a small MLP, and the external validation is somebody else's
+benchmark — Open Problems `label_projection`, whose datasets, metrics and ranking we did not
+choose. We report the results as a decision aid (accuracy-per-second, accuracy-per-byte, and
+behaviour from 3k to 49k reference cells), then use actinn-jax to demonstrate **end-to-end
+workflows that a low, flat cost profile makes practical**: annotating an unknown human dataset from a **shipped census-scale
 reference** (~800 cell types, calibrated abstain) with no training; **tissue-aware
 refinement** that halves spurious cross-tissue labels on a liver query; a **broad→refined
 hand-off** to a small focused reference (held-out cross-study liver 0.23/0.58 → 0.72/0.86,
@@ -82,6 +85,30 @@ second, accuracy per byte, and how each behaves as the reference grows. We answe
 neutral 12-method benchmark plus a set of demonstrated workflows, held to a single standard:
 every method runs in its own environment through the same harness, on the same splits, scored
 by the same metrics, and reported as measured — including where actinn-jax is not the leader.
+
+**How the comparison was constrained.** A benchmark written by a method's own author has a
+well-known failure mode: the datasets, baselines and metrics that flatter the method are the
+ones that get reported. We tried to design that freedom out rather than promise restraint.
+Every method runs on **every** dataset, so none appears on a favourable subset, and the two
+methods outside that matrix are named with reasons (§2.2). The panel was chosen to include
+the baselines most likely to beat a small MLP — a carefully tuned linear pipeline, scTOP,
+ProtoCloud — and each of them does beat it somewhere; our own classical tier is left untuned
+while the linear baseline is tuned, which is the unfavourable direction (§5). Metrics are
+fixed across all methods and reported in full. Most importantly, the **external validation is
+somebody else's**: Open Problems `label_projection` (§3.8) sets the datasets, the metrics and
+the ranking, and we did not choose any of them. Where results contradict our own earlier
+claims or our method's interests — ProtoCloud overtaking actinn-jax at atlas scale, a bounded
+rather than widening memory advantage, a better-resourced broad annotator than our own — they
+are reported in those terms.
+
+**A twelfth method is a cost.** Adding one more entry to a crowded field is not by itself a
+service to it ([xkcd 927]). actinn-jax exists because the original ACTINN no longer installs
+or runs on current toolchains, not because the field lacked a classifier, and nothing here
+argues that it should displace the methods it is measured against — on accuracy it sits
+inside a five-way cluster that it does not lead. What we think is worth adding is the
+comparison itself, the cost axes it reports, and a workflow that composes existing pieces;
+where a better-resourced model already exists, the productive move is to build on it rather
+than to compete with it (§3.5).
 
 **Contributions.**
 1. A modern, dependency-light (no TensorFlow) JAX reimplementation of ACTINN with sparse
@@ -633,6 +660,18 @@ humans: it needs a pretrained annotator whose typology can be read off its outpu
 extending the same entry point to other organisms is a matter of finding one (or building
 the tier-1 reference from a labeled census slice, as §3.5's census route does).
 
+**What the speed is for.** Annotation is almost never the result; it is the step before the
+biology, and it is usually run more than once — the labels change when a reference is
+swapped, a threshold moves, a new sample arrives, or a cluster turns out to be two things.
+The argument of this paper is not that a faster classifier produces better labels; at equal
+data most of these methods produce much the same labels (§3.1). It is that when a stage costs
+a second instead of a minute, and a chain of stages fits in memory on the machine already on
+the desk, the loop from question to annotated data to the next question closes in an
+afternoon rather than across a queue. That is the contribution we would defend: not a better
+number in a table, but a workflow — start from the best pan-human model available, refine
+into the labels a given study actually uses, and flag what neither covers — that a working
+scientist can run, inspect, and run again.
+
 ## 5. Limitations
 
 - Single hardware family for the in-house panel (Apple Silicon); no discrete-GPU numbers
@@ -722,4 +761,5 @@ condition of that licence and travels inside the shipped model's `build_info.jso
 [Abdelaal 2019]: https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1795-z
 [Huang 2024]: https://academic.oup.com/bib/article/25/5/bbae392/7730135
 [Ma & Pellegrini 2020]: https://doi.org/10.1093/bioinformatics/btz592
+[xkcd 927]: https://xkcd.com/927/
 [doi:10.64898/2026.06.30.735539]: https://doi.org/10.64898/2026.06.30.735539
