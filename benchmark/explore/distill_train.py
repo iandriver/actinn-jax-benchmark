@@ -198,10 +198,22 @@ def main():
     model.save(a.out)
     sz = sum(os.path.getsize(os.path.join(a.out, f)) for f in os.listdir(a.out)
              if os.path.isfile(os.path.join(a.out, f))) / 1e6
+    # The teacher's weights are CC BY 4.0, so credit is a licence term, not a courtesy.
+    # It is written into the model directory itself: a reference that travels without its
+    # build_info is a reference that travels without its attribution.
     with open(os.path.join(a.out, "build_info.json"), "w") as fh:
         json.dump({"name": os.path.basename(a.out),
                    "built_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                   "teacher": "Pan-human Azimuth (panhumanpy 1.0.0, MIT)",
+                   "teacher": {
+                       "model": "Pan-human Azimuth",
+                       "citation": "Sarkar, Li, Molla, ... Satija. Organism-scale "
+                                   "annotation with Pan-human Azimuth. bioRxiv 2026.",
+                       "doi": "10.64898/2026.07.16.738997",
+                       "package": "panhumanpy 1.0.0 (MIT)",
+                       "weights": "https://doi.org/10.5281/zenodo.20401417",
+                       "weights_license": "CC BY 4.0",
+                       "attribution_required": True,
+                   },
                    "teacher_label": TEACHER_LABEL, "teacher_hierarchy": TEACHER_GROUP,
                    "n_cells": int(corpus.n_obs), "n_classes": len(model.classes),
                    "n_hvg": a.n_hvg, "arms": rows}, fh, indent=2)

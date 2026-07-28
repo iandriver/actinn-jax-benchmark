@@ -51,9 +51,13 @@ def main():
     if os.path.exists(info_path):
         with open(info_path) as fh:
             info = json.load(fh)
-        print(f"{a.name}: built {info.get('built_utc')} from "
-              f"{info.get('n_cells')} cells / {info.get('n_types')} types "
-              f"(census {info.get('census_release', {}).get('release_build', '?')})")
+        # Census-built and distilled references carry different provenance keys; print
+        # whichever the model actually has rather than a row of "None".
+        src = info.get("census_release", {}).get("release_build") or info.get(
+            "teacher", {}).get("model")
+        print(f"{a.name}: built {info.get('built_utc')} from {info.get('n_cells')} cells / "
+              f"{info.get('n_types') or info.get('n_classes')} types"
+              + (f" (source: {src})" if src else ""))
     print(f"loaded: {len(model.classes)} classes, "
           f"{len(set(model.type_to_group.values()))} coarse groups")
 

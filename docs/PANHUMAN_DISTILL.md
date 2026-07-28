@@ -19,7 +19,12 @@ instead of 798 census strings of uneven granularity.
 
 **The distillation corpus is what bounds it.** From three atlases alone the student trailed
 its teacher by 10 points on withheld liver (0.407 vs 0.512); adding the census pull closed
-that to 3 (0.481 vs 0.511). Breadth came from data, not from a better recipe.
+that to 3 (0.481 vs 0.511), and on withheld lung the gap is **1.5** (0.695 vs 0.710).
+Breadth came from data, not from a better recipe.
+
+It ships as `actinn_jax.bundled_reference("panhuman_distill_v1")`. The teacher's weights are
+CC BY 4.0, so **attribution is a licence condition** — see below; the notice travels inside
+the model's `build_info.json`.
 
 Scripts: [`distill_dump.py`](../benchmark/explore/distill_dump.py) (teacher, `.venv-panhuman`)
 → [`distill_train.py`](../benchmark/explore/distill_train.py) (student, core `.venv`).
@@ -81,12 +86,18 @@ Both runs, so the effect of adding breadth is visible:
 | 3 atlases, 34k | held-out liver | 102 | 0.529 | 0.607 | 0.407 | 0.512 |
 | **+ census, 85k** | in-corpus | **324** | 0.757 | 0.822 | 0.513 | 0.521 |
 | **+ census, 85k** | held-out liver | **324** | **0.723** | **0.785** | **0.481** | 0.511 |
+| **+ census, 85k** | held-out lung | **324** | **0.836** | **0.878** | **0.695** | 0.710 |
 
 Only the **held-out liver** rows compare across corpora — the in-corpus test population
 changes when census cells enter it, which is why both student *and teacher* accuracy fall
 there (a harder, broader evaluation, not a worse model). On the fixed liver arm, adding
 census breadth moves agreement 0.529 → **0.723** and closes the accuracy gap from 10.5
 points to **3.0**.
+
+**A second withheld atlas agrees, and more strongly.** Holding out krasnow lung entirely
+(18,550 cells) the student tracks its teacher to **1.5 points** — 0.695 vs 0.710 — at 0.836
+exact agreement. So the liver result is not a one-atlas fluke: once the corpus covers the
+territory, the student is a faithful stand-in for the teacher on data it never saw.
 
 Cost, same machine:
 
@@ -171,13 +182,27 @@ its 5,055-gene panel on **symbols**, while census data is Ensembl-keyed, so a pu
 the symbol column produces a corpus the teacher cannot score. `fetch_census_wide.py` now
 requests it — caught before the 5-hour pull rather than after.
 
-## Licensing
+## Licensing and attribution
 
-`panhumanpy` is **MIT** (v1.0.0), which permits training on its outputs and redistributing
-the result. Before shipping a distilled reference in the package, confirm the terms on the
-**weights** specifically ([Zenodo](https://doi.org/10.5281/zenodo.20401417)) — the package
-license covers the code, and the weights are downloaded separately at first use. Attribute
-Sarkar et al. either way; a distilled model is a derivative of their labeling.
+Both halves are cleared for this use:
+
+| | license |
+|---|---|
+| `panhumanpy` v1.0.0 (code) | **MIT** |
+| Pan-human Azimuth weights ([Zenodo](https://doi.org/10.5281/zenodo.20401417)) | **CC BY 4.0** |
+
+CC BY permits deriving from and redistributing the model **provided credit is given**, and
+a distilled reference is squarely a derivative of their labeling. So attribution is not
+optional politeness here, it is the licence term — any distilled reference we ship must
+carry it, and `distill_train.py` writes it into the model's `build_info.json` so the
+artifact cannot be separated from its credit:
+
+> Distilled from **Pan-human Azimuth** — Sarkar, Li, Molla, … Satija, *Organism-scale
+> annotation with Pan-human Azimuth*, bioRxiv 2026,
+> [doi:10.64898/2026.07.16.738997](https://doi.org/10.64898/2026.07.16.738997). Model
+> weights © the authors, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), via
+> [`panhumanpy`](https://github.com/satijalab/panhumanpy) (MIT) and
+> [Zenodo](https://doi.org/10.5281/zenodo.20401417).
 
 ## Limitations
 
@@ -192,8 +217,9 @@ Sarkar et al. either way; a distilled model is a derivative of their labeling.
   generalization to biology the corpus never saw.
 - **The two runs' test sets differ slightly** (5,342 vs 5,391 liver cells): the
   minimum-cells-per-class filter retains more cells once the corpus is larger.
-- **One held-out arm, one tissue.** Whether the gap closes the same way elsewhere is
-  untested; lung is the obvious second check.
+- **Two held-out atlases, both from the local set.** Liver and lung agree, but neither is a
+  tissue the census sample leaves uncovered — nothing here measures what happens on biology
+  genuinely outside the corpus.
 - **The teacher's `Unassigned` class survives distillation but is barely exercised** —
   0.0–0.3% of the corpus. Its quality-control behaviour is inherited in name; it is not
   measured here.
