@@ -39,15 +39,20 @@ DEFAULT_QUERY = os.path.expanduser("~/Downloads/krasnow_lung_atlas_10x.h5ad")
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--name", default="broad_human_v1")
+    ap.add_argument("--path", default=None,
+                    help="score a model directory directly, before installing it")
     ap.add_argument("--query", default=DEFAULT_QUERY)
     ap.add_argument("--per-label", type=int, default=50)
     ap.add_argument("--obo", default="/tmp/cl-basic.obo")
     ap.add_argument("--min-prob", type=float, default=0.5)
     a = ap.parse_args()
 
-    model = aj.bundled_reference(a.name)
-    info_path = os.path.join(os.path.dirname(aj.hierarchy.__file__), "references",
-                             a.name, "build_info.json")
+    model = (aj.HierarchicalReferenceModel.load(a.path) if a.path
+             else aj.bundled_reference(a.name))
+    info_path = os.path.join(
+        a.path if a.path else os.path.join(os.path.dirname(aj.hierarchy.__file__),
+                                           "references", a.name),
+        "build_info.json")
     if os.path.exists(info_path):
         with open(info_path) as fh:
             info = json.load(fh)
@@ -55,7 +60,11 @@ def main():
         # whichever the model actually has rather than a row of "None".
         src = info.get("census_release", {}).get("release_build") or info.get(
             "teacher", {}).get("model")
-        print(f"{a.name}: built {info.get('built_utc')} from {info.get('n_cells')} cells / "
+        # Report what was actually scored: --name sits at its default when --path is
+        # used, so printing it there labels the run with the wrong model.
+        label = info.get("name") or (os.path.basename(a.path.rstrip("/")) if a.path
+                                     else a.name)
+        print(f"{label}: built {info.get('built_utc')} from {info.get('n_cells')} cells / "
               f"{info.get('n_types') or info.get('n_classes')} types"
               + (f" (source: {src})" if src else ""))
     print(f"loaded: {len(model.classes)} classes, "

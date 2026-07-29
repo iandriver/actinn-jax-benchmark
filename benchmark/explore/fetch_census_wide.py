@@ -112,7 +112,12 @@ with cellxgene_census.open_soma(census_version=CENSUS_VERSION) as census:
         coords = sorted(int(x) for _, idx in batch for x in idx.values)
         for attempt in range(4):
             try:
-                a = cellxgene_census.get_anndata(census, "homo_sapiens",
+                # ORGANISM, not a literal: joinids are per-experiment, so pulling
+                # mouse-selected coords from the human experiment silently returns the
+                # *human* cells that happen to hold those ids -- right cell count, wrong
+                # species, and nothing downstream notices. See the gene-space assertion
+                # below, which exists because that is exactly what happened.
+                a = cellxgene_census.get_anndata(census, ORGANISM,
                     obs_coords=coords, column_names=COLS)
                 a.write_h5ad(fp); done += len(batch); break
             except Exception as e:
@@ -127,6 +132,26 @@ with cellxgene_census.open_soma(census_version=CENSUS_VERSION) as census:
 parts = [sc.read_h5ad(f) for f in sorted(glob.glob(f"{PARTS}/batch_*.h5ad"))]
 a = ad.concat(parts, join="outer", merge="first")
 a.var_names = a.var["feature_id"].astype(str).values
+
+# Two checks the caller cannot do afterwards without re-deriving the plan. Both failed
+# silently once: mouse joinids were pulled from the human experiment, yielding the right
+# NUMBER of cells with human genes, human cell types and unrelated datasets.
+expect = {"mus_musculus": "ENSMUSG", "homo_sapiens": "ENSG"}.get(ORGANISM)
+if expect:
+    head = [g.upper() for g in a.var_names[:200]]
+    frac = sum(g.startswith(expect) for g in head) / max(len(head), 1)
+    if frac < 0.5:
+        raise SystemExit(
+            f"FATAL: pulled genes do not look like {ORGANISM} (expected ids starting "
+            f"{expect}; got e.g. {list(a.var_names[:3])}). The pull came from the wrong "
+            "census experiment -- do not use this file."
+        )
+if ONLY_DATASETS and not set(a.obs.dataset_id.astype(str)) <= ONLY_DATASETS:
+    raise SystemExit(
+        f"FATAL: ONLY_DATASETS requested {sorted(ONLY_DATASETS)} but the pull contains "
+        f"{sorted(set(a.obs.dataset_id.astype(str)))[:5]} -- do not use this file."
+    )
+
 print(f"pulled {a.shape} / {a.obs.cell_type.nunique()} types / {a.obs.tissue.nunique()} "
       f"tissues in {time.time()-t:.0f}s", flush=True)
 a.obs_names_make_unique()
