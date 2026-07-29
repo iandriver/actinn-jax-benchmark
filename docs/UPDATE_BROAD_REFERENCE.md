@@ -1,8 +1,16 @@
 # Updating the shipped broad reference
 
 `actinn_jax.bundled_reference("broad_human_v1")` is a pretrained census-wide model — 798
-cell types, 28 coarse groups, ~50 MB — that ships inside the package. This is how it gets
-rebuilt.
+cell types, 28 coarse groups, ~50 MB — archived at
+[doi:10.5281/zenodo.21688151](https://doi.org/10.5281/zenodo.21688151) and downloaded on
+first use. This is how it gets rebuilt.
+
+One step beyond the stages below: after a rebuild, re-archive it
+(`python tools/package_references.py` in the package repo, which rewrites the checksum the
+shipped code verifies against) and publish a new Zenodo version — otherwise users keep
+downloading the old model, or the new checksum makes the published archive un-installable.
+The concept DOI [10.5281/zenodo.21688150](https://doi.org/10.5281/zenodo.21688150) always
+resolves to the newest version.
 
 One command:
 

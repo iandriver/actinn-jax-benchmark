@@ -1178,7 +1178,14 @@ Open Problems
 {\pard \ql \f0 \sa180 \li0 \fi0 All configs ({\f1 configs/paper*.yaml}, including {\f1 configs/paper_baselines.yaml} which fills the matrix for the three later-added methods on the identical splits), adapters ({\f1 benchmark/adapters/}), result CSVs ({\f1 results/paper*/}, {\f1 docs/results_*.csv}, unified matrix in {\f1 docs/results_paper_matrix_unified.csv}), figure scripts, and the actinn-jax package ({\field{\*\fldinst{HYPERLINK "https://github.com/iandriver/actinn-jax"}}{\fldrslt{\ul
 github.com/iandriver/actinn-jax
 }}}
-) are in these two repositories. Rebuilding the shipped broad reference is a single documented command ({\f1 benchmark/explore/update_broad_reference.sh}); the distilled tier-1 reference is built by {\f1 distill_dump.py} \u8594 ? {\f1 distill_train.py} and ships as {\f1 actinn_jax.bundled_reference("panhuman_distill_v1")}.\par}
+) are in these two repositories. Rebuilding the shipped broad reference is a single documented command ({\f1 benchmark/explore/update_broad_reference.sh}); the distilled tier-1 reference is built by {\f1 distill_dump.py} \u8594 ? {\f1 distill_train.py}; the pan-mouse reference and the Cell-Ontology hierarchy it depends on are in .\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\b Pre-trained references} \u8212- human ({\f1 broad_human_v1}, {\f1 panhuman_distill_v1}), mouse ({\f1 broad_mouse_v1}) and focused liver ({\f1 liver_hlica_v1}/{\f1 v2}) \u8212- are archived at {\field{\*\fldinst{HYPERLINK "https://doi.org/10.5281/zenodo.21688151"}}{\fldrslt{\ul
+doi:10.5281/zenodo.21688151
+}}}
+ (CC BY 4.0; cite the concept DOI {\field{\*\fldinst{HYPERLINK "https://doi.org/10.5281/zenodo.21688150"}}{\fldrslt{\ul
+10.5281/zenodo.21688150
+}}}
+ for the latest version). {\f1 actinn_jax.bundled_reference(name)} downloads and caches them on first use, so no manual retrieval is needed; {\f1 actinn-jax fetch} pre-downloads for offline use.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 HLiCA data \u169 ? Edgar et al.\u160 ?2026 (CC-BY 4.0), [doi:10.64898/2026.06.30.735539]. The distilled reference derives from {\b Pan-human Azimuth} (Sarkar, Li, Molla, \u8230 ? Satija, bioRxiv 2026, {\field{\*\fldinst{HYPERLINK "https://doi.org/10.64898/2026.07.16.738997"}}{\fldrslt{\ul
 doi:10.64898/2026.07.16.738997
 }}}

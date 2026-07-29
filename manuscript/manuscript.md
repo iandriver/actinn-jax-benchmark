@@ -700,8 +700,15 @@ in `docs/results_paper_matrix_unified.csv`), figure scripts, and the actinn-jax 
 ([github.com/iandriver/actinn-jax](https://github.com/iandriver/actinn-jax)) are in these
 two repositories. Rebuilding the shipped broad reference is a single documented command
 (`benchmark/explore/update_broad_reference.sh`);
-the distilled tier-1 reference is built by `distill_dump.py` → `distill_train.py` and ships as
-`actinn_jax.bundled_reference("panhuman_distill_v1")`.
+the distilled tier-1 reference is built by `distill_dump.py` → `distill_train.py`; the pan-mouse reference and the
+Cell-Ontology hierarchy it depends on are in .
+
+**Pre-trained references** — human (`broad_human_v1`, `panhuman_distill_v1`), mouse
+(`broad_mouse_v1`) and focused liver (`liver_hlica_v1`/`v2`) — are archived at
+[doi:10.5281/zenodo.21688151](https://doi.org/10.5281/zenodo.21688151) (CC BY 4.0; cite the
+concept DOI [10.5281/zenodo.21688150](https://doi.org/10.5281/zenodo.21688150) for the
+latest version). `actinn_jax.bundled_reference(name)` downloads and caches them on first
+use, so no manual retrieval is needed; `actinn-jax fetch` pre-downloads for offline use.
 
 HLiCA data © Edgar et al. 2026 (CC-BY 4.0), [doi:10.64898/2026.06.30.735539]. The distilled
 reference derives from **Pan-human Azimuth** (Sarkar, Li, Molla, … Satija, bioRxiv 2026,

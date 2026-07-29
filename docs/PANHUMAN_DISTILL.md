@@ -22,9 +22,12 @@ its teacher by 10 points on withheld liver (0.407 vs 0.512); adding the census p
 that to 3 (0.481 vs 0.511), and on withheld lung the gap is **1.5** (0.695 vs 0.710).
 Breadth came from data, not from a better recipe.
 
-It ships as `actinn_jax.bundled_reference("panhuman_distill_v1")`. The teacher's weights are
-CC BY 4.0, so **attribution is a licence condition** — see below; the notice travels inside
-the model's `build_info.json`.
+It ships as `actinn_jax.bundled_reference("panhuman_distill_v1")` — the one reference small
+enough to live inside the wheel, so it needs no download — and is archived alongside the
+others at [doi:10.5281/zenodo.21688151](https://doi.org/10.5281/zenodo.21688151). The
+teacher's weights are CC BY 4.0, so **attribution is a licence condition** — see below; the
+notice travels inside the model's `build_info.json` and in the Zenodo record's
+`isDerivedFrom` metadata.
 
 Scripts: [`distill_dump.py`](../benchmark/explore/distill_dump.py) (teacher, `.venv-panhuman`)
 → [`distill_train.py`](../benchmark/explore/distill_train.py) (student, core `.venv`).

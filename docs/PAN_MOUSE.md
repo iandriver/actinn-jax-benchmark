@@ -1,7 +1,9 @@
 # A pan-mouse reference, and a hierarchy that needs no GPU
 
 `actinn_jax.bundled_reference("broad_mouse_v1")` — 453 cell types across 85 tissues,
-38 MB, built in **17 seconds of CPU** from a census pull. On 12,646 cells from two mouse
+38 MB, built in **17 seconds of CPU** from a census pull. Archived at
+[doi:10.5281/zenodo.21688151](https://doi.org/10.5281/zenodo.21688151) and downloaded on
+first use (~40 s), so nothing has to be fetched by hand. On 12,646 cells from two mouse
 datasets held out of the reference entirely, it reaches **0.638** ontology concordance
 (**0.718** on the 71% of cells it keeps at `min_prob=0.5`) at **9,712 cells/s**.
 
