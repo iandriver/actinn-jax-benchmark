@@ -126,30 +126,25 @@ def headings(text):
     return "\n".join(out)
 body = headings(body)
 
-# 5. references section
-REFS = """
-# References {-}
+# 5. references section -- generated from docs/references.yaml, which tools/check_references.py
+# validates against the methods and datasets tables. Hand-editing a list here is how scPRINT
+# ended up benchmarked with no citation and five of six datasets with none.
+def _references():
+    import yaml
+    with open(ROOT / "docs" / "references.yaml") as fh:
+        refs = yaml.safe_load(fh)
+    out = ["", "# References {-}", ""]
+    n = 0
+    for key, e in sorted(refs["entries"].items()):
+        if e.get("status") == "unresolved":
+            continue
+        n += 1
+        doi = f" doi:{e['doi']}." if e.get("doi") else ""
+        out.append(f"{n}. {e['text']}{doi}")
+    return "\n".join(out) + "\n"
 
-1. Ma F, Pellegrini M. ACTINN: automated identification of cell types in single cell RNA sequencing. *Bioinformatics* 36(2):533-538 (2020).
-2. Abdelaal T, et al. A comparison of automatic cell identification methods for single-cell RNA sequencing data. *Genome Biology* 20:194 (2019).
-3. Huang Q, et al. Benchmarking single-cell cell-type annotation methods. *Briefings in Bioinformatics* 25(5):bbae392 (2024).
-4. Domínguez Conde C, et al. Cross-tissue immune cell analysis reveals tissue-specific features in humans (CellTypist). *Science* 376:eabl5197 (2022).
-5. Aran D, et al. Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage (SingleR). *Nature Immunology* 20:163-172 (2019).
-6. Kiselev VY, Yiu A, Hemberg M. scmap: projection of single-cell RNA-seq data across data sets. *Nature Methods* 15:359-362 (2018).
-7. Xu C, et al. Probabilistic harmonization and annotation of single-cell transcriptomics data with deep generative models (scANVI). *Molecular Systems Biology* 17:e9620 (2021).
-8. Lotfollahi M, et al. Mapping single-cell data to reference atlases by transfer learning (scArches). *Nature Biotechnology* 40:121-130 (2022).
-9. Chen T, Guestrin C. XGBoost: a scalable tree boosting system. *KDD* 785-794 (2016).
-10. Rosen Y, et al. Universal cell embeddings: a foundation model for cell biology (UCE). *Nature* (2026), doi:10.1038/s41586-026-10689-z.
-11. Lin Z, et al. Evolutionary-scale prediction of atomic-level protein structure with a language model (ESM-2). *Science* 379:1123-1130 (2023).
-12. Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis. openproblems.bio (2024).
-13. Bradbury J, et al. JAX: composable transformations of Python+NumPy programs (2018). github.com/google/jax.
-14. Edgar R, et al. The Human Liver Cell Atlas (HLiCA). doi:10.64898/2026.06.30.735539.
-15. Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. *bioRxiv* (2026), doi:10.64898/2026.02.11.705358.
-16. Guo K, Ding J. ProtoCloud: a prototypical self-explaining model for single-cell analysis. *Cell Genomics* 6(6):101217 (2026), doi:10.1016/j.xgen.2026.101217.
-17. Yampolskaya M, Souza H, et al. scTOP: cell identity from single-cell data via parameter-free projection. github.com/Emergent-Behaviors-in-Biology/scTOP.
-18. Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026), doi:10.64898/2026.07.16.738997.
-19. Munroe R. Standards. *xkcd* 927. xkcd.com/927.
-"""
+
+REFS = _references()
 
 FRONT = f"""---
 title: |

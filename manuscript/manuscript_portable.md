@@ -95,7 +95,8 @@ exists. Where a better-resourced model already exists, the productive move is to
 ## actinn-jax
 
 actinn-jax reimplements ACTINN ([Ma & Pellegrini 2020]) — a 4-layer fully-connected
-network (100/50/25 hidden units, ReLU, softmax) trained with Adam — in JAX/optax, replacing
+network (100/50/25 hidden units, ReLU, softmax) trained with Adam — in JAX/optax
+([Bradbury 2018]), replacing
 the original's TensorFlow-1.x graph/session code. Key engineering:
 - **Sparse-aware preprocessing**: no `adata.to_df` densification; CP10k+log2
   normalization and the expression / coefficient-of-variation gene filter run on sparse
@@ -119,21 +120,24 @@ engineering win is the point, not an accuracy comparison.
 
 ## Benchmarked methods
 
-| method | tier | engine | rejection | env |
-|---|---|---|---|---|
-| **actinn-jax** | classical | JAX MLP | abstain (min_prob) | core |
-| SVM | classical | linear SVM (SGD) | — | core |
-| kNN | classical | k-nearest neighbors | — | core |
-| CellTypist | linear | L2 logistic regression | prob threshold | core |
-| **linear-anova-pca** | linear | normalize→ANOVA→PCA(220)→logreg | prob | core |
-| **scTOP** | parameter-free | rank z-score class-average projection | — | core (`sctop`) |
-| SingleR | correlation | Spearman + fine-tuning | — | R/.Rlib |
-| scmap-cluster | correlation | centroid cosine | yes (unassigned) | R/.Rlib |
-| scANVI | deep | scVI semi-supervised VAE | prob | .venv-scvi (MPS) |
-| scArches | deep | scANVI reference surgery | prob | .venv-scvi (MPS) |
-| **ProtoCloud** | deep | prototype VAE + LRP attribution | ambiguity flag | .venv-protocloud |
-| scPRINT | foundation | pretrained transformer, zero-shot | — | .venv-scprint (MPS) |
-| **Pan-human Azimuth** | pretrained | 8-level hierarchical NN, fixed 382-leaf typology | trained `Unassigned` | .venv-panhuman |
+| method | source | tier | engine | rejection | env |
+|---|---|---|---|---|---|
+| **actinn-jax** | [Ma & Pellegrini 2020] | classical | JAX MLP | abstain (`min_prob`) | core |
+| SVM | [Pedregosa 2011] | classical | linear SVM (SGD) | — | core |
+| kNN | [Pedregosa 2011] | classical | k-nearest neighbors | — | core |
+| CellTypist | [Domínguez Conde 2022] | linear | L2 logistic regression | prob threshold | core |
+| **linear-anova-pca** | [Pedregosa 2011] † | linear | normalize→ANOVA→PCA(220)→logreg | prob | core |
+| **scTOP** | [Yampolskaya 2023] | parameter-free | rank z-score class-average projection | — | core (`sctop`) |
+| SingleR | [Aran 2019] | correlation | Spearman + fine-tuning | — | R/.Rlib |
+| scmap-cluster | [Kiselev 2018] | correlation | centroid cosine | yes (unassigned) | R/.Rlib |
+| scANVI | [Xu 2021] | deep | scVI semi-supervised VAE | prob | .venv-scvi (MPS) |
+| scArches | [Lotfollahi 2022] | deep | scANVI reference surgery | prob | .venv-scvi (MPS) |
+| **ProtoCloud** | [Guo & Ding 2026] | deep | prototype VAE + LRP attribution | ambiguity flag | .venv-protocloud |
+| scPRINT | [Kalfon 2025] | foundation | pretrained transformer, zero-shot | — | .venv-scprint (MPS) |
+| **Pan-human Azimuth** | [Sarkar et al. 2026] | pretrained | 8-level hierarchical NN, fixed 382-leaf typology | trained `Unassigned` | .venv-panhuman |
+
+† `linear-anova-pca` has no method paper: it is a baseline assembled here from scikit-learn
+components, tuned deliberately to be the strongest simple competitor we could build (§1).
 
 **Ten of the twelve are trained on each dataset's own reference** and run the full
 accuracy/cost matrix of §3.1 on all six datasets, so none is compared on a favourable subset.
@@ -165,14 +169,21 @@ API and older harmony versions do not compile on the current toolchain.
 
 ## Datasets
 
-| dataset | split | tissue | #types | genes | notes |
-|---|---|---|---|---|---|
-| lung_intra | within-dataset | lung (Krasnow) | 46 | Ensembl | 300 cells/type ref |
-| lung_cross | cross-dataset | lung (HCLA→Krasnow) | 46 | Ensembl | different lab/protocol |
-| liver_intra | within-dataset | liver (HLiCA) | 36 | Ensembl | 150 cells/type |
-| liver_cross | cross-**study** | liver (HLiCA) | 34 | Ensembl | train 6 studies → test withheld study |
-| blood_gut_intra | within-dataset | blood+gut (Sanger) | 86 | Ensembl | high cardinality; no CL ids |
-| pbmc | within-dataset | PBMC (pbmc3k) | 8 | symbols | small-n; scPRINT skips (symbols) |
+| dataset | source | split | tissue | #types | genes | notes |
+|---|---|---|---|---|---|---|
+| lung_intra | [Travaglini 2020] | within-dataset | lung (Krasnow) | 46 | Ensembl | 300 cells/type ref |
+| lung_cross | [Sikkema 2023] → [Travaglini 2020] | cross-dataset | lung (HLCA→Krasnow) | 46 | Ensembl | different lab/protocol |
+| liver_intra | [Edgar 2026] | within-dataset | liver (HLiCA) | 36 | Ensembl | 150 cells/type |
+| liver_cross | [Edgar 2026] | cross-**study** | liver (HLiCA) | 34 | Ensembl | train 6 studies → test withheld study |
+| blood_gut_intra | **source unresolved** ‡ | within-dataset | blood+gut (Sanger) | 86 | Ensembl | high cardinality; no CL ids |
+| pbmc | [10x Genomics 2016] | within-dataset | PBMC (pbmc3k) | 8 | symbols | small-n; scPRINT skips (symbols) |
+
+‡ The blood+gut atlas carries Sanger-style annotation columns and blood / terminal-ileum /
+rectum samples, but this repository records no fetch script for it and the file carries no
+provenance, so we do not assert a citation we cannot verify. It contributes only to the
+86-type high-cardinality row and carries no Cell Ontology ids, so no ontology-scored result
+depends on it. Resolving it is tracked by `tools/check_references.py`, which fails while it
+is open.
 
 The set spans the three generalization regimes (within-dataset, across datasets, across
 studies), an order of magnitude in cell-type count (8→86), and both gene-ID conventions.
@@ -228,7 +239,7 @@ The shipped broad-pass references (§3.4) are built once, offline, by a three-st
 driven by one command (`update_broad_reference.sh`;
 ).
 
-**Sampling.** All primary cells for one organism in the CELLxGENE census
+**Sampling.** All primary cells for one organism in the CELLxGENE Census [CZI Census 2025]
 (`is_primary_data == True`), stratified by `cell_type` at a fixed cap per type — 40 for
 `broad_human_v1`, 60 for the later human and mouse pulls — dropping types with fewer than 12
 cells and the uninformative labels (`unknown`, `native cell`, `eukaryotic cell`, `animal
@@ -335,7 +346,7 @@ Reported per method; the point of interest is which curves cross.
 
 ## External validation protocol
 
-**Open Problems `label_projection`** supplies the
+**Open Problems `label_projection`** [Open Problems 2024] supplies the
 datasets, metrics and ranking — none chosen by us. actinn-jax is packaged as a viash 0.9.7
 component (`config.vsh.yaml` + `script.py`) declaring its `preferred_normalization`, and run
 through the project's own Nextflow workflow. We additionally built components for four
@@ -361,8 +372,8 @@ methods, all selectable without test labels:
 - **Gene budget** — Open Problems feeds every method 1,000 HVGs; we sweep wider panels and
   select per dataset by **held-out reference cross-validation**, which is label-free with
   respect to the test set.
-- **Protein-embedding featurization** (negative control) — a CPU-only featurization in the style of **Universal Cell Embeddings (UCE)** — an
-  expression-weighted mean of ESM2 protein-language-model gene embeddings — to test whether a foundation model's value
+- **Protein-embedding featurization** (negative control) — a CPU-only featurization in the style of **Universal Cell Embeddings (UCE)** [Rosen 2026] — an
+  expression-weighted mean of ESM2 [Lin 2023] protein-language-model gene embeddings — to test whether a foundation model's value
   survives a cheap pooling shortcut.
 
 # Results
@@ -665,7 +676,7 @@ published v2.0.0 leaderboard.
 17 on mean accuracy (0.837), 1st among all methods that complete every dataset**, beats its
 PCA-space `mlp` sibling, and posts the best accuracy of any completing method on the hardest
 dataset (tabula_sapiens, 160 types: 0.394 vs mlp 0.342). It is upper-mid on macro-F1 and
-**not the top method overall** — scANVI+scArches surgery and xgboost score higher on the
+**not the top method overall** — scANVI+scArches surgery and xgboost [Chen & Guestrin 2016] score higher on the
 datasets they finish, though both **fail to complete tabula_sapiens**, which is why they
 rank above actinn-jax only on a mean over the 5 easier datasets. The foundation models again
 land at the bottom (scgpt_zeroshot 0.639, uce 0.131 ≈ the random-labels control),
@@ -805,7 +816,7 @@ matrix, ahead on lung, and the strongest method of all at atlas scale (§3.1, §
 (`PROTOCLOUD.md`). The richer model pays off where it has the data to
 support it, and not before — which is an argument for matching model capacity to reference
 size, not for preferring small models everywhere. Second, and more broadly,
-Souza & Mehta report that
+Souza & Mehta [Souza & Mehta 2026] report that
 **parameter-free linear representations** match or exceed single-cell foundation models across
 cross-species transfer, human cell-type classification and disease-state prediction — on
 Tabula Sapiens 2.0 their normalize→ANOVA→PCA→logistic-regression pipeline reaches mean
@@ -972,22 +983,28 @@ condition of that licence and travels inside the shipped model's `build_info.jso
 
 # References {-}
 
-1. Ma F, Pellegrini M. ACTINN: automated identification of cell types in single cell RNA sequencing. *Bioinformatics* 36(2):533-538 (2020).
-2. Abdelaal T, et al. A comparison of automatic cell identification methods for single-cell RNA sequencing data. *Genome Biology* 20:194 (2019).
-3. Huang Q, et al. Benchmarking single-cell cell-type annotation methods. *Briefings in Bioinformatics* 25(5):bbae392 (2024).
-4. Domínguez Conde C, et al. Cross-tissue immune cell analysis reveals tissue-specific features in humans (CellTypist). *Science* 376:eabl5197 (2022).
-5. Aran D, et al. Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage (SingleR). *Nature Immunology* 20:163-172 (2019).
-6. Kiselev VY, Yiu A, Hemberg M. scmap: projection of single-cell RNA-seq data across data sets. *Nature Methods* 15:359-362 (2018).
-7. Xu C, et al. Probabilistic harmonization and annotation of single-cell transcriptomics data with deep generative models (scANVI). *Molecular Systems Biology* 17:e9620 (2021).
-8. Lotfollahi M, et al. Mapping single-cell data to reference atlases by transfer learning (scArches). *Nature Biotechnology* 40:121-130 (2022).
-9. Chen T, Guestrin C. XGBoost: a scalable tree boosting system. *KDD* 785-794 (2016).
-10. Rosen Y, et al. Universal cell embeddings: a foundation model for cell biology (UCE). *Nature* (2026), doi:10.1038/s41586-026-10689-z.
-11. Lin Z, et al. Evolutionary-scale prediction of atomic-level protein structure with a language model (ESM-2). *Science* 379:1123-1130 (2023).
-12. Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis. openproblems.bio (2024).
-13. Bradbury J, et al. JAX: composable transformations of Python+NumPy programs (2018). github.com/google/jax.
-14. Edgar R, et al. The Human Liver Cell Atlas (HLiCA). doi:10.64898/2026.06.30.735539.
-15. Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. *bioRxiv* (2026), doi:10.64898/2026.02.11.705358.
-16. Guo K, Ding J. ProtoCloud: a prototypical self-explaining model for single-cell analysis. *Cell Genomics* 6(6):101217 (2026), doi:10.1016/j.xgen.2026.101217.
-17. Yampolskaya M, Souza H, et al. scTOP: cell identity from single-cell data via parameter-free projection. github.com/Emergent-Behaviors-in-Biology/scTOP.
-18. Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026), doi:10.64898/2026.07.16.738997.
-19. Munroe R. Standards. *xkcd* 927. xkcd.com/927.
+1. 10x Genomics. 3k PBMCs from a healthy donor, Cell Ranger 1.1.0 (2016). Distributed with scanpy as `pbmc3k`.
+2. Abdelaal T, et al. A comparison of automatic cell identification methods for single-cell RNA sequencing data. *Genome Biology* 20:194 (2019). doi:10.1186/s13059-019-1795-z.
+3. Aran D, et al. Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage (SingleR). *Nature Immunology* 20:163-172 (2019). doi:10.1038/s41590-018-0276-y.
+4. Bradbury J, et al. JAX: composable transformations of Python+NumPy programs (2018). github.com/google/jax.
+5. CZI Cell Science Program. CZ CELLxGENE Discover Census, LTS release 2025-11-08. chanzuckerberg.github.io/cellxgene-census.
+6. Chen T, Guestrin C. XGBoost: a scalable tree boosting system. *KDD* 785-794 (2016).
+7. Domínguez Conde C, et al. Cross-tissue immune cell analysis reveals tissue-specific features in humans (CellTypist). *Science* 376:eabl5197 (2022). doi:10.1126/science.abl5197.
+8. Edgar R, et al. The Human Liver Cell Atlas (HLiCA). *bioRxiv* (2026). doi:10.64898/2026.06.30.735539.
+9. Guo K, Ding J. ProtoCloud: a prototypical self-explaining model for single-cell analysis. *Cell Genomics* 6(6):101217 (2026). doi:10.1016/j.xgen.2026.101217.
+10. Huang Q, et al. Benchmarking single-cell cell-type annotation methods. *Briefings in Bioinformatics* 25(5):bbae392 (2024).
+11. Kalfon J, Samaran J, Peyré G, Cantini L. scPRINT: pre-training on 50 million cells allows robust gene network predictions. *Nature Communications* (2025). doi:10.1038/s41467-025-58699-1.
+12. Kiselev VY, Yiu A, Hemberg M. scmap: projection of single-cell RNA-seq data across data sets. *Nature Methods* 15:359-362 (2018). doi:10.1038/nmeth.4644.
+13. Lin Z, et al. Evolutionary-scale prediction of atomic-level protein structure with a language model (ESM-2). *Science* 379:1123-1130 (2023). doi:10.1126/science.ade2574.
+14. Lotfollahi M, et al. Mapping single-cell data to reference atlases by transfer learning (scArches). *Nature Biotechnology* 40:121-130 (2022). doi:10.1038/s41587-021-01001-7.
+15. Ma F, Pellegrini M. ACTINN: automated identification of cell types in single cell RNA sequencing. *Bioinformatics* 36(2):533-538 (2020). doi:10.1093/bioinformatics/btz592.
+16. Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis. openproblems.bio (2024).
+17. Pedregosa F, et al. Scikit-learn: machine learning in Python. *JMLR* 12:2825-2830 (2011).
+18. Rosen Y, et al. Universal cell embeddings: a foundation model for cell biology (UCE). *Nature* (2026). doi:10.1038/s41586-026-10689-z.
+19. Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026). doi:10.64898/2026.07.16.738997.
+20. Sikkema L, et al. An integrated cell atlas of the lung in health and disease (HLCA). *Nature Medicine* 29:1563-1577 (2023). doi:10.1038/s41591-023-02327-2.
+21. Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. *bioRxiv* (2026). doi:10.64898/2026.02.11.705358.
+22. Travaglini KJ, Nabhan AN, Penland L, et al. A molecular cell atlas of the human lung from single-cell RNA sequencing. *Nature* 587(7835):619-625 (2020). doi:10.1038/s41586-020-2922-4.
+23. Xu C, et al. Probabilistic harmonization and annotation of single-cell transcriptomics data with deep generative models (scANVI). *Molecular Systems Biology* 17:e9620 (2021). doi:10.15252/msb.20209620.
+24. Yampolskaya M, Souza H, et al. scTOP: cell identity from single-cell data via parameter-free projection. github.com/Emergent-Behaviors-in-Biology/scTOP.
+25. Munroe R. Standards. *xkcd* 927. xkcd.com/927.

@@ -1,0 +1,164 @@
+# Single source of truth for every citation in the paper.
+#
+# `tools/check_references.py` enforces that:
+#   * every method in PAPER.md section 2.2 has a `cite:` key here
+#   * every dataset in section 2.3 has one
+#   * every [Key] used inline resolves to an entry
+#   * no entry is unresolved (status: unresolved fails the check)
+#
+# `manuscript/build_manuscript.py` generates the numbered reference list from this file,
+# so the list cannot drift from what the text actually cites.
+#
+# status:
+#   verified   — bibliographic details checked against the publisher record
+#   software   — a tool/repo with no paper; cite the artifact
+#   unresolved — WE DO NOT KNOW the source. Fails the check. Do not guess a citation:
+#                a wrong dataset attribution is worse than an admitted gap.
+
+methods:
+  actinn-jax:
+    cite: Ma & Pellegrini 2020
+    note: actinn-jax reimplements ACTINN; this is the original method paper
+  SVM:
+    cite: Pedregosa 2011
+  kNN:
+    cite: Pedregosa 2011
+  CellTypist:
+    cite: Domínguez Conde 2022
+  linear-anova-pca:
+    cite: Pedregosa 2011
+    note: baseline assembled here from scikit-learn components; no separate paper
+  scTOP:
+    cite: Yampolskaya 2023
+  SingleR:
+    cite: Aran 2019
+  scmap-cluster:
+    cite: Kiselev 2018
+  scANVI:
+    cite: Xu 2021
+  scArches:
+    cite: Lotfollahi 2022
+  ProtoCloud:
+    cite: Guo & Ding 2026
+  scPRINT:
+    cite: Kalfon 2025
+  Pan-human Azimuth:
+    cite: Sarkar et al. 2026
+
+datasets:
+  lung_intra:
+    cite: Travaglini 2020
+  lung_cross:
+    cite: [Sikkema 2023, Travaglini 2020]
+    note: HLCA (reference) -> Travaglini/Krasnow (query)
+  liver_intra:
+    cite: Edgar 2026
+  liver_cross:
+    cite: Edgar 2026
+  blood_gut_intra:
+    cite: UNRESOLVED blood_gut
+  pbmc:
+    cite: 10x Genomics 2016
+
+entries:
+  Ma & Pellegrini 2020:
+    text: "Ma F, Pellegrini M. ACTINN: automated identification of cell types in single cell RNA sequencing. *Bioinformatics* 36(2):533-538 (2020)."
+    doi: 10.1093/bioinformatics/btz592
+    status: verified
+  Abdelaal 2019:
+    text: "Abdelaal T, et al. A comparison of automatic cell identification methods for single-cell RNA sequencing data. *Genome Biology* 20:194 (2019)."
+    doi: 10.1186/s13059-019-1795-z
+    status: verified
+  Huang 2024:
+    text: "Huang Q, et al. Benchmarking single-cell cell-type annotation methods. *Briefings in Bioinformatics* 25(5):bbae392 (2024)."
+    status: verified
+  Domínguez Conde 2022:
+    text: "Domínguez Conde C, et al. Cross-tissue immune cell analysis reveals tissue-specific features in humans (CellTypist). *Science* 376:eabl5197 (2022)."
+    doi: 10.1126/science.abl5197
+    status: verified
+  Aran 2019:
+    text: "Aran D, et al. Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage (SingleR). *Nature Immunology* 20:163-172 (2019)."
+    doi: 10.1038/s41590-018-0276-y
+    status: verified
+  Kiselev 2018:
+    text: "Kiselev VY, Yiu A, Hemberg M. scmap: projection of single-cell RNA-seq data across data sets. *Nature Methods* 15:359-362 (2018)."
+    doi: 10.1038/nmeth.4644
+    status: verified
+  Xu 2021:
+    text: "Xu C, et al. Probabilistic harmonization and annotation of single-cell transcriptomics data with deep generative models (scANVI). *Molecular Systems Biology* 17:e9620 (2021)."
+    doi: 10.15252/msb.20209620
+    status: verified
+  Lotfollahi 2022:
+    text: "Lotfollahi M, et al. Mapping single-cell data to reference atlases by transfer learning (scArches). *Nature Biotechnology* 40:121-130 (2022)."
+    doi: 10.1038/s41587-021-01001-7
+    status: verified
+  Pedregosa 2011:
+    text: "Pedregosa F, et al. Scikit-learn: machine learning in Python. *JMLR* 12:2825-2830 (2011)."
+    status: verified
+  Chen & Guestrin 2016:
+    text: "Chen T, Guestrin C. XGBoost: a scalable tree boosting system. *KDD* 785-794 (2016)."
+    status: verified
+  Rosen 2026:
+    text: "Rosen Y, et al. Universal cell embeddings: a foundation model for cell biology (UCE). *Nature* (2026)."
+    doi: 10.1038/s41586-026-10689-z
+    status: verified
+  Lin 2023:
+    text: "Lin Z, et al. Evolutionary-scale prediction of atomic-level protein structure with a language model (ESM-2). *Science* 379:1123-1130 (2023)."
+    doi: 10.1126/science.ade2574
+    status: verified
+  Open Problems 2024:
+    text: "Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis. openproblems.bio (2024)."
+    status: software
+  Bradbury 2018:
+    text: "Bradbury J, et al. JAX: composable transformations of Python+NumPy programs (2018). github.com/google/jax."
+    status: software
+  Edgar 2026:
+    text: "Edgar R, et al. The Human Liver Cell Atlas (HLiCA). *bioRxiv* (2026)."
+    doi: 10.64898/2026.06.30.735539
+    status: verified
+  Souza & Mehta 2026:
+    text: "Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. *bioRxiv* (2026)."
+    doi: 10.64898/2026.02.11.705358
+    status: verified
+  Guo & Ding 2026:
+    text: "Guo K, Ding J. ProtoCloud: a prototypical self-explaining model for single-cell analysis. *Cell Genomics* 6(6):101217 (2026)."
+    doi: 10.1016/j.xgen.2026.101217
+    status: verified
+  Yampolskaya 2023:
+    text: "Yampolskaya M, Souza H, et al. scTOP: cell identity from single-cell data via parameter-free projection. github.com/Emergent-Behaviors-in-Biology/scTOP."
+    status: software
+  Sarkar et al. 2026:
+    text: "Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026)."
+    doi: 10.64898/2026.07.16.738997
+    status: verified
+  Kalfon 2025:
+    text: "Kalfon J, Samaran J, Peyré G, Cantini L. scPRINT: pre-training on 50 million cells allows robust gene network predictions. *Nature Communications* (2025)."
+    doi: 10.1038/s41467-025-58699-1
+    status: verified
+  Travaglini 2020:
+    text: "Travaglini KJ, Nabhan AN, Penland L, et al. A molecular cell atlas of the human lung from single-cell RNA sequencing. *Nature* 587(7835):619-625 (2020)."
+    doi: 10.1038/s41586-020-2922-4
+    status: verified
+  Sikkema 2023:
+    text: "Sikkema L, et al. An integrated cell atlas of the lung in health and disease (HLCA). *Nature Medicine* 29:1563-1577 (2023)."
+    doi: 10.1038/s41591-023-02327-2
+    status: verified
+  10x Genomics 2016:
+    text: "10x Genomics. 3k PBMCs from a healthy donor, Cell Ranger 1.1.0 (2016). Distributed with scanpy as `pbmc3k`."
+    status: software
+  CZI Census 2025:
+    text: "CZI Cell Science Program. CZ CELLxGENE Discover Census, LTS release 2025-11-08. chanzuckerberg.github.io/cellxgene-census."
+    status: software
+  xkcd 927:
+    text: "Munroe R. Standards. *xkcd* 927. xkcd.com/927."
+    status: software
+  UNRESOLVED blood_gut:
+    text: "SOURCE NOT ESTABLISHED — see check_references.py output."
+    status: unresolved
+    note: >
+      blood_gut_intra.h5ad carries Sanger-style obs columns (Final_labels, Category,
+      Lineage, sanger_sample_id) and tissues blood / ti / r, but no fetch script in this
+      repo records where it came from and the file has no provenance in .uns. It is
+      probably a Sanger gut/blood atlas, and probably Elmentaite 2021 (Nature 595:250-255,
+      doi:10.1038/s41586-021-03852-1) — but that atlas is intestinal tract only, while this
+      file also contains blood, so the match is not established. Resolve before submission.

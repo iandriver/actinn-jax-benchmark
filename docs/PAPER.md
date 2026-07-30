@@ -155,7 +155,8 @@ exists. Where a better-resourced model already exists, the productive move is to
 ### 2.1 actinn-jax
 
 actinn-jax reimplements ACTINN ([Ma & Pellegrini 2020]) — a 4-layer fully-connected
-network (100/50/25 hidden units, ReLU, softmax) trained with Adam — in JAX/optax, replacing
+network (100/50/25 hidden units, ReLU, softmax) trained with Adam — in JAX/optax
+([Bradbury 2018]), replacing
 the original's TensorFlow-1.x graph/session code. Key engineering:
 - **Sparse-aware preprocessing**: no `adata.to_df()` densification; CP10k+log2
   normalization and the expression / coefficient-of-variation gene filter run on sparse
@@ -179,21 +180,24 @@ engineering win is the point, not an accuracy comparison.
 
 ### 2.2 Benchmarked methods
 
-| method | tier | engine | rejection | env |
-|---|---|---|---|---|
-| **actinn-jax** | classical | JAX MLP | abstain (min_prob) | core |
-| SVM | classical | linear SVM (SGD) | — | core |
-| kNN | classical | k-nearest neighbors | — | core |
-| CellTypist | linear | L2 logistic regression | prob threshold | core |
-| **linear-anova-pca** | linear | normalize→ANOVA→PCA(220)→logreg | prob | core |
-| **scTOP** | parameter-free | rank z-score class-average projection | — | core (`sctop`) |
-| SingleR | correlation | Spearman + fine-tuning | — | R/.Rlib |
-| scmap-cluster | correlation | centroid cosine | yes (unassigned) | R/.Rlib |
-| scANVI | deep | scVI semi-supervised VAE | prob | .venv-scvi (MPS) |
-| scArches | deep | scANVI reference surgery | prob | .venv-scvi (MPS) |
-| **ProtoCloud** | deep | prototype VAE + LRP attribution | ambiguity flag | .venv-protocloud |
-| scPRINT | foundation | pretrained transformer, zero-shot | — | .venv-scprint (MPS) |
-| **Pan-human Azimuth** | pretrained | 8-level hierarchical NN, fixed 382-leaf typology | trained `Unassigned` | .venv-panhuman |
+| method | source | tier | engine | rejection | env |
+|---|---|---|---|---|---|
+| **actinn-jax** | [Ma & Pellegrini 2020] | classical | JAX MLP | abstain (`min_prob`) | core |
+| SVM | [Pedregosa 2011] | classical | linear SVM (SGD) | — | core |
+| kNN | [Pedregosa 2011] | classical | k-nearest neighbors | — | core |
+| CellTypist | [Domínguez Conde 2022] | linear | L2 logistic regression | prob threshold | core |
+| **linear-anova-pca** | [Pedregosa 2011] † | linear | normalize→ANOVA→PCA(220)→logreg | prob | core |
+| **scTOP** | [Yampolskaya 2023] | parameter-free | rank z-score class-average projection | — | core (`sctop`) |
+| SingleR | [Aran 2019] | correlation | Spearman + fine-tuning | — | R/.Rlib |
+| scmap-cluster | [Kiselev 2018] | correlation | centroid cosine | yes (unassigned) | R/.Rlib |
+| scANVI | [Xu 2021] | deep | scVI semi-supervised VAE | prob | .venv-scvi (MPS) |
+| scArches | [Lotfollahi 2022] | deep | scANVI reference surgery | prob | .venv-scvi (MPS) |
+| **ProtoCloud** | [Guo & Ding 2026] | deep | prototype VAE + LRP attribution | ambiguity flag | .venv-protocloud |
+| scPRINT | [Kalfon 2025] | foundation | pretrained transformer, zero-shot | — | .venv-scprint (MPS) |
+| **Pan-human Azimuth** | [Sarkar et al. 2026] | pretrained | 8-level hierarchical NN, fixed 382-leaf typology | trained `Unassigned` | .venv-panhuman |
+
+† `linear-anova-pca` has no method paper: it is a baseline assembled here from scikit-learn
+components, tuned deliberately to be the strongest simple competitor we could build (§1).
 
 **Ten of the twelve are trained on each dataset's own reference** and run the full
 accuracy/cost matrix of §3.1 on all six datasets, so none is compared on a favourable subset.
@@ -225,14 +229,21 @@ API and older harmony versions do not compile on the current toolchain.
 
 ### 2.3 Datasets
 
-| dataset | split | tissue | #types | genes | notes |
-|---|---|---|---|---|---|
-| lung_intra | within-dataset | lung (Krasnow) | 46 | Ensembl | 300 cells/type ref |
-| lung_cross | cross-dataset | lung (HCLA→Krasnow) | 46 | Ensembl | different lab/protocol |
-| liver_intra | within-dataset | liver (HLiCA) | 36 | Ensembl | 150 cells/type |
-| liver_cross | cross-**study** | liver (HLiCA) | 34 | Ensembl | train 6 studies → test withheld study |
-| blood_gut_intra | within-dataset | blood+gut (Sanger) | 86 | Ensembl | high cardinality; no CL ids |
-| pbmc | within-dataset | PBMC (pbmc3k) | 8 | symbols | small-n; scPRINT skips (symbols) |
+| dataset | source | split | tissue | #types | genes | notes |
+|---|---|---|---|---|---|---|
+| lung_intra | [Travaglini 2020] | within-dataset | lung (Krasnow) | 46 | Ensembl | 300 cells/type ref |
+| lung_cross | [Sikkema 2023] → [Travaglini 2020] | cross-dataset | lung (HLCA→Krasnow) | 46 | Ensembl | different lab/protocol |
+| liver_intra | [Edgar 2026] | within-dataset | liver (HLiCA) | 36 | Ensembl | 150 cells/type |
+| liver_cross | [Edgar 2026] | cross-**study** | liver (HLiCA) | 34 | Ensembl | train 6 studies → test withheld study |
+| blood_gut_intra | **source unresolved** ‡ | within-dataset | blood+gut (Sanger) | 86 | Ensembl | high cardinality; no CL ids |
+| pbmc | [10x Genomics 2016] | within-dataset | PBMC (pbmc3k) | 8 | symbols | small-n; scPRINT skips (symbols) |
+
+‡ The blood+gut atlas carries Sanger-style annotation columns and blood / terminal-ileum /
+rectum samples, but this repository records no fetch script for it and the file carries no
+provenance, so we do not assert a citation we cannot verify. It contributes only to the
+86-type high-cardinality row and carries no Cell Ontology ids, so no ontology-scored result
+depends on it. Resolving it is tracked by `tools/check_references.py`, which fails while it
+is open.
 
 The set spans the three generalization regimes (within-dataset, across datasets, across
 studies), an order of magnitude in cell-type count (8→86), and both gene-ID conventions.
@@ -288,7 +299,7 @@ The shipped broad-pass references (§3.4) are built once, offline, by a three-st
 driven by one command (`update_broad_reference.sh`;
 [UPDATE_BROAD_REFERENCE.md](UPDATE_BROAD_REFERENCE.md)).
 
-**Sampling.** All primary cells for one organism in the CELLxGENE census
+**Sampling.** All primary cells for one organism in the CELLxGENE Census [CZI Census 2025]
 (`is_primary_data == True`), stratified by `cell_type` at a fixed cap per type — 40 for
 `broad_human_v1`, 60 for the later human and mouse pulls — dropping types with fewer than 12
 cells and the uninformative labels (`unknown`, `native cell`, `eukaryotic cell`, `animal
@@ -397,7 +408,8 @@ Reported per method; the point of interest is which curves cross
 
 ### 2.10 External validation protocol
 
-**Open Problems `label_projection`** ([OPENPROBLEMS.md](OPENPROBLEMS.md)) supplies the
+**Open Problems `label_projection`** [Open Problems 2024]
+([OPENPROBLEMS.md](OPENPROBLEMS.md)) supplies the
 datasets, metrics and ranking — none chosen by us. actinn-jax is packaged as a viash 0.9.7
 component (`config.vsh.yaml` + `script.py`) declaring its `preferred_normalization`, and run
 through the project's own Nextflow workflow. We additionally built components for four
@@ -423,8 +435,8 @@ methods, all selectable without test labels:
 - **Gene budget** — Open Problems feeds every method 1,000 HVGs; we sweep wider panels and
   select per dataset by **held-out reference cross-validation**, which is label-free with
   respect to the test set.
-- **Protein-embedding featurization** (negative control) — a CPU-only featurization in the style of **Universal Cell Embeddings (UCE)** — an
-  expression-weighted mean of ESM2 protein-language-model gene embeddings — to test whether a foundation model's value
+- **Protein-embedding featurization** (negative control) — a CPU-only featurization in the style of **Universal Cell Embeddings (UCE)** [Rosen 2026] — an
+  expression-weighted mean of ESM2 [Lin 2023] protein-language-model gene embeddings — to test whether a foundation model's value
   survives a cheap pooling shortcut.
 
 ## 3. Results
@@ -736,7 +748,7 @@ published v2.0.0 leaderboard (full detail: [OPENPROBLEMS.md](OPENPROBLEMS.md)).
 17 on mean accuracy (0.837), 1st among all methods that complete every dataset**, beats its
 PCA-space `mlp` sibling, and posts the best accuracy of any completing method on the hardest
 dataset (tabula_sapiens, 160 types: 0.394 vs mlp 0.342). It is upper-mid on macro-F1 and
-**not the top method overall** — scANVI+scArches surgery and xgboost score higher on the
+**not the top method overall** — scANVI+scArches surgery and xgboost [Chen & Guestrin 2016] score higher on the
 datasets they finish, though both **fail to complete tabula_sapiens**, which is why they
 rank above actinn-jax only on a mean over the 5 easier datasets. The foundation models again
 land at the bottom (scgpt_zeroshot 0.639, uce 0.131 ≈ the random-labels control),
@@ -871,7 +883,7 @@ matrix, ahead on lung, and the strongest method of all at atlas scale (§3.1, §
 ([`PROTOCLOUD.md`](PROTOCLOUD.md)). The richer model pays off where it has the data to
 support it, and not before — which is an argument for matching model capacity to reference
 size, not for preferring small models everywhere. Second, and more broadly,
-Souza & Mehta report that
+Souza & Mehta [Souza & Mehta 2026] report that
 **parameter-free linear representations** match or exceed single-cell foundation models across
 cross-species transfer, human cell-type classification and disease-state prediction — on
 Tabula Sapiens 2.0 their normalize→ANOVA→PCA→logistic-regression pipeline reaches mean
