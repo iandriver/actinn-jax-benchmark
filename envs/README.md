@@ -1,5 +1,36 @@
 # Per-method environments
 
+**Reproducing the published numbers.** Every environment is pinned in `envs/locks/`, and
+`envs/locks/manifest.json` records the interpreter versions, the platform, and the Cell
+Ontology release with its SHA-256. Restore one with:
+
+```bash
+uv venv --python 3.11 .venv-scvi                     # version from the lockfile header
+uv pip install --python .venv-scvi/bin/python -r envs/locks/scvi.lock.txt
+```
+
+Check whether the installed environments still match:
+
+```bash
+python tools/freeze_envs.py --check     # exits 1 on drift
+python tools/freeze_envs.py             # re-freeze after an intentional change
+```
+
+The Cell Ontology is not a Python package and drifts independently. Pin it explicitly —
+ontology-aware concordance changes when ancestor sets change, with no model changing:
+
+```bash
+curl -sL -o /tmp/cl-basic.obo http://purl.obolibrary.org/obo/cl/releases/2026-06-08/cl-basic.obo
+```
+
+This matters: a rerun of `lung_cross` after an unpinned re-download reproduced the splits
+exactly (14,390 reference / 13,550 query cells) but moved ontology concordance by 0.003 and
+accuracy by one cell in 13,550. Small, but invisible without a pin.
+
+*The locks cover the benchmark environments only.* The actinn-jax library itself declares
+dependency **floors**, not pins — a library that pins its dependents cannot be installed
+alongside anything else.
+
 Heavy or conflicting methods run in their own isolated environments; the driver
 invokes each via subprocess, so dependency sets never clash (R vs Python, jax vs
 torch vs TF). Point a method at its interpreter in the config:

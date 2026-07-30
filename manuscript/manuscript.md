@@ -222,10 +222,13 @@ different label vocabularies (§2.2), and it is reported only where both referen
 carry CL ids — so not on `blood_gut_intra`, and not on the symbol-keyed `pbmc`.
 
 Concordance depends on the ontology release, since ancestor sets change between them. All
-numbers here use **`cl-basic.obo`, CL release 2026-06-08**, resolved once and reused by every
-scoring pass (`benchmark/metrics.py`, via `pronto`). A different release can move concordance
-by a fraction of a point without any model changing, so a rebuild that compares against these
-numbers should pin the same file.
+numbers here use **`cl-basic.obo`, CL release 2026-06-08**
+(sha256 `73996c63…`), resolved once and reused by every scoring pass (`benchmark/metrics.py`,
+via `pronto`). This is not a hypothetical concern: re-running `lung_cross` against a
+later-fetched release reproduced the splits exactly (14,390 reference / 13,550 query cells)
+and still moved concordance by 0.003, with no model changing. The release, its checksum, and
+exact versions for all six benchmark environments are recorded in `envs/locks/`
+(`tools/freeze_envs.py --check` reports drift).
 
 Exact-match accuracy is reported for the ten reference-trained methods and, on `lung_cross`,
 flagged: reference and query use different label vocabularies there, so its exact accuracy is

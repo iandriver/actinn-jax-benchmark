@@ -1,0 +1,43 @@
+{
+  "frozen_utc": "2026-07-30T21:59:16Z",
+  "platform": "Darwin 25.5.0 arm64",
+  "cell_ontology": {
+    "path": "/tmp/cl-basic.obo",
+    "present": true,
+    "data_version": "cl/releases/2026-06-08/cl-basic.owl",
+    "sha256": "73996c6349283e7a8cbd8183367a1cb810d0077e9c291ae0c72bd31e869f8c1c",
+    "size_bytes": 3347518
+  },
+  "environments": {
+    "core": {
+      "present": true,
+      "python": "3.12.13",
+      "packages": 182
+    },
+    "scprint": {
+      "present": true,
+      "python": "3.11.15",
+      "packages": 302
+    },
+    "protocloud": {
+      "present": true,
+      "python": "3.12.13",
+      "packages": 97
+    },
+    "scvi": {
+      "present": true,
+      "python": "3.11.15",
+      "packages": 86
+    },
+    "tf": {
+      "present": true,
+      "python": "3.11.15",
+      "packages": 87
+    },
+    "panhuman": {
+      "present": true,
+      "python": "3.11.15",
+      "packages": 165
+    }
+  }
+}
