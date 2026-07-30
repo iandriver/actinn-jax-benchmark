@@ -45,8 +45,8 @@ cells, the useful contribution is not another ranking but an account of **which 
 which job, and what the surrounding workflow looks like**. Every method is run on every
 dataset through one harness on identical splits, the panel deliberately includes the
 baselines most likely to beat a small MLP, and the external validation is somebody else's
-benchmark — Open Problems `label_projection`, whose datasets, metrics and ranking we did not
-choose. We report the results as a decision aid (accuracy-per-second, accuracy-per-byte, and
+benchmark — **Open Problems (OP)** `label_projection`, whose datasets, metrics and ranking we
+did not choose. We report the results as a decision aid (accuracy-per-second, accuracy-per-byte, and
 behaviour from 3k to 49k reference cells), then use actinn-jax to demonstrate **end-to-end
 workflows that a low, flat cost profile makes practical**, on human data and — via a
 Cell-Ontology-derived hierarchy that takes the accelerator out of the build — on mouse:
@@ -54,7 +54,7 @@ annotating an unknown human dataset from a **shipped census-scale
 reference** (~800 cell types, calibrated abstain) with no training; **tissue-aware
 refinement** that halves spurious cross-tissue labels on a liver query; a **broad→refined
 hand-off** to a small focused reference (held-out cross-study liver 0.23/0.58 → 0.72/0.86,
-exact-CL/ontology); within-cell-type resolution (hepatocyte zonation); and a **cluster-level
+exact-match / Cell-Ontology-aware); within-cell-type resolution (hepatocyte zonation); and a **cluster-level
 novel-cell-type screen** that recovers a withheld pulmonary ionocyte population and its marker
 ASCL3. What enables this is inference that is **sub-second and flat** — independent of
 reference size and cardinality — over a cached reference that is trained once and reused,
@@ -158,7 +158,8 @@ actinn-jax reimplements ACTINN ([Ma & Pellegrini 2020]) — a 4-layer fully-conn
 network (100/50/25 hidden units, ReLU, softmax) trained with Adam — in JAX/optax, replacing
 the original's TensorFlow-1.x graph/session code. Key engineering:
 - **Sparse-aware preprocessing**: no `adata.to_df()` densification; CP10k+log2
-  normalization and the expr/CV gene filter run on sparse matrices; only the selected-gene
+  normalization and the expression / coefficient-of-variation gene filter run on sparse
+  matrices; only the selected-gene
   columns of each minibatch are densified.
 - **Cached reference model** (`ReferenceModel`): train once, `save()`/`load()`, map many
   queries — the amortized cost of repeated annotation against a fixed reference drops to
@@ -199,13 +200,17 @@ accuracy/cost matrix of §3.1 on all six datasets, so none is compared on a favo
 The remaining two are **pretrained annotators with fixed label vocabularies**, which changes
 what can be measured rather than excusing them from measurement:
 
-- **scPRINT** is a zero-shot foundation model over a fixed Cell-Ontology vocabulary; it cannot
+- **scPRINT** is a zero-shot foundation model over a fixed **Cell Ontology (CL)** vocabulary —
+  CL being the standard controlled vocabulary of cell types, used throughout as the common
+  ground between datasets that name the same cell differently; it cannot
   emit labels outside that set and skips symbol-keyed datasets.
 - **Pan-human Azimuth** ([Sarkar et al. 2026]) is a supervised hierarchical classifier over a
   single organism-wide typology — 8 levels, 382 leaves, ~7M parameters, a fixed 5,055-gene
-  panel, trained on 9.7M curated cells, with abstention learned rather than thresholded. It is
-  the closest published counterpart to this paper's broad pass, and the teacher we distill in
-  §3.4. Adapter: [`panhuman_adapter.py`](../benchmark/adapters/panhuman_adapter.py).
+  panel, trained on 9.7M curated cells, with abstention *learned rather than thresholded* —
+  the model is trained to answer `Unassigned`, instead of having a probability cutoff applied
+  to its output afterwards. It is the closest published counterpart to this paper's broad
+  pass, and the teacher we distill in §3.4. Adapter:
+  [`panhuman_adapter.py`](../benchmark/adapters/panhuman_adapter.py).
 
 Neither predicts into the dataset's label strings, so **exact-match accuracy against those
 strings is a vocabulary artifact, not an accuracy signal** — `regulatory T cell` → `Treg cell`
@@ -236,7 +241,7 @@ studies), an order of magnitude in cell-type count (8→86), and both gene-ID co
 
 Per (dataset, method, repeat): **accuracy**; **macro-F1**, unweighted over classes so rare
 types count as much as common ones; **ontology-aware concordance**; **fit time**, **predict
-time**, **peak RSS**.
+time**, and **peak RSS** (resident set size — the maximum physical memory the process held).
 
 **Ontology-aware concordance** credits a call that is the same node, an ancestor, or a
 descendant of the truth in the Cell Ontology. It exists because cell-type vocabularies
@@ -309,9 +314,12 @@ groups plus one fine classifier per group, and the grouping comes from either:
    scPRINT's mouse support is untested here. §3.4 compares the two routes against a
    random-grouping control.
 
-**Training and calibration.** A 4,000-gene HVG panel is selected on the reference; the coarse
+**Training and calibration.** A 4,000-gene panel of **highly variable genes (HVGs)** — the
+genes that differ most across cells, and so carry most of the signal for telling types apart —
+is selected on the reference; the coarse
 and per-group fine models are trained on it. Abstain calibration holds out **10% of cell types
-entirely** as out-of-distribution, plus a 20% within-type test split, and sweeps `min_prob` to
+entirely** as out-of-distribution (OOD — types the model was never trained on, standing in for
+the novel populations a real query contains), plus a 20% within-type test split, and sweeps `min_prob` to
 trade coverage against accuracy on kept cells — the table each shipped reference reports.
 
 **Shipping and verification.** Each reference is written with a `build_info.json` recording
@@ -415,8 +423,8 @@ methods, all selectable without test labels:
 - **Gene budget** — Open Problems feeds every method 1,000 HVGs; we sweep wider panels and
   select per dataset by **held-out reference cross-validation**, which is label-free with
   respect to the test set.
-- **Protein-embedding featurization** (negative control) — a CPU-only, UCE-style
-  expression-weighted mean of ESM2 gene embeddings, to test whether a foundation model's value
+- **Protein-embedding featurization** (negative control) — a CPU-only featurization in the style of **Universal Cell Embeddings (UCE)** — an
+  expression-weighted mean of ESM2 protein-language-model gene embeddings — to test whether a foundation model's value
   survives a cheap pooling shortcut.
 
 ## 3. Results
@@ -832,10 +840,15 @@ same way.
 sets (§3.1, §5), and — a finding from the OP analysis — it is sensitive to input budget under
 domain shift: more genes help most datasets but overfit a tiny, fine-grained, shifted query
 (tabula_sapiens). The two cheapest levers are principled and label-free:
-**standardization** (a scArches-style domain alignment) and a **reference-CV-guided gene
-budget** both improve the model without peeking at test labels, and at a fair gene budget
+**standardization** (a scArches-style domain alignment) and a **gene budget chosen by
+cross-validation on the reference alone** both improve the model without peeking at test labels, and at a fair gene budget
 the gene-space MLP *matches the leaderboard's top method* on the datasets both complete —
-i.e. much of the apparent gap to heavier methods is representation budget, not model class.
+In other words, much of what looked like a deficit of the *model* was a deficit of its
+**input**: the benchmark hands every method 1,000 highly variable genes, which is a far
+harsher constraint on a model reading gene space directly than on one that learns a
+compressed representation first. Widen the gene panel and most of the gap closes — so the
+quantity being measured was partly "how well does each method tolerate a narrow input",
+not "which model class is stronger".
 
 *Foundation models.* Their **zero-shot labels** are the weakest option in both benchmarks
 (scPRINT, scGPT, UCE ≈ random); their **embeddings/structure** are where the value lies, and
@@ -852,9 +865,9 @@ no stake in our conclusion, for both halves of our reading.
 
 *When extra expressivity pays.* Two lines of evidence bear on this. First, **ProtoCloud** —
 a prototype-based, self-explaining VAE with built-in uncertainty and gene-level attribution,
-a strictly richer model than ours — splits by regime rather than by a uniform margin: below
-the top cluster on the subsampled matrix, ahead on lung, and the strongest method at atlas
-scale (§3.1, §5), at ~9× actinn-jax's CPU fit time (146 vs 16 s mean)
+a strictly richer model than ours — does not sit a fixed distance above or below us. Where it
+lands depends on how much reference data it is given: below the top cluster on the subsampled
+matrix, ahead on lung, and the strongest method of all at atlas scale (§3.1, §5), at ~9× actinn-jax's CPU fit time (146 vs 16 s mean)
 ([`PROTOCLOUD.md`](PROTOCLOUD.md)). The richer model pays off where it has the data to
 support it, and not before — which is an argument for matching model capacity to reference
 size, not for preferring small models everywhere. Second, and more broadly,
@@ -867,7 +880,8 @@ explanation: the biologically realized cell manifold is well approximated by a *
 subspace**, so once noise is suppressed performance *saturates* and extra expressivity buys
 little. That is a principled account of why a four-layer MLP over normalized gene space stays
 competitive, and it matches our own finding that the residual gap to heavier methods was mostly
-**representation budget, not model class** (§3.7). They further find that simple methods hold
+**the size of the input each method was given rather than the class of model** (§3.7). They
+further find that simple methods hold
 up *best* out-of-distribution — on novel cell types and unseen organisms. That matters for the
 abstain mechanism of §3.5, which is only useful if low confidence tracks genuine novelty
 rather than model noise: a method whose out-of-distribution behaviour degrades gracefully is
@@ -888,8 +902,9 @@ refinement, calibrated abstain, novel-cell-type screening.
 For the **broad tier specifically, prefer a purpose-built pan-human model**: **Pan-human
 Azimuth** ([`PAN_HUMAN_AZIMUTH.md`](PAN_HUMAN_AZIMUTH.md)) ships a pretrained hierarchical
 classifier over a harmonized organism-wide typology (8 levels, 382 leaf types, trained on
-9.7M curated cells), with abstention learned rather than thresholded and calibration
-measured at ECE 0.0044, running at ~1,000 cells/s on a laptop. It is better resourced than
+9.7M curated cells), with abstention learned rather than thresholded and an **expected
+calibration error (ECE)** of 0.0044 — meaning its stated confidence sits within half a
+percentage point of its observed accuracy — running at ~1,000 cells/s on a laptop. It is better resourced than
 our census-built reference and we make no claim to improve on its annotations. What we do
 with it instead is **use it**: distilling its labels and its hierarchy into actinn-jax
 produces a broad-pass model of comparable accuracy at roughly nine times its throughput, built
@@ -954,7 +969,7 @@ scientist can run, inspect, and run again.
   measures behaviour on biology the corpus never saw.
 - **The gene budget is dataset-dependent, not a free parameter.** More genes help most
   references but *overfit* a tiny, fine-grained, domain-shifted query (tabula_sapiens −10 pt);
-  our reference-CV + cells-per-class selection rule is validated on 6 datasets with a single
+  our reference-cross-validation + cells-per-class selection rule is validated on 6 datasets with a single
   clean failure case, so it is directional evidence, not a tuned threshold.
 - **Standardization is shipped opt-in**, not default, because it shifts probability
   calibration that the two-stage abstain thresholds are tuned against; combining the two
