@@ -43,7 +43,7 @@ classical methods (~0.91) and are much costlier — SingleR's correlation scan i
 *opposite* of PBMC (8 broad types), where SingleR led: correlation/projection
 methods degrade on many closely-related fine types.
 
-## Lung — HCLA → krasnow cross-atlas (22,859 train / 37,688 query)
+## Lung — HLCA → krasnow cross-atlas (22,859 train / 37,688 query)
 
 | method | exact acc | macro-F1 | ontology | fit (s) | predict (s) | mem (MB) |
 |---|---|---|---|---|---|---|

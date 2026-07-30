@@ -63,11 +63,11 @@ trained on the reference. (exact = exact-label for actinn-jax, exact-CL-id for s
 ## 2. Fast CPU classifier from curated atlas data
 
 The better use of the *underlying* curated data: train a lightweight classifier on it.
-Atlases like the **Human Lung Cell Atlas** (HCLA / Sikkema) are themselves integrations
+Atlases like the **Human Lung Cell Atlas** (HLCA / Sikkema) are themselves integrations
 of dozens of datasets with **harmonized Cell Ontology labels** — exactly the curated,
 ontology-standardized data lamindb/CELLxGENE manage.
 
-**actinn-jax trained on HCLA** (50 CL-labeled cell types; `atlas_classifier.py`):
+**actinn-jax trained on HLCA** (50 CL-labeled cell types; `atlas_classifier.py`):
 
 | | value |
 |---|---|

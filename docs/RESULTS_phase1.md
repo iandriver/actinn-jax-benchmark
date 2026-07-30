@@ -2,7 +2,7 @@
 
 **Setup (first pass, deliberately small for fast iteration):** Mac M5 Pro, CPU,
 full machine, math threads capped at 4 per method, `repeats: 1`. Reference
-subsampled per label (krasnow 600/label; HCLA 300/label; cross query capped
+subsampled per label (krasnow 600/label; HLCA 300/label; cross query capped
 1000/label). Single repeat → timings are indicative, not averaged.
 
 ## krasnow within-dataset CV (13,923 train / 4,628 test, 46 cell types)
@@ -14,7 +14,7 @@ subsampled per label (krasnow 600/label; HCLA 300/label; cross query capped
 | svm (SGD)  | 0.901 | 0.894 | 0.929 | 43.2 | 0.20 | 2,504 |
 | knn        | 0.901 | 0.882 | 0.932 | **4.4** | 0.39 | 2,509 |
 
-## HCLA → krasnow cross-atlas (14,390 train / 26,077 query)
+## HLCA → krasnow cross-atlas (14,390 train / 26,077 query)
 
 | method | exact acc | macro-F1 | ontology | fit (s) | predict (s) | peak mem (MB) |
 |---|---|---|---|---|---|---|
