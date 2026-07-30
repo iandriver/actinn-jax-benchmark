@@ -15,7 +15,7 @@ datasets:
 
   - name: hcla_to_krasnow
     type: cross
-    ref_path: ~/Downloads/Sikkama_HCLA.h5ad
+    ref_path: ~/Downloads/Sikkema_HLCA.h5ad
     query_path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
     ref_subsample_per_label: 500
     query_subsample_per_label: 2000

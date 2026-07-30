@@ -12,7 +12,7 @@ import actinn_jax as aj
 
 PER = int(sys.argv[1]) if len(sys.argv)>1 else 300
 print(f"loading HCLA backed, subsampling {PER}/cell_type...", flush=True)
-backed = sc.read_h5ad("/Users/iandriver/Downloads/Sikkama_HCLA.h5ad", backed="r")
+backed = sc.read_h5ad("/Users/iandriver/Downloads/Sikkema_HLCA.h5ad", backed="r")
 labels = np.asarray(backed.obs["cell_type"].values)
 sel = datasets.stratified_subsample(labels, PER)
 ad = backed[sel].to_memory(); backed.file.close()

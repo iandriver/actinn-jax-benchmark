@@ -34,7 +34,7 @@ datasets:
   # source: HLCA, Sikkema et al. 2023 (doi:10.1038/s41591-023-02327-2) -> Travaglini 2020
   - name: lung_cross           # HLCA -> krasnow, cross-dataset (hard)
     type: cross
-    ref_path: ~/Downloads/Sikkama_HCLA.h5ad
+    ref_path: ~/Downloads/Sikkema_HLCA.h5ad
     query_path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
     ref_subsample_per_label: 300
     query_subsample_per_label: 400
