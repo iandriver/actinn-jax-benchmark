@@ -1,5 +1,5 @@
 # panhuman environment — python 3.11.15
-# frozen 2026-07-30T21:59:16Z on Darwin 25.5.0 arm64
+# frozen 2026-07-30T23:37:15Z on Darwin 25.5.0 arm64
 # regenerate: python tools/freeze_envs.py
 absl-py==2.5.0
 anndata==0.12.19

@@ -45,13 +45,46 @@ def run(cmd):
     return subprocess.run(cmd, capture_output=True, text=True, timeout=300)
 
 
+# A freeze can contain entries that will not restore on another machine: editable installs
+# and wheels referenced by local path. `pip freeze` emits them happily and the lock looks
+# complete. actinn-jax itself was captured as `-e file:///Users/.../actinn-jax`, so a restore
+# would have silently omitted the package the benchmark is about.
+LOCAL_REWRITE = {"actinn-jax": "actinn-jax==0.3.1"}   # published; pin to the release
+
+
+def _rewrite_local(line):
+    """Return (line, warning) with local/editable installs resolved where possible."""
+    raw = line.strip()
+    if raw.startswith("-e ") or " @ file://" in raw or raw.startswith("file://"):
+        name = (raw.split(" @ ")[0].strip() if " @ " in raw
+                else os.path.basename(raw.rstrip("/")).replace("-e ", "").strip())
+        for pkg, pinned in LOCAL_REWRITE.items():
+            if pkg in raw.lower():
+                return pinned, f"rewrote local install of {pkg} -> {pinned}"
+        return f"# UNRESTORABLE (local path): {raw}", (
+            f"{name}: installed from a local path that will not exist elsewhere; "
+            "entry commented out")
+    return raw, None
+
+
 def freeze(py):
-    """pip freeze, falling back to uv for environments built without pip."""
+    """pip freeze, falling back to uv for environments built without pip.
+
+    Returns (text, warnings)."""
     r = run([py, "-m", "pip", "freeze", "--all"])
-    if r.returncode == 0 and r.stdout.strip():
-        return r.stdout
-    r = run(["uv", "pip", "freeze", "--python", py])
-    return r.stdout if r.returncode == 0 else ""
+    if not (r.returncode == 0 and r.stdout.strip()):
+        r = run(["uv", "pip", "freeze", "--python", py])
+    if r.returncode != 0:
+        return "", []
+    lines, warns = [], []
+    for line in r.stdout.splitlines():
+        if not line.strip():
+            continue
+        new, w = _rewrite_local(line)
+        lines.append(new)
+        if w:
+            warns.append(w)
+    return "\n".join(lines) + "\n", warns
 
 
 def pyver(py):
@@ -98,7 +131,9 @@ def main():
             manifest["environments"][name] = {"present": False, "path": venv}
             continue
         v = pyver(py)
-        body = freeze(py)
+        body, warns = freeze(py)
+        for w in warns:
+            print(f"{name:<12} warn: {w}")
         n = len([l for l in body.splitlines() if l.strip() and not l.startswith("#")])
         manifest["environments"][name] = {"present": True, "python": v, "packages": n}
 

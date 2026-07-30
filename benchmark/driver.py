@@ -164,6 +164,37 @@ def run(config_path):
         results.to_parquet(os.path.join(out_dir, "results.parquet"))
     except Exception:
         pass
+
+    # Record the environment beside the numbers. Results were previously written with no
+    # provenance, so when a package silently disappeared from an environment there was no
+    # way to learn which version had produced the recorded values -- celltypist's numbers
+    # became unreproducible for exactly this reason.
+    try:
+        import platform as _platform
+        import time as _time
+        env = {
+            "written_utc": _time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime()),
+            "config": os.path.abspath(config_path),
+            "platform": f"{_platform.system()} {_platform.release()} {_platform.machine()}",
+            "python": sys.version.split()[0],
+        }
+        try:
+            env["git_sha"] = subprocess.run(
+                ["git", "-C", os.path.dirname(os.path.abspath(__file__)),
+                 "rev-parse", "--short", "HEAD"],
+                capture_output=True, text=True, timeout=10).stdout.strip() or None
+        except Exception:
+            env["git_sha"] = None
+        locks = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                             "envs", "locks", "manifest.json")
+        if os.path.exists(locks):
+            with open(locks) as fh:
+                env["env_locks"] = json.load(fh)
+        with open(os.path.join(out_dir, "run_manifest.json"), "w") as fh:
+            json.dump(env, fh, indent=2)
+    except Exception as exc:                    # never fail a finished run over metadata
+        print(f"  (could not write run_manifest.json: {exc})")
+
     print(f"\nwrote {len(results)} rows to {out_dir}/results.csv")
     cols = [c for c in ["dataset", "method", "accuracy", "macro_f1",
                         "ontology_concordance", "fit_s", "predict_s", "peak_mem_mb"]

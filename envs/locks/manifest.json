@@ -1,5 +1,5 @@
 {
-  "frozen_utc": "2026-07-30T21:59:16Z",
+  "frozen_utc": "2026-07-30T23:37:15Z",
   "platform": "Darwin 25.5.0 arm64",
   "cell_ontology": {
     "path": "/tmp/cl-basic.obo",
@@ -12,7 +12,7 @@
     "core": {
       "present": true,
       "python": "3.12.13",
-      "packages": 182
+      "packages": 183
     },
     "scprint": {
       "present": true,

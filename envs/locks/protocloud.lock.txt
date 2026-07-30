@@ -1,8 +1,8 @@
 # protocloud environment — python 3.12.13
-# frozen 2026-07-30T21:59:16Z on Darwin 25.5.0 arm64
+# frozen 2026-07-30T23:37:15Z on Darwin 25.5.0 arm64
 # regenerate: python tools/freeze_envs.py
 absl-py==2.5.0
--e file:///Users/iandriver/Downloads/actinn-jax
+actinn-jax==0.3.1
 anndata==0.13.2
 annotated-types==0.7.0
 anyio==4.14.2
@@ -60,7 +60,7 @@ patsy==1.0.2
 pillow==12.3.0
 pluggy==1.6.0
 pronto==2.7.3
--e file:///Users/iandriver/Downloads/actinn-jax-benchmark/benchmark/vendor/ProtoCloud
+actinn-jax==0.3.1
 psutil==7.2.2
 py-cpuinfo==9.0.0
 pyarrow==25.0.0
