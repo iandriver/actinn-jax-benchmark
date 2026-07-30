@@ -11,6 +11,7 @@ datasets:
   - name: pbmc                 # ~2k cells, 8 types, symbols
     type: builtin
     builtin: pbmc3k
+  # source: HLiCA, Edgar et al. 2026, doi:10.64898/2026.06.30.735539
   - name: liver_cross          # HLiCA cross-study (train 6 studies -> test Andrews_2022)
     type: cross
     ref_path: /Volumes/IanSSD/hlica/liver_ref_xstudy.h5ad
@@ -19,16 +20,19 @@ datasets:
     type: intra
     path: /Volumes/IanSSD/hlica/liver_intra.h5ad
     test_frac: 0.25
+  # source: IBDverse, Alegbe et al. 2026, doi:10.1038/s41586-026-10627-z (ibdverse.info)
   - name: blood_gut_intra      # high cardinality, 86 types (no CL id -> no ontology score)
     type: intra
     path: /Volumes/IanSSD/hlica/blood_gut_intra.h5ad
     test_frac: 0.25
+  # source: Travaglini et al. 2020, doi:10.1038/s41586-020-2922-4
   - name: lung_intra           # krasnow within-dataset, 46 types
     type: intra
     path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
     subsample_per_label: 300
     test_frac: 0.25
-  - name: lung_cross           # HCLA -> krasnow, cross-dataset (hard)
+  # source: HLCA, Sikkema et al. 2023 (doi:10.1038/s41591-023-02327-2) -> Travaglini 2020
+  - name: lung_cross           # HLCA -> krasnow, cross-dataset (hard)
     type: cross
     ref_path: ~/Downloads/Sikkama_HCLA.h5ad
     query_path: ~/Downloads/krasnow_lung_atlas_10x.h5ad

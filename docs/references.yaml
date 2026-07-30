@@ -56,7 +56,14 @@ datasets:
   liver_cross:
     cite: Edgar 2026
   blood_gut_intra:
-    cite: UNRESOLVED blood_gut
+    cite: Alegbe 2026
+    note: >
+      IBDverse (ibdverse.info, Wellcome Sanger Institute / Anderson Lab). Matched on
+      three independent signals: the sanger_sample_id column, the blood / ti / r tissue
+      codes against the study's blood + terminal ileum + rectum design, and the
+      immune+epithelial+mesenchymal lineage set. Our file is a subsample; IBDverse also
+      backs two further papers (ileal inflammation; blood-vs-gut immune comparison), so
+      cite the atlas paper unless a specific released object is being referenced.
   pbmc:
     cite: 10x Genomics 2016
 
@@ -152,13 +159,7 @@ entries:
   xkcd 927:
     text: "Munroe R. Standards. *xkcd* 927. xkcd.com/927."
     status: software
-  UNRESOLVED blood_gut:
-    text: "SOURCE NOT ESTABLISHED — see check_references.py output."
-    status: unresolved
-    note: >
-      blood_gut_intra.h5ad carries Sanger-style obs columns (Final_labels, Category,
-      Lineage, sanger_sample_id) and tissues blood / ti / r, but no fetch script in this
-      repo records where it came from and the file has no provenance in .uns. It is
-      probably a Sanger gut/blood atlas, and probably Elmentaite 2021 (Nature 595:250-255,
-      doi:10.1038/s41586-021-03852-1) — but that atlas is intestinal tract only, while this
-      file also contains blood, so the match is not established. Resolve before submission.
+  Alegbe 2026:
+    text: "Alegbe T, Harris BT, Fachal L, et al. Cell-type-resolved genetic variation shapes inflammatory bowel disease risk (IBDverse). *Nature* (2026)."
+    doi: 10.1038/s41586-026-10627-z
+    status: verified

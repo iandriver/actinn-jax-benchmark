@@ -235,15 +235,13 @@ API and older harmony versions do not compile on the current toolchain.
 | lung_cross | [Sikkema 2023] → [Travaglini 2020] | cross-dataset | lung (HLCA→Krasnow) | 46 | Ensembl | different lab/protocol |
 | liver_intra | [Edgar 2026] | within-dataset | liver (HLiCA) | 36 | Ensembl | 150 cells/type |
 | liver_cross | [Edgar 2026] | cross-**study** | liver (HLiCA) | 34 | Ensembl | train 6 studies → test withheld study |
-| blood_gut_intra | **source unresolved** ‡ | within-dataset | blood+gut (Sanger) | 86 | Ensembl | high cardinality; no CL ids |
+| blood_gut_intra | [Alegbe 2026] | within-dataset | blood + gut (IBDverse) | 86 | Ensembl | high cardinality; no CL ids |
 | pbmc | [10x Genomics 2016] | within-dataset | PBMC (pbmc3k) | 8 | symbols | small-n; scPRINT skips (symbols) |
 
-‡ The blood+gut atlas carries Sanger-style annotation columns and blood / terminal-ileum /
-rectum samples, but this repository records no fetch script for it and the file carries no
-provenance, so we do not assert a citation we cannot verify. It contributes only to the
-86-type high-cardinality row and carries no Cell Ontology ids, so no ontology-scored result
-depends on it. Resolving it is tracked by `tools/check_references.py`, which fails while it
-is open.
+The blood+gut set is a subsample of **IBDverse** (Wellcome Sanger Institute; blood, terminal
+ileum and rectum from 421 individuals), included here because 86 fine-grained labels make it
+the high-cardinality stress case for the panel. It carries no Cell Ontology ids, so it
+contributes to accuracy and macro-F1 but to no ontology-scored result.
 
 The set spans the three generalization regimes (within-dataset, across datasets, across
 studies), an order of magnitude in cell-type count (8→86), and both gene-ID conventions.
@@ -524,14 +522,14 @@ dataset is 1–4 points. scmap-cluster is consistently the weakest (0.24 macro-F
 liver_cross).
 
 **† lung_cross exact accuracy (~0.35 for every method) is a label-vocabulary artifact, not
-a transfer failure.** HCLA (reference) and Krasnow (query) were annotated independently and
-share only **20 of 46 cell-type names**; 26 of Krasnow's types are absent from HCLA's
-vocabulary, so no classifier can emit the exact string. The mismatch is granularity: HCLA's
+a transfer failure.** HLCA (reference) and Krasnow (query) were annotated independently and
+share only **20 of 46 cell-type names**; 26 of Krasnow's types are absent from HLCA's
+vocabulary, so no classifier can emit the exact string. The mismatch is granularity: HLCA's
 finer taxonomy has `alveolar / elicited / lung macrophage` but **no generic `macrophage`**
-(CL:0000235), while Krasnow labels many cells generic `macrophage` — so an HCLA-trained
+(CL:0000235), while Krasnow labels many cells generic `macrophage` — so an HLCA-trained
 model predicts `lung macrophage` (CL:1001603) for them, exact-wrong but ontology-correct
 (*lung macrophage is-a macrophage*); likewise Krasnow's generic `endothelial cell`
-(CL:0000115) has no HCLA counterpart. **Ontology-aware concordance — which credits a
+(CL:0000115) has no HLCA counterpart. **Ontology-aware concordance — which credits a
 same-lineage call — is ~0.75 for the trained methods (0.67–0.79 across the full panel,
 highest for ProtoCloud)**, so cross-dataset transfer actually
 works; exact-match just conflates classifier error with vocabulary/granularity mismatch.
