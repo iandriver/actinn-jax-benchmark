@@ -1,9 +1,9 @@
 ---
-title: "Annotating single-cell data on a laptop: a 12-method benchmark and practical low-memory workflows, with actinn-jax"
+title: "Annotating single-cell data on a laptop: a 13-method benchmark and practical low-memory workflows, with actinn-jax"
 author: "Ian Driver"
 date: ""
 abstract: |
-  Reference-based cell-type annotation is a routine, high-volume step in single-cell analysis, and most labs run it on a laptop, not a GPU cluster. We present **actinn-jax**, a from-scratch JAX reimplementation of ACTINN (a 4-layer MLP classifier) with a sparse-aware pipeline and a train-once/map-many cached reference model, and use it as the occasion for a neutral benchmark of **twelve** methods spanning every major class — classical (SVM, kNN), regularized-linear (CellTypist), a carefully-tuned linear pipeline, parameter-free projection (scTOP), marker/correlation (SingleR, scmap), deep probabilistic (scANVI, scArches), an interpretable prototype VAE (ProtoCloud), and a foundation model (scPRINT) — across **six** datasets (within-dataset, cross-dataset and cross-study; 8 to 86 cell types) plus a five-point **scaling sweep to 49k reference cells**, measuring accuracy, macro-F1, ontology-aware concordance, training and inference time, and peak memory on commodity Apple-Silicon hardware. **Accuracy differences among the leading methods are small; their cost differences are not.** The top of the accuracy table is a five-way cluster spanning 0.008 (0.831–0.839), led by a carefully preprocessed **linear pipeline** (normalize → ANOVA → PCA → logistic regression, 0.839) rather than by a deep model, with scANVI, scArches, actinn-jax (0.831) and CellTypist alongside it. **Those same five methods differ by ~200× in inference time** (0.35 s to 73 s) **and 2.7× in peak memory** (1.6 to 4.3 GB). The linear pipeline is the most accurate-per-second option on laptop-sized data, fitting 4× faster than actinn-jax (4.0 vs. 16.0 s). At atlas scale the ordering changes: **ProtoCloud** rises from worst at 3k reference cells (0.722) to best at 49k (**0.976**, vs. 0.936 for actinn-jax and 0.939 for the linear pipeline). No method leads everywhere, and methods separated by less than a percentage point of accuracy are separated by two orders of magnitude in cost. Because several methods now annotate quickly, accurately, and with a usable handle on unknown cells, the useful contribution is not another ranking but an account of **which tool fits which job, and what the surrounding workflow looks like**. Every method is run on every dataset through one harness on identical splits, the panel deliberately includes the baselines most likely to beat a small MLP, and the external validation is somebody else's benchmark — **Open Problems (OP)** `label_projection`, whose datasets, metrics and ranking we did not choose. We report the results as a decision aid (accuracy-per-second, accuracy-per-byte, and behaviour from 3k to 49k reference cells), then use actinn-jax to demonstrate **end-to-end workflows that a low, flat cost profile makes practical**, on human data and — via a Cell-Ontology-derived hierarchy that takes the accelerator out of the build — on mouse: annotating an unknown human dataset from a **shipped census-scale reference** (~800 cell types, calibrated abstain) with no training; **tissue-aware refinement** that halves spurious cross-tissue labels on a liver query; a **broad→refined hand-off** to a small focused reference (held-out cross-study liver 0.23/0.58 → 0.72/0.86, exact-match / Cell-Ontology-aware); within-cell-type resolution (hepatocyte zonation); and a **cluster-level novel-cell-type screen** that recovers a withheld pulmonary ionocyte population and its marker ASCL3. What enables this is inference that is **sub-second and flat** — independent of reference size and cardinality — over a cached reference that is trained once and reused, at the lowest peak memory of the methods we carried to atlas scale (6.1 vs. 13.2 GB for the linear pipeline at 49k cells). The components are not unique: ProtoCloud provides uncertainty, gene attribution and a retraining-based refinement path, and **Pan-human Azimuth** ships a pretrained, calibrated, hierarchical pan-human annotator that runs on a laptop — a better-resourced broad tier than ours, and one we can **distill into a broad-pass model of comparable accuracy at ~9× its throughput, built with no GPU and no labeled data**. What the workflow adds is the **hand-off into a label set the broad model was never trained on**: refinement against a user's own focused reference, and resolution below any fixed typology's leaves.
+  Reference-based cell-type annotation is a routine, high-volume step in single-cell analysis, and most labs run it on a laptop, not a GPU cluster. We present **actinn-jax**, a from-scratch JAX reimplementation of ACTINN (a 4-layer MLP classifier) with a sparse-aware pipeline and a train-once/map-many cached reference model, and use it as the occasion for a neutral benchmark of **thirteen** methods spanning every major class — classical (SVM, kNN), regularized-linear (CellTypist), a carefully-tuned linear pipeline, parameter-free projection (scTOP), marker/correlation (SingleR, scmap), deep probabilistic (scANVI, scArches), an interpretable prototype VAE (ProtoCloud), and a foundation model (scPRINT) — across **six** datasets (within-dataset, cross-dataset and cross-study; 8 to 86 cell types) plus a five-point **scaling sweep to 49k reference cells**, measuring accuracy, macro-F1, ontology-aware concordance, training and inference time, and peak memory on commodity Apple-Silicon hardware. **Accuracy differences among the leading methods are small; their cost differences are not.** The top of the accuracy table is a four-way cluster spanning 0.008 (0.831–0.839), led by a carefully preprocessed **linear pipeline** (normalize → ANOVA → PCA → logistic regression, 0.839) rather than by a deep model, with scANVI, scArches and actinn-jax (0.831) alongside it. **Those same four methods differ by ~130× in inference time** (0.34 s to 89 s) **and 2.4× in peak memory** (1.8 to 4.3 GB). The linear pipeline is the most accurate-per-second option on laptop-sized data, fitting 7× faster than actinn-jax (3.0 vs. 21.9 s). At atlas scale the ordering changes: **ProtoCloud** rises from worst at 3k reference cells (0.722) to best at 49k (**0.976**, vs. 0.936 for actinn-jax and 0.939 for the linear pipeline). No method leads everywhere, and methods separated by less than a percentage point of accuracy are separated by two orders of magnitude in cost. Because several methods now annotate quickly, accurately, and with a usable handle on unknown cells, the useful contribution is not another ranking but an account of **which tool fits which job, and what the surrounding workflow looks like**. Every method is run on every dataset through one harness on identical splits, the panel deliberately includes the baselines most likely to beat a small MLP, and the external validation is somebody else's benchmark — **Open Problems (OP)** `label_projection`, whose datasets, metrics and ranking we did not choose. We report the results as a decision aid (accuracy-per-second, accuracy-per-byte, and behaviour from 3k to 49k reference cells), then use actinn-jax to demonstrate **end-to-end workflows that a low, flat cost profile makes practical**, on human data and — via a Cell-Ontology-derived hierarchy that takes the accelerator out of the build — on mouse: annotating an unknown human dataset from a **shipped census-scale reference** (~800 cell types, calibrated abstain) with no training; **tissue-aware refinement** that halves spurious cross-tissue labels on a liver query; a **broad→refined hand-off** to a small focused reference (held-out cross-study liver 0.23/0.58 → 0.72/0.86, exact-match / Cell-Ontology-aware); within-cell-type resolution (hepatocyte zonation); and a **cluster-level novel-cell-type screen** that recovers a withheld pulmonary ionocyte population and its marker ASCL3. What enables this is inference that is **sub-second and flat** — independent of reference size and cardinality — over a cached reference that is trained once and reused, at the lowest peak memory of the methods we carried to atlas scale (6.1 vs. 13.2 GB for the linear pipeline at 49k cells). The components are not unique: ProtoCloud provides uncertainty, gene attribution and a retraining-based refinement path, and **Pan-human Azimuth** ships a pretrained, calibrated, hierarchical pan-human annotator that runs on a laptop — a better-resourced broad tier than ours, and one we can **distill into a broad-pass model of comparable accuracy at ~9× its throughput, built with no GPU and no labeled data**. What the workflow adds is the **hand-off into a label set the broad model was never trained on**: refinement against a user's own focused reference, and resolution below any fixed typology's leaves.
 ---
 
 *Independent Researcher, Detroit, MI, USA*  ·  *Correspondence: driver.ian@gmail.com*
@@ -24,7 +24,7 @@ method should you actually run, and what does the surrounding workflow look like
 methods now annotate quickly and accurately and give a usable signal on unknown cells, so
 the shortage is not another leaderboard but guidance on fit-for-purpose — accuracy per
 second, accuracy per byte, and how each behaves as the reference grows. We answer with a
-neutral 12-method benchmark plus a set of demonstrated workflows, held to a single standard:
+neutral 13-method benchmark plus a set of demonstrated workflows, held to a single standard:
 every method runs in its own environment through the same harness, on the same splits, scored
 by the same metrics, and reported as measured — including where actinn-jax is not the leader.
 
@@ -48,7 +48,7 @@ its place: the original ACTINN no longer installs or runs on current toolchains,
 reimplementation's flat, sub-second, memory-bounded inference over a cached reference is what
 makes the multi-stage workflow of §3.4 practical on a laptop. What we are *not* doing is the
 move that makes method papers hard to trust — concluding that the new method wins. It does
-not: on accuracy it sits inside a five-way cluster it does not lead, the panel was assembled
+not: on accuracy it sits inside a four-way cluster it does not lead, the panel was assembled
 to include the baselines most likely to beat it, and they do. A field with a dozen working
 methods ([xkcd 927]) is a good reason to be specific about what a new entry is *for* — here,
 a cost profile that lets several models be chained — rather than to claim it supersedes what
@@ -58,7 +58,7 @@ exists. Where a better-resourced model already exists, the productive move is to
 **Contributions.**
 1. A modern, dependency-light (no TensorFlow) JAX reimplementation of ACTINN with sparse
    preprocessing, chunked atlas-scale prediction, and a cached reference model.
-2. A neutral **12-method × 6-dataset** benchmark of accuracy, speed, and memory on Apple
+2. A neutral **13-method × 6-dataset** benchmark of accuracy, speed, and memory on Apple
    Silicon, with a rejection/abstain analysis and a **five-point scaling sweep to 49k
    reference cells**. The panel deliberately includes the baselines most likely to beat a
    small MLP — a tuned linear pipeline, scTOP, and ProtoCloud — and the results are reported
@@ -139,7 +139,7 @@ engineering win is the point, not an accuracy comparison.
 † `linear-anova-pca` has no method paper: it is a baseline assembled here from scikit-learn
 components, tuned deliberately to be the strongest simple competitor we could build (§1).
 
-**Ten of the twelve are trained on each dataset's own reference** and run the full
+**Eleven of the thirteen are trained on each dataset's own reference** and run the full
 accuracy/cost matrix of §3.1 on all six datasets, so none is compared on a favourable subset.
 The remaining two are **pretrained annotators with fixed label vocabularies**, which changes
 what can be measured rather than excusing them from measurement:
@@ -392,25 +392,25 @@ means over all six; cost is the mean per query. Ordered by accuracy:
 
 | method | acc (5) | macro-F1 (6) | ontology (6) | fit (s) | **predict (s)** | peak MB |
 |---|---:|---:|---:|---:|---:|---:|
-| **linear-anova-pca** | **0.839** | 0.699 | 0.808 | **4.0** | **0.35** | 4403 |
-| scANVI | 0.835 | **0.701** | **0.812** | 0.0* | 73.1 | 2118 |
-| scArches | 0.833 | 0.700 | 0.809 | 47.7 | 18.7 | 1783 |
-| **actinn-jax** | 0.831 | 0.683 | 0.811 | 16.0 | **0.37** | 2145 |
-| CellTypist | 0.831 | 0.697 | 0.807 | 27.0 | **0.63** | 1661 |
-| SVM | 0.816 | 0.688 | 0.797 | 24.9 | **0.10** | 1480 |
-| ProtoCloud | 0.790 | 0.649 | 0.778 | 145.9 | 1.42 | 1895 |
-| SingleR | 0.770 | 0.652 | 0.750 | 0.2 | 42.4 | 3621 |
-| kNN | 0.770 | 0.624 | 0.769 | 2.3 | **0.24** | 1546 |
-| scTOP | 0.739 | 0.619 | 0.703 | 1.0 | 1.08 | 1928 |
-| scmap-cluster | 0.646 | 0.550 | 0.771 | 0.2 | 9.0 | 8550 |
+| **linear-anova-pca** | **0.839** | 0.699 | 0.808 | **3.0** | **0.34** | 4294 |
+| scANVI | 0.833 | 0.697 | 0.809 | 0.0* | 89.2 | 2099 |
+| scArches | 0.832 | **0.699** | 0.805 | 54.7 | 21.4 | 1819 |
+| **actinn-jax** | 0.831 | 0.683 | **0.811** | 21.9 | **0.67** | 2399 |
+| CellTypist | 0.823 | 0.691 | 0.805 | 60.7 | **0.66** | 1569 |
+| SVM | 0.810 | 0.680 | 0.797 | 66.5 | **0.07** | 1415 |
+| ProtoCloud | 0.790 | 0.649 | 0.778 | 176.3 | 2.14 | 1893 |
+| SingleR | 0.770 | 0.652 | 0.750 | 0.3 | 62.1 | 3541 |
+| kNN | 0.770 | 0.622 | 0.769 | 0.4 | **0.15** | 1483 |
+| scTOP | 0.739 | 0.619 | 0.703 | 1.1 | 1.07 | 1928 |
+| scmap-cluster | 0.646 | 0.550 | 0.771 | 0.4 | 13.1 | 8073 |
 
 (*scANVI does most of its work in one train+predict pass, attributed to predict.)
 
-**Read down the accuracy column, then across.** The top five span 0.008 in accuracy, **~200× in
-predict time** (0.35 s to 73 s) and 2.7× in memory. scANVI sits within 0.004 of the leader and
-195× slower than actinn-jax at tied accuracy. The linear pipeline is both the most accurate and
-among the fastest to fit, and pays for it in memory — 4403 vs 2145 MB — because ANOVA/PCA
-densify a cells × genes matrix while actinn-jax stays sparse; that ~2× ratio holds to atlas
+**Read down the accuracy column, then across.** The top four span 0.008 in accuracy, **~130× in
+predict time** (0.34 s to 89 s) and 2.4× in memory. scANVI sits within 0.002 of second place and
+**134× slower than actinn-jax** at tied accuracy. The linear pipeline is both the most accurate
+and the fastest to fit, and pays for it in memory — 4294 vs 2399 MB — because ANOVA/PCA densify
+a cells × genes matrix while actinn-jax stays sparse; that ~1.8× ratio widens to ~2× at atlas
 scale (6.1 vs 13.2 GB at 49k cells, §3.3). The two profiles suit different jobs: one-shot
 labelling, versus a reference **trained once and reused**, where a cached model pays fit once
 while the linear pipeline refits scaler/PCA/classifier for every query. ProtoCloud's 146 s CPU
@@ -435,10 +435,11 @@ zero-shot foundation head — 0.700 against 0.218 on lung — and it sets up §3
 serves as a broad pass in its own right and as a distillation teacher. Peak memory is
 indistinguishable between actinn-jax and Azimuth (1.65–2.1 GB on every dataset).
 
-The top of the accuracy table is a **five-way tie within 0.008** — the tuned **linear pipeline
-(0.839)**, scANVI (0.835), scArches (0.833), actinn-jax (0.831) and CellTypist (0.831) — led
-by the linear pipeline rather than by a deep model. actinn-jax is essentially tied for the
-best ontology-aware concordance (0.811 vs scANVI's 0.812). ProtoCloud (0.790) and scTOP
+The top of the accuracy table is a **four-way tie within 0.008** — the tuned **linear pipeline
+(0.839)**, scANVI (0.833), scArches (0.832) and actinn-jax (0.831) — led by the linear pipeline
+rather than by a deep model. CellTypist (0.823) sits just outside it. actinn-jax has the best
+ontology-aware concordance (0.811), marginally ahead of scANVI's 0.809 — a gap well inside
+repeat noise, so read it as a tie rather than a lead. ProtoCloud (0.790) and scTOP
 (0.739) sit below that cluster on these subsampled references: both need conditions these
 splits do not provide — ProtoCloud is data-hungry and becomes the strongest method once given
 a real atlas (§5, `SCALING_MEMORY.md`), while scTOP is built for small,
@@ -447,18 +448,18 @@ low-cardinality problems. Per dataset (accuracy):
 | dataset | actinn-jax | best method (acc) |
 |---|---|---|
 | lung_intra (46 types) | 0.894 | ProtoCloud 0.932 |
-| lung_cross (cross-dataset)† | 0.358 exact / 0.749 ontology | ProtoCloud 0.374 / **0.791 ontology** |
+| lung_cross (cross-dataset)† | 0.358 exact / 0.752 ontology | ProtoCloud 0.374 / **0.791 ontology** |
 | liver_intra (36 types) | 0.802 | linear-anova-pca 0.804 (actinn-jax #2) |
 | liver_cross (cross-study) | **0.686 exact / 0.731 ontology — #1 on both** | actinn-jax |
 | blood_gut (86 types) | 0.860 | linear-anova-pca 0.902 |
-| pbmc (8 types) | 0.913 | scArches 0.934 |
+| pbmc (8 types) | 0.913 | scArches 0.931 |
 
 No single method leads everywhere: the linear pipeline and ProtoCloud each take two datasets,
 actinn-jax and scArches one apiece. actinn-jax leads the cross-study liver split — the hardest
 generalization regime here, and the one closest to real reference mapping — and is second on
 within-dataset liver, while trailing on lung, on the 86-type blood+gut set (−4.2 pt to the
 linear pipeline), and on small-n pbmc. The spread across the leading methods on any one
-dataset is 1–4 points. scmap-cluster is consistently the weakest (0.24 macro-F1 on
+dataset is 1–4 points. scmap-cluster is consistently the weakest (0.23 macro-F1 on
 liver_cross).
 
 **† lung_cross exact accuracy (~0.35 for every method) is a label-vocabulary artifact, not
@@ -485,9 +486,9 @@ exact scores are unaffected.
 
 Plotting accuracy against total wall time makes the frontier explicit. The **tuned linear
 pipeline** holds the fast-frontier point: highest matrix accuracy (0.839) at the lowest fit
-time of any accurate method (4.0 s), placing it above and to the left of actinn-jax, SVM, kNN
+time of any accurate method (3.0 s), placing it above and to the left of actinn-jax, SVM, kNN
 and CellTypist. The deep methods buy little or nothing on accuracy here — at or below the
-linear pipeline on every dataset except lung — for 50–200× the inference cost. actinn-jax
+linear pipeline on every dataset except lung — for 30–130× the inference cost. actinn-jax
 sits just inside the frontier at this reference size; what separates it is not visible on a
 fixed-size plot but on the scaling axes of §3.3 and §5: predict time that stays flat as the
 reference grows, and ~2× lower peak memory that holds to atlas scale. The figure is drawn
@@ -754,7 +755,7 @@ in its GPU transformer, not a portable averaging trick.
 # Discussion
 
 **Method choice is now dominated by cost, not accuracy.** The five leading methods are
-separated by 0.008 in mean accuracy and by ~200× in inference time (§3.1), so for most
+separated by 0.008 in mean accuracy and by ~130× in inference time (§3.1), so for most
 annotation jobs the decision is made on the cost axes. On laptop-sized references the tuned
 linear pipeline is the best of them on accuracy-per-second (0.839, fitting in 4.0 s); at
 atlas scale ProtoCloud is the most accurate by a clear margin (0.976 vs 0.936 at 49k lung

@@ -40,5 +40,9 @@ datasets:
 
 methods:
   - name: linear-anova-pca
+  # sctop and ProtoCloud live in .venv-protocloud; without these the driver would run
+  # them in the core env, where neither is installed (caught by tools/preflight.py).
   - name: sctop
+    python: .venv-protocloud/bin/python
   - name: protocloud
+    python: .venv-protocloud/bin/python

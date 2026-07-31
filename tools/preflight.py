@@ -30,7 +30,7 @@ BACKEND = {
     "sctop": "sctop",
     "scanvi": "scvi",
     "scarches": "scvi",
-    "protocloud": "protocloud",
+    "protocloud": "ProtoCloud",     # capital P; the package is ProtoCloud.api
     "scprint": "scprint",
     "actinn-orig": "tensorflow",
     "panhuman-azimuth": "panhumanpy",
