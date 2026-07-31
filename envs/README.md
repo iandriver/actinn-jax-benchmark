@@ -27,6 +27,32 @@ This matters: a rerun of `lung_cross` after an unpinned re-download reproduced t
 exactly (14,390 reference / 13,550 query cells) but moved ontology concordance by 0.003 and
 accuracy by one cell in 13,550. Small, but invisible without a pin.
 
+### State that a lockfile cannot capture
+
+Two dependencies live outside the Python package set, and both broke a rerun:
+
+**The Cell Ontology** — a file, pinned by release and checksum above.
+
+**scPRINT's lamindb instance** — a *database*, not a package. A fresh environment has an
+empty one, and scPRINT then fails in three escalating ways: `ln$connect()` (no instance),
+`'NoneType' object has no attribute 'id'` (no organism records), and `Dataset dropped due to
+too many genes not mapping` (no gene records). Rebuild it with:
+
+```bash
+.venv-scprint/bin/python -c "
+import lamindb_setup as ls; ls.init(storage='/tmp/lamin_scprint', modules='bionty')"
+.venv-scprint/bin/python -c "
+import bionty as bt
+bt.Organism.import_source()                      # 276 organisms
+for org in ('human', 'mouse'):
+    bt.Gene.import_source(organism=org)          # ~165k gene records, several minutes
+"
+```
+
+Note that bionty pulls the *current* ontology sources, which are not necessarily the ones a
+past run used — so scPRINT's numbers are reproducible in kind but not to the digit. That is
+a property of the tool, not of this harness.
+
 *The locks cover the benchmark environments only.* The actinn-jax library itself declares
 dependency **floors**, not pins — a library that pins its dependents cannot be installed
 alongside anything else.

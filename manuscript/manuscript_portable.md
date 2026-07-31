@@ -425,7 +425,7 @@ query both carry CL ids, with actinn-jax on the same splits for reference:
 |---|---:|---:|---:|---:|
 | actinn-jax (reference-trained) | **0.917** | **0.846** | **0.731** | 0.27–0.37 |
 | Pan-human Azimuth (pretrained) | 0.700 | 0.521 | 0.408 | 2.2–3.4 |
-| scPRINT (zero-shot) | 0.218 | — | — | 32.7 |
+| scPRINT (zero-shot) | 0.201 | — | — | 62.3 |
 
 **This is not a like-for-like comparison and should not be read as one.** actinn-jax is trained
 on a reference drawn from the same data and scored in its own vocabulary; Pan-human Azimuth has
@@ -657,10 +657,12 @@ what makes the abstain step usable as a routing decision in the workflow of §3.
 ## Foundation-model zero-shot (scPRINT)
 
 scPRINT is run separately as a zero-shot predictor (no training on the reference), as a
-reference point for the "just use a foundation model" alternative. On the lung datasets it
-scored **exact accuracy 0.027 / ontology concordance 0.206 in 321 s per query** — vs.
-actinn-jax's 0.89 in 0.2 s — so as a *label* predictor it is both slow (~1000× actinn-jax)
-and weak. Its pretrained classifier head also carries a **fixed label vocabulary** and
+reference point for the "just use a foundation model" alternative. On the lung dataset it
+scored **exact accuracy 0.029 / ontology concordance 0.201, taking 62 s for 2,694 query
+cells** — against actinn-jax's 0.894 in 0.23 s — so as a *label* predictor it is both slow
+(**~280×** actinn-jax) and weak. It is reported on lung alone because its fixed vocabulary
+cannot score the other datasets: the liver and blood+gut sets contain Cell Ontology terms
+absent from its label set, and it declines them rather than guessing. Its pretrained classifier head also carries a **fixed label vocabulary** and
 requires CL ids, so it cannot emit labels outside that set; this is an inherent property of
 a zero-shot label head, not a defect, but it means the foundation model's raw predictions
 are not a drop-in annotator. This is exactly why our two-stage workflow uses scPRINT's **embeddings** — its learned structure — to

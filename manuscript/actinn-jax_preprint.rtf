@@ -802,13 +802,13 @@
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 scPRINT (zero-shot)\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.218\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.201\par}
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 \u8212-\par}
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 \u8212-\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 32.7\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 62.3\par}
 \cell}
 }
 \intbl\row}
@@ -1156,7 +1156,7 @@
 {\pard \ql \f0 \sa180 \li0 \fi0 \par}
 {\pard \ql \f0 \sa180 \li0 \fi0 actinn-jax\u8217's probability gives a {\b smooth, tunable} abstain curve \u8212- accuracy on kept cells rises 0.885\u8594 ?0.969 as coverage falls 1.00\u8594 ?0.66 and OOD-flagging climbs 0.00\u8594 ?0.73 \u8212- so a user can dial the precision/coverage/novel-cell-detection trade-off. CellTypist\u8217's probabilities are {\b saturated} (near 0 or 1): the threshold jumps to 68% OOD-flagged at 0.5 and then does not move across 0.5\u8211-0.9, giving essentially one operating point rather than a tunable curve. scmap-cluster offers a single native \u8220"unassigned\u8221" decision (no sweep). A tunable threshold is what makes the abstain step usable as a routing decision in the workflow of \u167 ?3.4.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Foundation-model zero-shot (scPRINT)\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 scPRINT is run separately as a zero-shot predictor (no training on the reference), as a reference point for the \u8220"just use a foundation model\u8221" alternative. On the lung datasets it scored {\b exact accuracy 0.027 / ontology concordance 0.206 in 321 s per query} \u8212- vs. actinn-jax\u8217's 0.89 in 0.2 s \u8212- so as a {\i label} predictor it is both slow (~1000\u215 ? actinn-jax) and weak. Its pretrained classifier head also carries a {\b fixed label vocabulary} and requires CL ids, so it cannot emit labels outside that set; this is an inherent property of a zero-shot label head, not a defect, but it means the foundation model\u8217's raw predictions are not a drop-in annotator. This is exactly why our two-stage workflow uses scPRINT\u8217's {\b embeddings} \u8212- its learned structure \u8212- to shape a small trained model, never its zero-shot labels: the foundation model is valuable, its raw label predictions are not.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 scPRINT is run separately as a zero-shot predictor (no training on the reference), as a reference point for the \u8220"just use a foundation model\u8221" alternative. On the lung dataset it scored {\b exact accuracy 0.029 / ontology concordance 0.201, taking 62 s for 2,694 query cells} \u8212- against actinn-jax\u8217's 0.894 in 0.23 s \u8212- so as a {\i label} predictor it is both slow ({\b ~280\u215 ?} actinn-jax) and weak. It is reported on lung alone because its fixed vocabulary cannot score the other datasets: the liver and blood+gut sets contain Cell Ontology terms absent from its label set, and it declines them rather than guessing. Its pretrained classifier head also carries a {\b fixed label vocabulary} and requires CL ids, so it cannot emit labels outside that set; this is an inherent property of a zero-shot label head, not a defect, but it means the foundation model\u8217's raw predictions are not a drop-in annotator. This is exactly why our two-stage workflow uses scPRINT\u8217's {\b embeddings} \u8212- its learned structure \u8212- to shape a small trained model, never its zero-shot labels: the foundation model is valuable, its raw label predictions are not.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 External validation: Open Problems {\f1 label_projection}\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Our in-house benchmark is neutral but self-run. For an {\b independent} check, we ran actinn-jax through the community-standard {\field{\*\fldinst{HYPERLINK "https://openproblems.bio/benchmarks/label_projection"}}{\fldrslt{\ul
 Open Problems
