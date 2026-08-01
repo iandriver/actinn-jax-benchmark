@@ -33,11 +33,11 @@ ROOT = pathlib.Path("/Users/iandriver/Downloads/actinn-jax-benchmark")
 FIGDIR = ROOT / "docs" / "figures"
 src = (ROOT / "docs" / "PAPER.md").read_text()
 
-# ---- author block (PLACEHOLDER — replace with real details before submission) ----
+# ---- author block (confirmed 2026-08-01; not a placeholder) ----
 TITLE = ("Annotating single-cell data on a laptop: a 13-method benchmark and practical "
          "low-memory workflows, with actinn-jax")
-# "Independent Researcher" is the standard bioRxiv affiliation for unaffiliated authors.
-# Swap in an institution/company here if one is in place before submission.
+# "Independent Researcher" is the standard bioRxiv affiliation for unaffiliated authors,
+# and is the intended value here -- this work is not submitted under an institution.
 AUTHORS = "Ian Driver$^{\\ast}$"
 AFFIL = "Independent Researcher, Detroit, MI, USA"
 CORR = "$^{\\ast}$ Correspondence: driver.ian@gmail.com"
