@@ -121,12 +121,10 @@ exists. Where a better-resourced model already exists, the productive move is to
    Silicon, with a rejection/abstain analysis and a **five-point scaling sweep to 49k
    reference cells**. The panel deliberately includes the baselines most likely to beat a
    small MLP — a tuned linear pipeline, scTOP, and ProtoCloud — and the results are reported
-   as measured (§3.1, §5). The sweep also surfaced the slowest fit in the study as ours (359 s
-   on a 47k-cell, 32k-gene liver reference), which profiling traced to an unconditional
-   per-batch host sync and ACTINN's inherited fixed batch of 128 (~24k tiny update steps at
-   that size). Both are fixed upstream — the batch now scales with the reference — giving
-   **1.8–2.1× faster fits at 20k–49k cells with accuracy unchanged**, and leaving references
-   below ~12.8k cells bit-identical.
+   as measured (§3.1, §5). The sweep is also what sets actinn-jax's minibatch policy: at
+   ACTINN's fixed batch of 128, a 47k-cell reference costs ~24k tiny update steps, so
+   actinn-jax scales the batch with the reference above ~12.8k cells and keeps 128 below it.
+   Measured fit and predict curves are in §3.3.
 3. **Demonstrated end-to-end workflows** for jobs where cost is the binding constraint,
    all CPU: annotate an unknown human dataset from a **shipped census-wide ~800-type
    reference** with a calibrated abstain and no training; **tissue-aware refinement** (halves
@@ -561,20 +559,13 @@ from the liver_intra panel and depicts the ranking in the tables above.
 ![scaling](figures/fig_scaling.png)
 
 Training time grows with reference size and with #cell types for all trained methods —
-actinn-jax's fit goes 13 s → 141 s → 254 s as the reference grows 965 → 14.8k → 24k
-cells, comparable to CellTypist (4 s → 75 s → 246 s) and somewhat above SVM (9 s → 55 s →
-80 s); kNN is lazy (fit is trivial but it pays at predict and is the least accurate).
-
-> **These fit timings predate the batch-size fix** prompted by the atlas sweep
-> ([`SCALING_MEMORY.md`](SCALING_MEMORY.md)). Above ~12.8k reference cells actinn-jax now
-> scales its minibatch instead of using ACTINN's fixed 128, which measured **1.8–2.1×
-> faster fits at 20k–49k cells with accuracy unchanged** — so the 14.8k and 24k points here
-> are pessimistic by roughly that factor (the 965-cell point is unchanged: small references
-> keep batch 128). Predict time, the quantity this section turns on, is unaffected.
+actinn-jax's fit goes 2.6 s → 17.4 s → 23.5 s as the reference grows 965 → 14.8k → 24k
+cells, below CellTypist (6 s → 71 s → 116 s) and SVM (4 s → 51 s → 80 s) at every size in
+the sweep; kNN is lazy (fit is trivial but it pays at predict and is the least accurate).
 
 The other axis is the one that matters for the workflows: **predict time stays flat and
-sub-second across the entire range — ~0.3–1.4 s whether the reference has 1k or 24k cells, or
-5 or 86 types.** Inference cost does not grow with reference size or cardinality, and with the
+sub-second across the entire range — 0.08–0.33 s whether the reference has 1k or 24k cells,
+or 5 or 86 types.** Inference cost does not grow with reference size or cardinality, and with the
 train-once/map-many cache the fit cost is paid once and the flat predict cost is all that
 recurs — the regime that matters when a reference is reused across many queries. (The
 scaling script's memory column is process-cumulative and not a clean per-size measurement;
