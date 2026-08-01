@@ -142,8 +142,13 @@ def main():
                 drift.append(f"{name}: no lockfile")
                 print(f"{name:<12} py{v:<9} NO LOCKFILE")
                 continue
-            old = [l for l in open(lock).read().splitlines() if not l.startswith("#")]
-            new = [l for l in body.splitlines() if l.strip()]
+            # Comments must be stripped from BOTH sides. Stripping only the lockfile made
+            # the generated "# UNRESTORABLE (local path)" line look like a new package, so
+            # a clean environment reported drift on every run.
+            old = [l for l in open(lock).read().splitlines()
+                   if l.strip() and not l.startswith("#")]
+            new = [l for l in body.splitlines()
+                   if l.strip() and not l.startswith("#")]
             added, removed = set(new) - set(old), set(old) - set(new)
             if added or removed:
                 drift.append(f"{name}: {len(added)} changed/added, {len(removed)} removed")
