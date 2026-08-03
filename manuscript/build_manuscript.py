@@ -159,6 +159,10 @@ fontsize: 11pt
 linkcolor: RoyalBlue
 urlcolor: RoyalBlue
 header-includes:
+  # long unbreakable code tokens (paths, dotted names) otherwise run off the page;
+  # emergencystretch lets TeX loosen a problem paragraph and move them to the next
+  # line, without hyphenating inside a filename and inventing a name that does not exist
+  - \\setlength{{\\emergencystretch}}{{3em}}
   - \\usepackage{{authblk}}
   - \\renewcommand\\Authands{{, }}
   - \\usepackage{{newunicodechar}}

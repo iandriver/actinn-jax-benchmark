@@ -11,6 +11,10 @@ fontsize: 11pt
 linkcolor: RoyalBlue
 urlcolor: RoyalBlue
 header-includes:
+  # long unbreakable code tokens (paths, dotted names) otherwise run off the page;
+  # emergencystretch lets TeX loosen a problem paragraph and move them to the next
+  # line, without hyphenating inside a filename and inventing a name that does not exist
+  - \setlength{\emergencystretch}{3em}
   - \usepackage{authblk}
   - \renewcommand\Authands{, }
   - \usepackage{newunicodechar}
@@ -977,19 +981,19 @@ scientist can run, inspect, and run again.
 
 All configs (`configs/paper*.yaml`, including `configs/paper_baselines.yaml` which fills the
 matrix for the three later-added methods on the identical splits), adapters
-(`benchmark/adapters/`), result CSVs (`results/paper*/`, `docs/results_*.csv`, unified matrix
-in `docs/results_paper_matrix_unified.csv`), figure scripts, and the actinn-jax package
+(`benchmark/adapters/`), result CSVs (`results/paper*/` and `docs/results_*.csv`, which
+include the unified 11-method matrix), figure scripts, and the actinn-jax package
 ([github.com/iandriver/actinn-jax](https://github.com/iandriver/actinn-jax)) are in these
 two repositories. Rebuilding the shipped broad reference is a single documented command
 (`benchmark/explore/update_broad_reference.sh`);
 the distilled broad-pass reference is built by `distill_dump.py` → `distill_train.py`; the pan-mouse reference and the
-Cell-Ontology hierarchy it depends on are in .
+Cell-Ontology hierarchy it depends on are documented in the same repository.
 
 **Pre-trained references** — human (`broad_human_v1`, `panhuman_distill_v1`), mouse
 (`broad_mouse_v1`) and focused liver (`liver_hlica_v1`/`v2`) — are archived at
 [doi:10.5281/zenodo.21688151](https://doi.org/10.5281/zenodo.21688151) (CC BY 4.0; cite the
 concept DOI [10.5281/zenodo.21688150](https://doi.org/10.5281/zenodo.21688150) for the
-latest version). `actinn_jax.bundled_reference(name)` downloads and caches them on first
+latest version). actinn-jax's `bundled_reference` downloads and caches them on first
 use, so no manual retrieval is needed; `actinn-jax fetch` pre-downloads for offline use.
 
 HLiCA data © Edgar et al. 2026 (CC-BY 4.0), [doi:10.64898/2026.06.30.735539]. The distilled
