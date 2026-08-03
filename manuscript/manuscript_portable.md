@@ -12,7 +12,7 @@ abstract: |
 
 Annotating cell types by mapping to a labeled reference is one of the most frequently run
 operations in single-cell RNA-seq. The method landscape is large (survey),
-but published comparisons ([Abdelaal 2019], [Huang 2024]) emphasize accuracy and rarely
+but published comparisons ([Abdelaal 2019], [Fu 2024]) emphasize accuracy and rarely
 report the axis that decides what a working scientist actually runs on their own machine:
 **wall-clock time and memory on commodity hardware**, without a GPU. Foundation models
 (scGPT, Geneformer, scPRINT) push accuracy in some settings but need GPUs and minutes-to-
@@ -159,7 +159,7 @@ what can be measured rather than excusing them from measurement:
   the model is trained to answer `Unassigned`, instead of having a probability cutoff applied
   to its output afterwards. It is the closest published counterpart to this paper's broad
   pass, and the teacher we distill in §3.4. Adapter:
-  [`panhuman_adapter.py`](../benchmark/adapters/panhuman_adapter.py).
+  [`panhuman_adapter.py`](https://github.com/iandriver/actinn-jax-benchmark/blob/main/benchmark/adapters/panhuman_adapter.py).
 
 Neither predicts into the dataset's label strings, so **exact-match accuracy against those
 strings is a vocabulary artifact, not an accuracy signal** — `regulatory T cell` → `Treg cell`
@@ -619,7 +619,7 @@ species-independent.
 
 That substitution needs a control, since any grouping might help. Built from one human corpus
 (51,346 cells / 867 types) and scored on the held-out lung atlas
-([`results_hierarchy_ablation.csv`](results_hierarchy_ablation.csv)):
+([`results_hierarchy_ablation.csv`](https://github.com/iandriver/actinn-jax-benchmark/blob/main/docs/results_hierarchy_ablation.csv)):
 
 | coarse hierarchy | ontology |
 |---|---:|
@@ -773,7 +773,7 @@ this is a statement about the OP panel rather than a general one.
 **Extension: our four added methods on the same harness.** We later ported the tuned linear
 pipeline, scTOP, the SGD-SVM and CellTypist into Open Problems components and ran them
 through the same pipeline on a fresh `r7i.8xlarge`
-([`results_openproblems_samehw_v2.csv`](results_openproblems_samehw_v2.csv), raw trace
+([`results_openproblems_samehw_v2.csv`](https://github.com/iandriver/actinn-jax-benchmark/blob/main/docs/results_openproblems_samehw_v2.csv), raw trace
 archived alongside). All four run correctly on a harness we did not write, which is the
 main thing this establishes; peak memory sits in the same 13–20 GB band as the incumbent
 methods (xgboost is the outlier at 55 GB). **We do not report cross-method runtimes from
@@ -1055,29 +1055,57 @@ condition of that licence and travels inside the shipped model's `build_info.jso
 
 # References {-}
 
-1. 10x Genomics. 3k PBMCs from a healthy donor, Cell Ranger 1.1.0 (2016). Distributed with scanpy as `pbmc3k`.
-2. Abdelaal T, et al. A comparison of automatic cell identification methods for single-cell RNA sequencing data. *Genome Biology* 20:194 (2019). doi:10.1186/s13059-019-1795-z.
-3. Alegbe T, Harris BT, Fachal L, et al. Cell-type-resolved genetic variation shapes inflammatory bowel disease risk (IBDverse). *Nature* (2026). doi:10.1038/s41586-026-10627-z.
-4. Aran D, et al. Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage (SingleR). *Nature Immunology* 20:163-172 (2019). doi:10.1038/s41590-018-0276-y.
-5. Bradbury J, et al. JAX: composable transformations of Python+NumPy programs (2018). github.com/google/jax.
-6. CZI Cell Science Program. CZ CELLxGENE Discover Census, LTS release 2025-11-08. chanzuckerberg.github.io/cellxgene-census.
-7. Chen T, Guestrin C. XGBoost: a scalable tree boosting system. *KDD* 785-794 (2016).
-8. Domínguez Conde C, et al. Cross-tissue immune cell analysis reveals tissue-specific features in humans (CellTypist). *Science* 376:eabl5197 (2022). doi:10.1126/science.abl5197.
-9. Edgar R, et al. The Human Liver Cell Atlas (HLiCA). *bioRxiv* (2026). doi:10.64898/2026.06.30.735539.
-10. Guo K, Ding J. ProtoCloud: a prototypical self-explaining model for single-cell analysis. *Cell Genomics* 6(6):101217 (2026). doi:10.1016/j.xgen.2026.101217.
-11. Huang Q, et al. Benchmarking single-cell cell-type annotation methods. *Briefings in Bioinformatics* 25(5):bbae392 (2024).
-12. Kalfon J, Samaran J, Peyré G, Cantini L. scPRINT: pre-training on 50 million cells allows robust gene network predictions. *Nature Communications* (2025). doi:10.1038/s41467-025-58699-1.
-13. Kiselev VY, Yiu A, Hemberg M. scmap: projection of single-cell RNA-seq data across data sets. *Nature Methods* 15:359-362 (2018). doi:10.1038/nmeth.4644.
-14. Lin Z, et al. Evolutionary-scale prediction of atomic-level protein structure with a language model (ESM-2). *Science* 379:1123-1130 (2023). doi:10.1126/science.ade2574.
-15. Lotfollahi M, et al. Mapping single-cell data to reference atlases by transfer learning (scArches). *Nature Biotechnology* 40:121-130 (2022). doi:10.1038/s41587-021-01001-7.
-16. Ma F, Pellegrini M. ACTINN: automated identification of cell types in single cell RNA sequencing. *Bioinformatics* 36(2):533-538 (2020). doi:10.1093/bioinformatics/btz592.
-17. Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis. openproblems.bio (2024).
-18. Pedregosa F, et al. Scikit-learn: machine learning in Python. *JMLR* 12:2825-2830 (2011).
-19. Rosen Y, et al. Universal cell embeddings: a foundation model for cell biology (UCE). *Nature* (2026). doi:10.1038/s41586-026-10689-z.
-20. Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026). doi:10.64898/2026.07.16.738997.
-21. Sikkema L, et al. An integrated cell atlas of the lung in health and disease (HLCA). *Nature Medicine* 29:1563-1577 (2023). doi:10.1038/s41591-023-02327-2.
-22. Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. *bioRxiv* (2026). doi:10.64898/2026.02.11.705358.
-23. Travaglini KJ, Nabhan AN, Penland L, et al. A molecular cell atlas of the human lung from single-cell RNA sequencing. *Nature* 587(7835):619-625 (2020). doi:10.1038/s41586-020-2922-4.
-24. Xu C, et al. Probabilistic harmonization and annotation of single-cell transcriptomics data with deep generative models (scANVI). *Molecular Systems Biology* 17:e9620 (2021). doi:10.15252/msb.20209620.
-25. Yampolskaya M, Souza H, et al. scTOP: cell identity from single-cell data via parameter-free projection. github.com/Emergent-Behaviors-in-Biology/scTOP.
-26. Munroe R. Standards. *xkcd* 927. xkcd.com/927.
+1. 10x Genomics. 3k PBMCs from a healthy donor, Cell Ranger 1.1.0 (2016). Distributed with scanpy as `pbmc3k`. [10xgenomics.com/datasets/3-k-pbm-cs-from-a-healthy-donor-1-standard-1-1-0](https://www.10xgenomics.com/datasets/3-k-pbm-cs-from-a-healthy-donor-1-standard-1-1-0).
+2. Abdelaal T, et al. A comparison of automatic cell identification methods for single-cell RNA sequencing data. *Genome Biology* 20:194 (2019). [doi:10.1186/s13059-019-1795-z](https://doi.org/10.1186/s13059-019-1795-z).
+3. Alegbe T, Harris BT, Fachal L, et al. Cell-type-resolved genetic variation shapes inflammatory bowel disease risk (IBDverse). *Nature* (2026). [doi:10.1038/s41586-026-10627-z](https://doi.org/10.1038/s41586-026-10627-z).
+4. Aran D, et al. Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage (SingleR). *Nature Immunology* 20:163-172 (2019). [doi:10.1038/s41590-018-0276-y](https://doi.org/10.1038/s41590-018-0276-y).
+5. Bradbury J, et al. JAX: composable transformations of Python+NumPy programs (2018). [github.com/jax-ml/jax](https://github.com/jax-ml/jax).
+6. CZI Cell Science Program. CZ CELLxGENE Discover Census, LTS release 2025-11-08. [chanzuckerberg.github.io/cellxgene-census](https://chanzuckerberg.github.io/cellxgene-census/).
+7. Chen T, Guestrin C. XGBoost: a scalable tree boosting system. *KDD* 785-794 (2016). [doi:10.1145/2939672.2939785](https://doi.org/10.1145/2939672.2939785).
+8. Domínguez Conde C, et al. Cross-tissue immune cell analysis reveals tissue-specific features in humans (CellTypist). *Science* 376:eabl5197 (2022). [doi:10.1126/science.abl5197](https://doi.org/10.1126/science.abl5197).
+9. Edgar R, et al. The Human Liver Cell Atlas (HLiCA). *bioRxiv* (2026). [doi:10.64898/2026.06.30.735539](https://doi.org/10.64898/2026.06.30.735539).
+10. Fu Q, Dong C, Liu Y, et al. A comparison of scRNA-seq annotation methods based on experimentally labeled immune cell subtype dataset. *Briefings in Bioinformatics* 25(5):bbae392 (2024). [doi:10.1093/bib/bbae392](https://doi.org/10.1093/bib/bbae392).
+11. Guo K, Ding J. ProtoCloud: a prototypical self-explaining model for single-cell analysis. *Cell Genomics* 6(6):101217 (2026). [doi:10.1016/j.xgen.2026.101217](https://doi.org/10.1016/j.xgen.2026.101217).
+12. Kalfon J, Samaran J, Peyré G, Cantini L. scPRINT: pre-training on 50 million cells allows robust gene network predictions. *Nature Communications* (2025). [doi:10.1038/s41467-025-58699-1](https://doi.org/10.1038/s41467-025-58699-1).
+13. Kiselev VY, Yiu A, Hemberg M. scmap: projection of single-cell RNA-seq data across data sets. *Nature Methods* 15:359-362 (2018). [doi:10.1038/nmeth.4644](https://doi.org/10.1038/nmeth.4644).
+14. Lin Z, et al. Evolutionary-scale prediction of atomic-level protein structure with a language model (ESM-2). *Science* 379:1123-1130 (2023). [doi:10.1126/science.ade2574](https://doi.org/10.1126/science.ade2574).
+15. Lotfollahi M, et al. Mapping single-cell data to reference atlases by transfer learning (scArches). *Nature Biotechnology* 40:121-130 (2022). [doi:10.1038/s41587-021-01001-7](https://doi.org/10.1038/s41587-021-01001-7).
+16. Ma F, Pellegrini M. ACTINN: automated identification of cell types in single cell RNA sequencing. *Bioinformatics* 36(2):533-538 (2020). [doi:10.1093/bioinformatics/btz592](https://doi.org/10.1093/bioinformatics/btz592).
+17. Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis (2024). [openproblems.bio](https://openproblems.bio).
+18. Pedregosa F, et al. Scikit-learn: machine learning in Python. *JMLR* 12:2825-2830 (2011). [jmlr.org/papers/v12/pedregosa11a.html](https://www.jmlr.org/papers/v12/pedregosa11a.html).
+19. Rosen Y, et al. Universal cell embeddings: a foundation model for cell biology (UCE). *Nature* (2026). [doi:10.1038/s41586-026-10689-z](https://doi.org/10.1038/s41586-026-10689-z).
+20. Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026). [doi:10.64898/2026.07.16.738997](https://doi.org/10.64898/2026.07.16.738997).
+21. Sikkema L, et al. An integrated cell atlas of the lung in health and disease (HLCA). *Nature Medicine* 29:1563-1577 (2023). [doi:10.1038/s41591-023-02327-2](https://doi.org/10.1038/s41591-023-02327-2).
+22. Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. *bioRxiv* (2026). [doi:10.64898/2026.02.11.705358](https://doi.org/10.64898/2026.02.11.705358).
+23. Travaglini KJ, Nabhan AN, Penland L, et al. A molecular cell atlas of the human lung from single-cell RNA sequencing. *Nature* 587(7835):619-625 (2020). [doi:10.1038/s41586-020-2922-4](https://doi.org/10.1038/s41586-020-2922-4).
+24. Xu C, et al. Probabilistic harmonization and annotation of single-cell transcriptomics data with deep generative models (scANVI). *Molecular Systems Biology* 17:e9620 (2021). [doi:10.15252/msb.20209620](https://doi.org/10.15252/msb.20209620).
+25. Yampolskaya M, Herriges MJ, Ikonomou L, Kotton DN, Mehta P. scTOP: physics-inspired order parameters for cellular identification and visualization. *Development* 150(21):dev201873 (2023). [doi:10.1242/dev.201873](https://doi.org/10.1242/dev.201873).
+26. Munroe R. Standards. *xkcd* 927. [xkcd.com/927](https://xkcd.com/927/).
+
+[10x Genomics 2016]: https://www.10xgenomics.com/datasets/3-k-pbm-cs-from-a-healthy-donor-1-standard-1-1-0
+[Abdelaal 2019]: https://doi.org/10.1186/s13059-019-1795-z
+[Alegbe 2026]: https://doi.org/10.1038/s41586-026-10627-z
+[Aran 2019]: https://doi.org/10.1038/s41590-018-0276-y
+[Bradbury 2018]: https://github.com/jax-ml/jax
+[CZI Census 2025]: https://chanzuckerberg.github.io/cellxgene-census/
+[Chen & Guestrin 2016]: https://doi.org/10.1145/2939672.2939785
+[Domínguez Conde 2022]: https://doi.org/10.1126/science.abl5197
+[Edgar 2026]: https://doi.org/10.64898/2026.06.30.735539
+[Fu 2024]: https://doi.org/10.1093/bib/bbae392
+[Guo & Ding 2026]: https://doi.org/10.1016/j.xgen.2026.101217
+[Kalfon 2025]: https://doi.org/10.1038/s41467-025-58699-1
+[Kiselev 2018]: https://doi.org/10.1038/nmeth.4644
+[Lin 2023]: https://doi.org/10.1126/science.ade2574
+[Lotfollahi 2022]: https://doi.org/10.1038/s41587-021-01001-7
+[Ma & Pellegrini 2020]: https://doi.org/10.1093/bioinformatics/btz592
+[Open Problems 2024]: https://openproblems.bio
+[Pedregosa 2011]: https://www.jmlr.org/papers/v12/pedregosa11a.html
+[Rosen 2026]: https://doi.org/10.1038/s41586-026-10689-z
+[Sarkar et al. 2026]: https://doi.org/10.64898/2026.07.16.738997
+[Sikkema 2023]: https://doi.org/10.1038/s41591-023-02327-2
+[Souza & Mehta 2026]: https://doi.org/10.64898/2026.02.11.705358
+[Travaglini 2020]: https://doi.org/10.1038/s41586-020-2922-4
+[Xu 2021]: https://doi.org/10.15252/msb.20209620
+[Yampolskaya 2023]: https://doi.org/10.1242/dev.201873
+[doi:10.64898/2026.06.30.735539]: https://doi.org/10.64898/2026.06.30.735539
+[xkcd 927]: https://xkcd.com/927/

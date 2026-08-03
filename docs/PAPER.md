@@ -72,7 +72,7 @@ typology's leaves.
 
 Annotating cell types by mapping to a labeled reference is one of the most frequently run
 operations in single-cell RNA-seq. The method landscape is large ([survey](METHODS_SURVEY.md)),
-but published comparisons ([Abdelaal 2019], [Huang 2024]) emphasize accuracy and rarely
+but published comparisons ([Abdelaal 2019], [Fu 2024]) emphasize accuracy and rarely
 report the axis that decides what a working scientist actually runs on their own machine:
 **wall-clock time and memory on commodity hardware**, without a GPU. Foundation models
 (scGPT, Geneformer, scPRINT) push accuracy in some settings but need GPUs and minutes-to-
@@ -1115,7 +1115,7 @@ reference derives from **Pan-human Azimuth** (Sarkar, Li, Molla, … Satija, bio
 condition of that licence and travels inside the shipped model's `build_info.json`.
 
 [Abdelaal 2019]: https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1795-z
-[Huang 2024]: https://academic.oup.com/bib/article/25/5/bbae392/7730135
+[Fu 2024]: https://academic.oup.com/bib/article/25/5/bbae392/7730135
 [Ma & Pellegrini 2020]: https://doi.org/10.1093/bioinformatics/btz592
 [xkcd 927]: https://xkcd.com/927/
 [Sarkar et al. 2026]: https://doi.org/10.64898/2026.07.16.738997

@@ -11,6 +11,8 @@ Fails (exit 1) when:
   * a citation key names an entry that does not exist
   * a cited entry is marked `status: unresolved` (we do not know the source)
   * an entry exists but nothing cites it (dead weight in the reference list)
+  * a cited entry has neither `doi:` nor `url:` -- every reference must be one click from
+    the source, both in the list and from the inline [Key], so a reader can check it
 
     python tools/check_references.py            # report + exit status
     python tools/check_references.py --list     # print the resolved bibliography
@@ -49,9 +51,43 @@ def as_list(v):
     return v if isinstance(v, list) else [v]
 
 
+def check_links(entries):
+    """Resolve each entry's click target. A DOI that 404s is a citation nobody can check.
+
+    doi.org is asked without following the redirect: several publishers answer an automated
+    request at the *destination* with 403, which says nothing about whether the DOI is
+    registered. A 30x from doi.org does.
+    """
+    import concurrent.futures as cf
+    import subprocess
+
+    def one(item):
+        key, e = item
+        url = (f"https://doi.org/{e['doi']}" if e.get("doi") else e.get("url"))
+        if not url:
+            return key, None, "NO LINK", ""
+        r = subprocess.run(["curl", "-sS", "-o", os.devnull, "-w", "%{http_code} %{redirect_url}",
+                            "-I", "--max-time", "30", "-A", "Mozilla/5.0", url],
+                           capture_output=True, text=True)
+        code, _, target = r.stdout.partition(" ")
+        return key, url, code, target
+
+    todo = [(k, e) for k, e in sorted(entries.items()) if not k.startswith("UNRESOLVED")]
+    bad = 0
+    with cf.ThreadPoolExecutor(8) as ex:
+        for key, url, code, target in ex.map(one, todo):
+            ok = code.startswith(("2", "3"))
+            bad += not ok
+            print(f"{'ok ' if ok else 'FAIL'} {code:<7} {key:<24} {target[:64] or url or ''}")
+    print(f"\n{len(todo)} entries, {bad} unresolvable link(s)")
+    return 1 if bad else 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--list", action="store_true", help="print the bibliography and exit")
+    ap.add_argument("--links", action="store_true",
+                    help="resolve every entry's doi/url over the network and exit")
     a = ap.parse_args()
 
     refs = yaml.safe_load(open(REFS))
@@ -79,7 +115,9 @@ def main():
 
     # inline [Key] citations in the prose
     # keys are "Author YYYY" or "xkcd 927" -- do not require an initial capital
-    for key in set(re.findall(r"\[([A-Za-z][^\]\[]{2,40}? \d{3,4})\]", paper)):
+    # {1,40}, not {2,40}: a two-letter surname ("Fu 2024") has only one character between
+    # the initial and the space, and the stricter form silently skipped those citations.
+    for key in set(re.findall(r"\[([A-Za-z][^\]\[]{1,40}? \d{3,4})\]", paper)):
         if key in entries:
             cited.add(key)
         elif not re.search(rf"^\[{re.escape(key)}\]:", paper, re.M):
@@ -88,13 +126,19 @@ def main():
     for key in entries:
         if key not in cited and not key.startswith("UNRESOLVED"):
             warnings.append(f"entry '{key}' is never cited")
+        elif key in cited and not (entries[key].get("doi") or entries[key].get("url")):
+            problems.append(f"entry '{key}' has no doi: or url:, so it cannot be linked")
+
+    if a.links:
+        return check_links(entries)
 
     if a.list:
         for i, (key, e) in enumerate(sorted(entries.items()), 1):
             if key.startswith("UNRESOLVED"):
                 continue
-            doi = f" doi:{e['doi']}" if e.get("doi") else ""
-            print(f"{i}. {e['text']}{doi}")
+            link = (f" https://doi.org/{e['doi']}" if e.get("doi")
+                    else f" {e['url']}" if e.get("url") else "  <NO LINK>")
+            print(f"{i}. {e['text']}{link}")
         return 0
 
     for w in warnings:

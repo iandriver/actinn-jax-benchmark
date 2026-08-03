@@ -76,8 +76,9 @@ entries:
     text: "Abdelaal T, et al. A comparison of automatic cell identification methods for single-cell RNA sequencing data. *Genome Biology* 20:194 (2019)."
     doi: 10.1186/s13059-019-1795-z
     status: verified
-  Huang 2024:
-    text: "Huang Q, et al. Benchmarking single-cell cell-type annotation methods. *Briefings in Bioinformatics* 25(5):bbae392 (2024)."
+  Fu 2024:
+    text: "Fu Q, Dong C, Liu Y, et al. A comparison of scRNA-seq annotation methods based on experimentally labeled immune cell subtype dataset. *Briefings in Bioinformatics* 25(5):bbae392 (2024)."
+    doi: 10.1093/bib/bbae392
     status: verified
   Domínguez Conde 2022:
     text: "Domínguez Conde C, et al. Cross-tissue immune cell analysis reveals tissue-specific features in humans (CellTypist). *Science* 376:eabl5197 (2022)."
@@ -101,9 +102,11 @@ entries:
     status: verified
   Pedregosa 2011:
     text: "Pedregosa F, et al. Scikit-learn: machine learning in Python. *JMLR* 12:2825-2830 (2011)."
+    url: https://www.jmlr.org/papers/v12/pedregosa11a.html
     status: verified
   Chen & Guestrin 2016:
     text: "Chen T, Guestrin C. XGBoost: a scalable tree boosting system. *KDD* 785-794 (2016)."
+    doi: 10.1145/2939672.2939785
     status: verified
   Rosen 2026:
     text: "Rosen Y, et al. Universal cell embeddings: a foundation model for cell biology (UCE). *Nature* (2026)."
@@ -114,10 +117,12 @@ entries:
     doi: 10.1126/science.ade2574
     status: verified
   Open Problems 2024:
-    text: "Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis. openproblems.bio (2024)."
+    text: "Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis (2024)."
+    url: https://openproblems.bio
     status: software
   Bradbury 2018:
-    text: "Bradbury J, et al. JAX: composable transformations of Python+NumPy programs (2018). github.com/google/jax."
+    text: "Bradbury J, et al. JAX: composable transformations of Python+NumPy programs (2018)."
+    url: https://github.com/jax-ml/jax   # google/jax 301-redirects here
     status: software
   Edgar 2026:
     text: "Edgar R, et al. The Human Liver Cell Atlas (HLiCA). *bioRxiv* (2026)."
@@ -132,8 +137,9 @@ entries:
     doi: 10.1016/j.xgen.2026.101217
     status: verified
   Yampolskaya 2023:
-    text: "Yampolskaya M, Souza H, et al. scTOP: cell identity from single-cell data via parameter-free projection. github.com/Emergent-Behaviors-in-Biology/scTOP."
-    status: software
+    text: "Yampolskaya M, Herriges MJ, Ikonomou L, Kotton DN, Mehta P. scTOP: physics-inspired order parameters for cellular identification and visualization. *Development* 150(21):dev201873 (2023)."
+    doi: 10.1242/dev.201873
+    status: verified
   Sarkar et al. 2026:
     text: "Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026)."
     doi: 10.64898/2026.07.16.738997
@@ -152,12 +158,15 @@ entries:
     status: verified
   10x Genomics 2016:
     text: "10x Genomics. 3k PBMCs from a healthy donor, Cell Ranger 1.1.0 (2016). Distributed with scanpy as `pbmc3k`."
+    url: https://www.10xgenomics.com/datasets/3-k-pbm-cs-from-a-healthy-donor-1-standard-1-1-0
     status: software
   CZI Census 2025:
-    text: "CZI Cell Science Program. CZ CELLxGENE Discover Census, LTS release 2025-11-08. chanzuckerberg.github.io/cellxgene-census."
+    text: "CZI Cell Science Program. CZ CELLxGENE Discover Census, LTS release 2025-11-08."
+    url: https://chanzuckerberg.github.io/cellxgene-census/
     status: software
   xkcd 927:
-    text: "Munroe R. Standards. *xkcd* 927. xkcd.com/927."
+    text: "Munroe R. Standards. *xkcd* 927."
+    url: https://xkcd.com/927/
     status: software
   Alegbe 2026:
     text: "Alegbe T, Harris BT, Fachal L, et al. Cell-type-resolved genetic variation shapes inflammatory bowel disease risk (IBDverse). *Nature* (2026)."

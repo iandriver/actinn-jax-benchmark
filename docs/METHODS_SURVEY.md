@@ -16,7 +16,7 @@ No single method family dominates every axis:
   22 classifiers × 27 datasets), with most classifiers degrading on complex datasets
   with overlapping classes or deep/fine-grained labels.
 - **Foundation models can tie, but not consistently beat, task-specific methods.**
-  In the 18-method immune benchmark ([Huang et al. 2024, *Brief. Bioinform.* bbae392](https://academic.oup.com/bib/article/25/5/bbae392/7730135)),
+  In the 18-method immune benchmark ([Fu et al. 2024, *Brief. Bioinform.* bbae392](https://academic.oup.com/bib/article/25/5/bbae392/7730135)),
   **SVM, scBERT, scDeepSort** rank top (accuracy up to ~0.95), but fine-grained T-cell
   subtype accuracy stays low. Recent work finds the foundation-model advantage is
   **"biologically stratified"** — strong on recognition (annotation), weaker on
@@ -33,11 +33,11 @@ offer no guaranteed accuracy win to justify their GPU dependence on a CPU-first 
 
 ### Classical classifiers
 - **SVM** — overall accuracy leader ([Abdelaal 2019](https://pubmed.ncbi.nlm.nih.gov/31500660/));
-  **SVM_rejection** adds unseen-type rejection. Top-3 in [Huang 2024](https://academic.oup.com/bib/article/25/5/bbae392/7730135).
+  **SVM_rejection** adds unseen-type rejection. Top-3 in [Fu 2024](https://academic.oup.com/bib/article/25/5/bbae392/7730135).
 - **CellTypist** — regularized (L2) logistic regression, SGD-trainable for >500k cells;
   fast, CPU-friendly, Python ([Domínguez Conde et al. 2022, *Science*](https://www.science.org/doi/10.1126/science.abl5197)).
 - **scmap-cell/cluster, CHETAH, Cell BLAST** — provide rejection of unknown types
-  ([Huang 2024](https://academic.oup.com/bib/article/25/5/bbae392/7730135)).
+  ([Fu 2024](https://academic.oup.com/bib/article/25/5/bbae392/7730135)).
 - **mtANN** — supervised neural-network ensemble integrating multiple references via 8
   gene-selection methods; designed to annotate *and* flag unseen types
   ([Xiong et al. 2023, *PLoS Comput. Biol.*](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10335708/)).
@@ -53,7 +53,7 @@ offer no guaranteed accuracy win to justify their GPU dependence on a CPU-first 
 
 ### Transformer / foundation models
 - **scBERT, scDeepSort** — competitive with top classifiers (~0.95) in
-  [Huang 2024](https://academic.oup.com/bib/article/25/5/bbae392/7730135); both support rejection.
+  [Fu 2024](https://academic.oup.com/bib/article/25/5/bbae392/7730135); both support rejection.
 - **Geneformer** — masked-pretraining transformer (15% genes masked) on ~30M cells;
   **GPU required for efficient use** ([model card](https://huggingface.co/ctheodoris/Geneformer)).
 - Across tasks, foundation models **do not consistently outperform** task-specific
@@ -71,7 +71,7 @@ offer no guaranteed accuracy win to justify their GPU dependence on a CPU-first 
 ## Rejection / uncertainty support
 
 Methods with explicit unseen-type rejection: **SVM_rejection, CHETAH, scmap-cell,
-scmap-cluster, Cell BLAST, scBERT, scDeepSort** ([Huang 2024](https://academic.oup.com/bib/article/25/5/bbae392/7730135)).
+scmap-cluster, Cell BLAST, scBERT, scDeepSort** ([Fu 2024](https://academic.oup.com/bib/article/25/5/bbae392/7730135)).
 **popV** and **CASSIA** provide calibrated confidence scores. Even so, simultaneously
 annotating known + unknown types is unsolved — with a type held out of training, the
 best rejection methods scored <0.5 on the unknown type.
@@ -88,7 +88,7 @@ These claims failed adversarial verification and should not be used as establish
 
 ## Caveats
 
-- Abdelaal 2019 predates foundation/LLM methods; Huang 2024's ~0.95 is an immune-subtype
+- Abdelaal 2019 predates foundation/LLM methods; Fu 2024's ~0.95 is an immune-subtype
   ceiling where fine T-cell accuracy stayed low — rankings may not transfer across tissues.
 - popV calibration and CASSIA's outperformance are **authors' own evaluations**, not
   independent third-party benchmarks.
@@ -108,7 +108,7 @@ These claims failed adversarial verification and should not be used as establish
 
 ## Key sources
 - [Abdelaal et al. 2019, *Genome Biology*](https://pubmed.ncbi.nlm.nih.gov/31500660/) — 22-classifier benchmark
-- [Huang et al. 2024, *Brief. Bioinform.* bbae392](https://academic.oup.com/bib/article/25/5/bbae392/7730135) — 18-method immune benchmark
+- [Fu et al. 2024, *Brief. Bioinform.* bbae392](https://academic.oup.com/bib/article/25/5/bbae392/7730135) — 18-method immune benchmark
 - [Ergen et al. 2024, *Nature Genetics* (popV)](https://pmc.ncbi.nlm.nih.gov/articles/PMC11631762/)
 - [Domínguez Conde et al. 2022, *Science* (CellTypist)](https://www.science.org/doi/10.1126/science.abl5197)
 - [CellBench-LS 2026, bioRxiv](https://www.biorxiv.org/content/10.64898/2026.04.01.714123v1.full) · [Liu et al. 2026, *Adv. Sci.*](https://advanced.onlinelibrary.wiley.com/doi/10.1002/advs.202514490)

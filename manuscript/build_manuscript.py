@@ -89,7 +89,28 @@ body = re.sub(r"\(\s*,\s*", "(", body)                        # "(, and ..." -> 
 body = re.sub(r",\s*\)", ")", body)                           # "(X, )" -> "(X)"
 body = re.sub(r"\s*\(\s*\)", "", body)                        # empty "()"
 body = re.sub(r"\(\s*and the", "(see the", body)              # "(and the smooth..." -> "(see the..."
-body = re.sub(r"^\[[^\]]+\]:\s*https?://\S+\s*$", "", body, flags=re.M)  # remove link defs
+# Hand-written link definitions are collected rather than discarded: they are what makes an
+# inline [Key] clickable, and dropping them was why not one citation in the PDF was a link.
+# references.yaml wins for any key it defines (step 5); anything else -- the availability
+# section's bare-DOI pointers -- is carried through unchanged.
+LINKDEF = re.compile(r"^\[([^\]]+)\]:\s*(https?://\S+)\s*$", re.M)
+inline_links = {m.group(1): m.group(2) for m in LINKDEF.finditer(body)}
+body = LINKDEF.sub("", body)
+
+# 3b. repo-relative links to data and code are live hyperlinks in the PDF but resolve
+# against nothing outside the repo, so they printed as dead links. Point them at GitHub --
+# these are the result files and adapters behind the numbers, so a reader should be able to
+# open them. Paths are relative to docs/, hence the posixpath.normpath.
+REPO = "https://github.com/iandriver/actinn-jax-benchmark/blob/main"
+
+
+def repo_link(m):
+    import posixpath
+    return f"]({REPO}/{posixpath.normpath(posixpath.join('docs', m.group(1)))})"
+
+
+body = re.sub(r"(?<!!)\]\((?!https?://)([^)]+\.(?:csv|py|ya?ml|txt|json|sh))\)",
+              repo_link, body)
 
 # 4. figures -> absolute path. Captions are numbered "**Figure N.**" paragraphs in PAPER.md
 # itself: they have to be visible in the repo doc on GitHub (alt text is not), and only one
@@ -119,6 +140,18 @@ body = headings(body)
 # 5. references section -- generated from docs/references.yaml, which tools/check_references.py
 # validates against the methods and datasets tables. Hand-editing a list here is how scPRINT
 # ended up benchmarked with no citation and five of six datasets with none.
+def locator(e):
+    """(url, display) for the click-through target of one entry, or (None, None).
+
+    Every entry needs one so a reader can check the citation without retyping it;
+    tools/check_references.py fails the build if an entry has neither doi nor url."""
+    if e.get("doi"):
+        return f"https://doi.org/{e['doi']}", f"doi:{e['doi']}"
+    if e.get("url"):
+        return e["url"], re.sub(r"^https?://(www\.)?", "", e["url"]).rstrip("/")
+    return None, None
+
+
 def _references():
     import yaml
     with open(ROOT / "docs" / "references.yaml") as fh:
@@ -129,9 +162,15 @@ def _references():
         if e.get("status") == "unresolved":
             continue
         n += 1
-        doi = f" doi:{e['doi']}." if e.get("doi") else ""
-        out.append(f"{n}. {e['text']}{doi}")
-    return "\n".join(out) + "\n"
+        url, display = locator(e)
+        # The entry's own DOI/URL is the click target: linking the whole entry would print
+        # the reference list entirely in link colour.
+        out.append(f"{n}. {e['text']}" + (f" [{display}]({url})." if url else ""))
+        if url:
+            # ... and the same target makes every inline [Key] in the body clickable.
+            inline_links[key] = url
+    defs = "\n".join(f"[{k}]: {u}" for k, u in sorted(inline_links.items()))
+    return "\n".join(out) + "\n\n" + defs + "\n"
 
 
 REFS = _references()
