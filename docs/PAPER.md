@@ -48,7 +48,8 @@ benchmark — **Open Problems (OP)** `label_projection`, whose datasets, metrics
 did not choose. We report the results as a decision aid (accuracy-per-second, accuracy-per-byte, and
 behaviour from 3k to 49k reference cells), then use actinn-jax to demonstrate **end-to-end
 workflows that a low, flat cost profile makes practical**, on human data and — via a
-Cell-Ontology-derived hierarchy that takes the accelerator out of the build — on mouse:
+hierarchy derived from the Cell Ontology, which removes the GPU step from building a
+reference — on mouse:
 annotating an unknown human dataset from a **shipped census-scale
 reference** (~800 cell types, calibrated abstain) with no training; **tissue-aware
 refinement** that halves spurious cross-tissue labels on a liver query; a **broad→refined
@@ -343,7 +344,7 @@ not merely held-out cells (`EXCLUDE_DATASETS` / `ONLY_DATASETS`).
 
 ### 2.7 Distilling a pretrained annotator
 
-A broad reference can also be built without labels or an accelerator, by taking both the label
+A broad reference can also be built without labels and without a GPU, by taking both the label
 vocabulary and the hierarchy from an existing pretrained annotator
 ([PANHUMAN_DISTILL.md](PANHUMAN_DISTILL.md)). Keras/TensorFlow and JAX cannot share a process,
 so this runs in two stages.
@@ -604,7 +605,7 @@ force-labeled ([REFINE.md](REFINE.md), and the smooth abstain curve of §3.5). T
 foundation model on a GPU to discover its hierarchy. A pretrained pan-human annotator
 already has one — Pan-human Azimuth publishes an 8-level typology with every node mapped to
 a Cell Ontology term — so labelling a corpus with it and training actinn-jax on those labels
-transfers both the vocabulary and the structure. That build needs **no accelerator and no
+transfers both the vocabulary and the structure. That build needs **no GPU and no
 labeled input**, only raw human counts: under ten minutes of CPU on 85k cells drawn from
 three atlases plus a census-wide sample ([PANHUMAN_DISTILL.md](PANHUMAN_DISTILL.md)). On
 3,396 withheld cross-study liver cells:
@@ -627,7 +628,7 @@ that model's trained abstention: its confidence separates right from wrong poorl
 coverage at `p ≥ 0.5` moves concordance only 0.406 → 0.427), so the calibrated broad-pass abstain
 of §3.5 belongs to the census-built reference until this one is recalibrated.
 
-**A second organism, and a hierarchy with no accelerator in it.** Neither route above
+**A second organism, and a hierarchy that needs no GPU.** Neither route above
 transfers to mouse: Pan-human Azimuth is human-only, so there is no teacher to distill, and
 the census route wants scPRINT on a GPU with mouse support we have not tested. But the census
 already labels every cell with a Cell Ontology term, and CL encodes the relation the embedding
