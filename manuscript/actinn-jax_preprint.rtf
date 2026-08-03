@@ -13,14 +13,22 @@
 {\pard \ql \f0 \sa180 \li0 \fi0 We ask a practical question: {\b for a given annotation job on commodity hardware, which method should you actually run, and what does the surrounding workflow look like?} Several methods now annotate quickly and accurately and give a usable signal on unknown cells, so the shortage is not another leaderboard but guidance on fit-for-purpose \u8212- accuracy per second, accuracy per byte, and how each behaves as the reference grows. We answer with a neutral 13-method benchmark plus a set of demonstrated workflows, held to a single standard: every method runs in its own environment through the same harness, on the same splits, scored by the same metrics, and reported as measured \u8212- including where actinn-jax is not the leader.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 {\b How the comparison was constrained.} A benchmark written by a method\u8217's own author has a well-known failure mode: the datasets, baselines and metrics that flatter the method are the ones that get reported. We tried to design that freedom out rather than promise restraint. Every method runs on {\b every} dataset, so none appears on a favourable subset, and the two methods outside that matrix are named with reasons (\u167 ?2.2). The panel was chosen to include the baselines most likely to beat a small MLP \u8212- a carefully tuned linear pipeline, scTOP, ProtoCloud \u8212- and each of them does beat it somewhere; our own classical tier is left untuned while the linear baseline is tuned, which is the unfavourable direction (\u167 ?5). Metrics are fixed across all methods and reported in full. Most importantly, the {\b external validation is somebody else\u8217's}: Open Problems {\f1 label_projection} (\u167 ?3.7) sets the datasets, the metrics and the ranking, and we did not choose any of them. Where results contradict our own earlier claims or our method\u8217's interests \u8212- ProtoCloud overtaking actinn-jax at atlas scale, a bounded rather than widening memory advantage, a better-resourced broad annotator than our own \u8212- they are reported in those terms.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 {\b On adding a twelfth method to a crowded field.} We are adding one, and we think it earns its place: the original ACTINN no longer installs or runs on current toolchains, and the reimplementation\u8217's flat, sub-second, memory-bounded inference over a cached reference is what makes the multi-stage workflow of \u167 ?3.4 practical on a laptop. What we are {\i not} doing is the move that makes method papers hard to trust \u8212- concluding that the new method wins. It does not: on accuracy it sits inside a four-way cluster it does not lead, the panel was assembled to include the baselines most likely to beat it, and they do. A field with a dozen working methods ([xkcd 927]) is a good reason to be specific about what a new entry is {\i for} \u8212- here, a cost profile that lets several models be chained \u8212- rather than to claim it supersedes what exists. Where a better-resourced model already exists, the productive move is to build on it (\u167 ?3.4).\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 {\b Contributions.} 1. A modern, dependency-light (no TensorFlow) JAX reimplementation of ACTINN with sparse preprocessing, chunked atlas-scale prediction, and a cached reference model. 2. A neutral {\b 13-method \u215 ? 6-dataset} benchmark of accuracy, speed, and memory on Apple Silicon, with a rejection/abstain analysis and a {\b five-point scaling sweep to 49k reference cells}. The panel deliberately includes the baselines most likely to beat a small MLP \u8212- a tuned linear pipeline, scTOP, and ProtoCloud \u8212- and the results are reported as measured (\u167 ?3.1, \u167 ?5). The sweep is also what sets actinn-jax\u8217's minibatch policy: at ACTINN\u8217's fixed batch of 128, a 47k-cell reference costs ~24k tiny update steps, so actinn-jax scales the batch with the reference above ~12.8k cells and keeps 128 below it. Measured fit and predict curves are in \u167 ?3.3. 3. {\b Demonstrated end-to-end workflows} for jobs where cost is the binding constraint, all CPU: annotate an unknown human dataset from a {\b shipped census-wide ~800-type reference} with a calibrated abstain and no training; {\b tissue-aware refinement} (halves spurious cross-tissue labels on a liver query); a {\b broad\u8594 ?refined hand-off} to a small focused reference (cross-study liver 0.23/0.58 \u8594 ? 0.72/0.86); within-cell-type resolution (hepatocyte zonation); and a {\b one-call novel-cell-type screen} (recovers a withheld pulmonary ionocyte population and its marker ASCL3). We are precise about what is not ours: ProtoCloud offers uncertainty, attribution and a retraining-based refine, and Pan-human Azimuth ships a pretrained hierarchical pan-human annotator with trained abstention, so the broad tier itself is not a distinguishing feature \u8212- we distill that model into a broad-pass reference rather than compete with it. What is distinct is {\b refinement into a label set no pretrained model carries} \u8212- the user\u8217's own focused reference, and states below a fixed typology\u8217's leaves. The same route builds a {\b pan-mouse reference} (453 types / 85 tissues; 0.638 ontology concordance on two withheld datasets) in 17 s of CPU, using Cell Ontology lineage in place of a foundation-model embedding \u8212- which beats the embedding-derived hierarchy on the human corpus it was validated against, and needs no GPU at any stage. 4. An {\b independent external validation} on Open Problems {\f1 label_projection}, with a controlled same-hardware speed/memory comparison, and a set of cheap ablations that characterize {\i when} the gene-space model gains or loses to heavier methods (input standardization; a reference-guided gene budget; a foundation-model negative control).\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\b Contributions.}\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab A modern, dependency-light (no TensorFlow) JAX reimplementation of ACTINN with sparse preprocessing, chunked atlas-scale prediction, and a cached reference model.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab A neutral {\b 13-method \u215 ? 6-dataset} benchmark of accuracy, speed, and memory on Apple Silicon, with a rejection/abstain analysis and a {\b five-point scaling sweep to 49k reference cells}. The panel deliberately includes the baselines most likely to beat a small MLP \u8212- a tuned linear pipeline, scTOP, and ProtoCloud \u8212- and the results are reported as measured (\u167 ?3.1, \u167 ?5). The sweep is also what sets actinn-jax\u8217's minibatch policy: at ACTINN\u8217's fixed batch of 128, a 47k-cell reference costs ~24k tiny update steps, so actinn-jax scales the batch with the reference above ~12.8k cells and keeps 128 below it. Measured fit and predict curves are in \u167 ?3.3.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 3.\tx360\tab {\b Demonstrated end-to-end workflows} for jobs where cost is the binding constraint, all CPU: annotate an unknown human dataset from a {\b shipped census-wide ~800-type reference} with a calibrated abstain and no training; {\b tissue-aware refinement} (halves spurious cross-tissue labels on a liver query); a {\b broad\u8594 ?refined hand-off} to a small focused reference (cross-study liver 0.23/0.58 \u8594 ? 0.72/0.86); within-cell-type resolution (hepatocyte zonation); and a {\b one-call novel-cell-type screen} (recovers a withheld pulmonary ionocyte population and its marker ASCL3). We are precise about what is not ours: ProtoCloud offers uncertainty, attribution and a retraining-based refine, and Pan-human Azimuth ships a pretrained hierarchical pan-human annotator with trained abstention, so the broad tier itself is not a distinguishing feature \u8212- we distill that model into a broad-pass reference rather than compete with it. What is distinct is {\b refinement into a label set no pretrained model carries} \u8212- the user\u8217's own focused reference, and states below a fixed typology\u8217's leaves. The same route builds a {\b pan-mouse reference} (453 types / 85 tissues; 0.638 ontology concordance on two withheld datasets) in 17 s of CPU, using Cell Ontology lineage in place of a foundation-model embedding \u8212- which beats the embedding-derived hierarchy on the human corpus it was validated against, and needs no GPU at any stage.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 4.\tx360\tab An {\b independent external validation} on Open Problems {\f1 label_projection}, with a controlled same-hardware speed/memory comparison, and a set of cheap ablations that characterize {\i when} the gene-space model gains or loses to heavier methods (input standardization; a reference-guided gene budget; a foundation-model negative control).\sa180\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel0 \b \fs36 Methods\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 actinn-jax\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 actinn-jax reimplements ACTINN ([Ma & Pellegrini 2020]) \u8212- a 4-layer fully-connected network (100/50/25 hidden units, ReLU, softmax) trained with Adam \u8212- in JAX/optax ([Bradbury 2018]), replacing the original\u8217's TensorFlow-1.x graph/session code. Key engineering: - {\b Sparse-aware preprocessing}: no {\f1 adata.to_df} densification; CP10k+log2 normalization and the expression / coefficient-of-variation gene filter run on sparse matrices; only the selected-gene columns of each minibatch are densified. - {\b Cached reference model} ({\f1 ReferenceModel}): train once, {\f1 save}/{\f1 load}, map many queries \u8212- the amortized cost of repeated annotation against a fixed reference drops to the inference cost alone. - {\b Chunked prediction} for atlas-scale queries; {\b {\f1 use_raw='auto'}} to pick raw counts from {\f1 .raw} (CELLxGENE convention). - {\b Optional reference-fit standardization} ({\f1 standardize=True}): z-score each selected gene by the reference\u8217's frozen mean/std and apply it to the query \u8212- a cheap domain alignment (\u167 ?3.7). Opt-in, with a saved scaler that projects with the model; \u956 ?/\u963 ? persist in the {\f1 .npz} (old models load standardization-off, backward-compatible). The reimplementation reproduces the original\u8217's accuracy to within repeat noise while being {\b substantially faster and lighter and, unlike the TensorFlow-1.x original, installable on current Python/ML environments} \u8212- the original\u8217's {\f1 tf.compat.v1} graph/session code no longer runs on a modern stack without pinning a years-old TensorFlow. Because the two are the same model at equal accuracy, we do not carry the original as a separate benchmark row; the engineering win is the point, not an accuracy comparison.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 actinn-jax reimplements ACTINN ([Ma & Pellegrini 2020]) \u8212- a 4-layer fully-connected network (100/50/25 hidden units, ReLU, softmax) trained with Adam \u8212- in JAX/optax ([Bradbury 2018]), replacing the original\u8217's TensorFlow-1.x graph/session code. Key engineering:\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab {\b Sparse-aware preprocessing}: no {\f1 adata.to_df} densification; CP10k+log2 normalization and the expression / coefficient-of-variation gene filter run on sparse matrices; only the selected-gene columns of each minibatch are densified.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab {\b Cached reference model} ({\f1 ReferenceModel}): train once, {\f1 save}/{\f1 load}, map many queries \u8212- the amortized cost of repeated annotation against a fixed reference drops to the inference cost alone.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab {\b Chunked prediction} for atlas-scale queries; {\b {\f1 use_raw='auto'}} to pick raw counts from {\f1 .raw} (CELLxGENE convention).\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab {\b Optional reference-fit standardization} ({\f1 standardize=True}): z-score each selected gene by the reference\u8217's frozen mean/std and apply it to the query \u8212- a cheap domain alignment (\u167 ?3.7). Opt-in, with a saved scaler that projects with the model; \u956 ?/\u963 ? persist in the {\f1 .npz} (old models load standardization-off, backward-compatible). The reimplementation reproduces the original\u8217's accuracy to within repeat noise while being {\b substantially faster and lighter and, unlike the TensorFlow-1.x original, installable on current Python/ML environments} \u8212- the original\u8217's {\f1 tf.compat.v1} graph/session code no longer runs on a modern stack without pinning a years-old TensorFlow. Because the two are the same model at equal accuracy, we do not carry the original as a separate benchmark row; the engineering win is the point, not an accuracy comparison.\sa180\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Benchmarked methods\par}
 {
 \trowd \trgaph120
-\clbrdrb\brdrs\cellx1440\clbrdrb\brdrs\cellx2880\clbrdrb\brdrs\cellx4320\clbrdrb\brdrs\cellx5760\clbrdrb\brdrs\cellx7200\clbrdrb\brdrs\cellx8640
+\clbrdrb\brdrs\cellx1364\clbrdrb\brdrs\cellx2728\clbrdrb\brdrs\cellx3637\clbrdrb\brdrs\cellx6251\clbrdrb\brdrs\cellx7501\clbrdrb\brdrs\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 method\par}
@@ -39,7 +47,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1440\cellx2880\cellx4320\cellx5760\cellx7200\cellx8640
+\cellx1364\cellx2728\cellx3637\cellx6251\cellx7501\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b actinn-jax}\par}
@@ -58,7 +66,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1440\cellx2880\cellx4320\cellx5760\cellx7200\cellx8640
+\cellx1364\cellx2728\cellx3637\cellx6251\cellx7501\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 SVM\par}
@@ -77,7 +85,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1440\cellx2880\cellx4320\cellx5760\cellx7200\cellx8640
+\cellx1364\cellx2728\cellx3637\cellx6251\cellx7501\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 kNN\par}
@@ -96,7 +104,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1440\cellx2880\cellx4320\cellx5760\cellx7200\cellx8640
+\cellx1364\cellx2728\cellx3637\cellx6251\cellx7501\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 CellTypist\par}
@@ -115,7 +123,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1440\cellx2880\cellx4320\cellx5760\cellx7200\cellx8640
+\cellx1364\cellx2728\cellx3637\cellx6251\cellx7501\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b linear-anova-pca}\par}
@@ -124,7 +132,7 @@
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 linear\par}
 \cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 normalize\u8594 ?ANOVA\u8594 ?PCA(220)\u8594 ?logreg\par}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 normalize \u8594 ? ANOVA \u8594 ? PCA(220) \u8594 ? logreg\par}
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 prob\par}
 \cell}
@@ -134,7 +142,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1440\cellx2880\cellx4320\cellx5760\cellx7200\cellx8640
+\cellx1364\cellx2728\cellx3637\cellx6251\cellx7501\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b scTOP}\par}
@@ -153,7 +161,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1440\cellx2880\cellx4320\cellx5760\cellx7200\cellx8640
+\cellx1364\cellx2728\cellx3637\cellx6251\cellx7501\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 SingleR\par}
@@ -172,7 +180,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1440\cellx2880\cellx4320\cellx5760\cellx7200\cellx8640
+\cellx1364\cellx2728\cellx3637\cellx6251\cellx7501\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 scmap-cluster\par}
@@ -191,7 +199,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1440\cellx2880\cellx4320\cellx5760\cellx7200\cellx8640
+\cellx1364\cellx2728\cellx3637\cellx6251\cellx7501\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 scANVI\par}
@@ -204,13 +212,13 @@
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 prob\par}
 \cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 .venv-scvi (MPS)\par}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 scvi (MPS)\par}
 \cell}
 }
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1440\cellx2880\cellx4320\cellx5760\cellx7200\cellx8640
+\cellx1364\cellx2728\cellx3637\cellx6251\cellx7501\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 scArches\par}
@@ -223,13 +231,13 @@
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 prob\par}
 \cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 .venv-scvi (MPS)\par}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 scvi (MPS)\par}
 \cell}
 }
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1440\cellx2880\cellx4320\cellx5760\cellx7200\cellx8640
+\cellx1364\cellx2728\cellx3637\cellx6251\cellx7501\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b ProtoCloud}\par}
@@ -242,13 +250,13 @@
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 ambiguity flag\par}
 \cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 .venv-protocloud\par}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 protocloud\par}
 \cell}
 }
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1440\cellx2880\cellx4320\cellx5760\cellx7200\cellx8640
+\cellx1364\cellx2728\cellx3637\cellx6251\cellx7501\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 scPRINT\par}
@@ -261,13 +269,13 @@
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 \u8212-\par}
 \cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 .venv-scprint (MPS)\par}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 scprint (MPS)\par}
 \cell}
 }
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1440\cellx2880\cellx4320\cellx5760\cellx7200\cellx8640
+\cellx1364\cellx2728\cellx3637\cellx6251\cellx7501\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b Pan-human Azimuth}\par}
@@ -280,7 +288,7 @@
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 trained {\f1 Unassigned}\par}
 \cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 .venv-panhuman\par}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 panhuman\par}
 \cell}
 }
 \intbl\row}
@@ -297,7 +305,7 @@
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Datasets\par}
 {
 \trowd \trgaph120
-\clbrdrb\brdrs\cellx1234\clbrdrb\brdrs\cellx2468\clbrdrb\brdrs\cellx3702\clbrdrb\brdrs\cellx4936\clbrdrb\brdrs\cellx6170\clbrdrb\brdrs\cellx7404\clbrdrb\brdrs\cellx8638
+\clbrdrb\brdrs\cellx1782\clbrdrb\brdrs\cellx3153\clbrdrb\brdrs\cellx4113\clbrdrb\brdrs\cellx5347\clbrdrb\brdrs\cellx6169\clbrdrb\brdrs\cellx7129\clbrdrb\brdrs\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 dataset\par}
@@ -318,7 +326,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1234\cellx2468\cellx3702\cellx4936\cellx6170\cellx7404\cellx8638
+\cellx1782\cellx3153\cellx4113\cellx5347\cellx6169\cellx7129\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 lung_intra\par}
@@ -339,7 +347,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1234\cellx2468\cellx3702\cellx4936\cellx6170\cellx7404\cellx8638
+\cellx1782\cellx3153\cellx4113\cellx5347\cellx6169\cellx7129\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 lung_cross\par}
@@ -360,7 +368,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1234\cellx2468\cellx3702\cellx4936\cellx6170\cellx7404\cellx8638
+\cellx1782\cellx3153\cellx4113\cellx5347\cellx6169\cellx7129\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 liver_intra\par}
@@ -381,7 +389,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1234\cellx2468\cellx3702\cellx4936\cellx6170\cellx7404\cellx8638
+\cellx1782\cellx3153\cellx4113\cellx5347\cellx6169\cellx7129\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 liver_cross\par}
@@ -402,7 +410,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1234\cellx2468\cellx3702\cellx4936\cellx6170\cellx7404\cellx8638
+\cellx1782\cellx3153\cellx4113\cellx5347\cellx6169\cellx7129\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 blood_gut_intra\par}
@@ -423,7 +431,7 @@
 \intbl\row}
 {
 \trowd \trgaph120
-\cellx1234\cellx2468\cellx3702\cellx4936\cellx6170\cellx7404\cellx8638
+\cellx1782\cellx3153\cellx4113\cellx5347\cellx6169\cellx7129\cellx8637
 \trkeep\intbl
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 pbmc\par}

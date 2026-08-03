@@ -56,6 +56,7 @@ exists. Where a better-resourced model already exists, the productive move is to
 (§3.4).
 
 **Contributions.**
+
 1. A modern, dependency-light (no TensorFlow) JAX reimplementation of ACTINN with sparse
    preprocessing, chunked atlas-scale prediction, and a cached reference model.
 2. A neutral **13-method × 6-dataset** benchmark of accuracy, speed, and memory on Apple
@@ -96,6 +97,7 @@ actinn-jax reimplements ACTINN ([Ma & Pellegrini 2020]) — a 4-layer fully-conn
 network (100/50/25 hidden units, ReLU, softmax) trained with Adam — in JAX/optax
 ([Bradbury 2018]), replacing
 the original's TensorFlow-1.x graph/session code. Key engineering:
+
 - **Sparse-aware preprocessing**: no `adata.to_df` densification; CP10k+log2
   normalization and the expression / coefficient-of-variation gene filter run on sparse
   matrices; only the selected-gene
@@ -119,20 +121,20 @@ engineering win is the point, not an accuracy comparison.
 ## Benchmarked methods
 
 | method | source | tier | engine | rejection | env |
-|---|---|---|---|---|---|
+|------------|------------|--------|-----------------------|-----------|----------|
 | **actinn-jax** | [Ma & Pellegrini 2020] | classical | JAX MLP | abstain (`min_prob`) | core |
 | SVM | [Pedregosa 2011] | classical | linear SVM (SGD) | — | core |
 | kNN | [Pedregosa 2011] | classical | k-nearest neighbors | — | core |
 | CellTypist | [Domínguez Conde 2022] | linear | L2 logistic regression | prob threshold | core |
-| **linear-anova-pca** | [Pedregosa 2011] † | linear | normalize→ANOVA→PCA(220)→logreg | prob | core |
+| **linear-anova-pca** | [Pedregosa 2011] † | linear | normalize → ANOVA → PCA(220) → logreg | prob | core |
 | **scTOP** | [Yampolskaya 2023] | parameter-free | rank z-score class-average projection | — | core (`sctop`) |
 | SingleR | [Aran 2019] | correlation | Spearman + fine-tuning | — | R/.Rlib |
 | scmap-cluster | [Kiselev 2018] | correlation | centroid cosine | yes (unassigned) | R/.Rlib |
-| scANVI | [Xu 2021] | deep | scVI semi-supervised VAE | prob | .venv-scvi (MPS) |
-| scArches | [Lotfollahi 2022] | deep | scANVI reference surgery | prob | .venv-scvi (MPS) |
-| **ProtoCloud** | [Guo & Ding 2026] | deep | prototype VAE + LRP attribution | ambiguity flag | .venv-protocloud |
-| scPRINT | [Kalfon 2025] | foundation | pretrained transformer, zero-shot | — | .venv-scprint (MPS) |
-| **Pan-human Azimuth** | [Sarkar et al. 2026] | pretrained | 8-level hierarchical NN, fixed 382-leaf typology | trained `Unassigned` | .venv-panhuman |
+| scANVI | [Xu 2021] | deep | scVI semi-supervised VAE | prob | scvi (MPS) |
+| scArches | [Lotfollahi 2022] | deep | scANVI reference surgery | prob | scvi (MPS) |
+| **ProtoCloud** | [Guo & Ding 2026] | deep | prototype VAE + LRP attribution | ambiguity flag | protocloud |
+| scPRINT | [Kalfon 2025] | foundation | pretrained transformer, zero-shot | — | scprint (MPS) |
+| **Pan-human Azimuth** | [Sarkar et al. 2026] | pretrained | 8-level hierarchical NN, fixed 382-leaf typology | trained `Unassigned` | panhuman |
 
 † `linear-anova-pca` has no method paper: it is a baseline assembled here from scikit-learn
 components, tuned deliberately to be the strongest simple competitor we could build (§1).
@@ -168,7 +170,7 @@ API and older harmony versions do not compile on the current toolchain.
 ## Datasets
 
 | dataset | source | split | tissue | #types | genes | notes |
-|---|---|---|---|---|---|---|
+|-------------|----------|-------|---------|------|-------|-----------|
 | lung_intra | [Travaglini 2020] | within-dataset | lung (Krasnow) | 46 | Ensembl | 300 cells/type ref |
 | lung_cross | [Sikkema 2023] → [Travaglini 2020] | cross-dataset | lung (HLCA→Krasnow) | 46 | Ensembl | different lab/protocol |
 | liver_intra | [Edgar 2026] | within-dataset | liver (HLiCA) | 36 | Ensembl | 150 cells/type |
