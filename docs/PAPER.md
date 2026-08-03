@@ -103,13 +103,13 @@ claims or our method's interests — ProtoCloud overtaking actinn-jax at atlas s
 rather than widening memory advantage, a better-resourced broad annotator than our own — they
 are reported in those terms.
 
-**On adding a twelfth method to a crowded field.** We are adding one, and we think it earns
+**On adding another method to a crowded field.** We are adding one, and we think it earns
 its place: the original ACTINN no longer installs or runs on current toolchains, and the
 reimplementation's flat, sub-second, memory-bounded inference over a cached reference is what
 makes the multi-stage workflow of §3.4 practical on a laptop. What we are *not* doing is the
 move that makes method papers hard to trust — concluding that the new method wins. It does
 not: on accuracy it sits inside a four-way cluster it does not lead, the panel was assembled
-to include the baselines most likely to beat it, and they do. A field with a dozen working
+to include the baselines most likely to beat it, and they do. A field already full of working
 methods ([xkcd 927]) is a good reason to be specific about what a new entry is *for* — here,
 a cost profile that lets several models be chained — rather than to claim it supersedes what
 exists. Where a better-resourced model already exists, the productive move is to build on it
