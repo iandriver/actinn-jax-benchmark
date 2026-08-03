@@ -11,12 +11,19 @@ Run this script first, then build the three deliverables from `manuscript/`:
 
     python manuscript/build_manuscript.py
     cd manuscript
-    pandoc manuscript.md          -o actinn-jax_preprint.pdf  --pdf-engine=tectonic \
-        --number-sections --resource-path=.:../docs:../docs/figures
-    pandoc manuscript_portable.md -o actinn-jax_preprint.rtf  --standalone \
-        --template=rtf-with-abstract.rtf.template --resource-path=.:../docs:../docs/figures
-    pandoc manuscript_portable.md -o actinn-jax_preprint.docx \
+    pandoc -f markdown-implicit_figures manuscript.md -o actinn-jax_preprint.pdf \
+        --pdf-engine=tectonic --number-sections --resource-path=.:../docs:../docs/figures
+    pandoc -f markdown-implicit_figures manuscript_portable.md -o actinn-jax_preprint.rtf \
+        --standalone --template=rtf-with-abstract.rtf.template \
         --resource-path=.:../docs:../docs/figures
+    pandoc -f markdown-implicit_figures manuscript_portable.md -o actinn-jax_preprint.docx \
+        --resource-path=.:../docs:../docs/figures
+
+``-f markdown-implicit_figures`` is load-bearing everywhere: captions are written into
+PAPER.md as numbered "**Figure N.**" / "**Table N.**" paragraphs so they survive into all
+three formats *and* stay visible in the repo doc. Left on, pandoc would additionally promote
+each image to a LaTeX float and number it itself, so the PDF alone would carry a second,
+conflicting set of numbers.
 
 The RTF flags are load-bearing and easy to lose:
   * ``--standalone`` -- without it pandoc emits a *fragment*: no {\\rtf1 header,
@@ -84,31 +91,14 @@ body = re.sub(r"\s*\(\s*\)", "", body)                        # empty "()"
 body = re.sub(r"\(\s*and the", "(see the", body)              # "(and the smooth..." -> "(see the..."
 body = re.sub(r"^\[[^\]]+\]:\s*https?://\S+\s*$", "", body, flags=re.M)  # remove link defs
 
-# 4. figures -> absolute path; nicer captions for the main ones
-CAPTIONS = {
- "fig_accuracy_heatmap.png": "Accuracy by method (rows) and dataset (columns), in-house panel.",
- "fig_speed_memory.png": "Per-query inference time and peak memory by method (in-house panel).",
- "fig_pareto_liver_intra.png": "Accuracy versus total wall time (liver_intra); actinn-jax sits on the fast frontier.",
- "fig_scaling.png": "Fit and predict time versus reference size and cardinality; predict time stays flat and sub-second.",
- "gene_budget_curve.png": "actinn-jax accuracy and macro-F1 versus input gene budget across all six Open Problems datasets.",
- "gene_budget_signals.png": "Label-free signals (reference held-out CV; query cells per class) predict when more genes hurt.",
-}
-def figrepl(m):
-    alt, path = m.group(1), m.group(2)
-    fname = path.split("/")[-1]
-    cap = CAPTIONS.get(fname, alt)
-    return f"![{cap}]({FIGDIR / fname})"
-body = re.sub(r"!\[([^\]]*)\]\((figures/[^)]+)\)", figrepl, body)
-
-# 4a. add the two gene-budget figures (referenced only as links in §3.9) as
-# proper embedded figures at the end of the Open Problems section.
-GB = (f"\n\n![actinn-jax accuracy and macro-F1 versus input gene budget across all six "
-      f"Open Problems datasets. More genes help most datasets but regress the fine-grained, "
-      f"domain-shifted tabula_sapiens.]({FIGDIR/'gene_budget_curve.png'})\n\n"
-      f"![Label-free signals for setting the gene budget without test labels. Held-out "
-      f"reference cross-validation and query-cells-per-class both single out tabula_sapiens "
-      f"(where more genes hurt).]({FIGDIR/'gene_budget_signals.png'})\n\n")
-body = body.replace("\n## 4. Discussion", GB + "## 4. Discussion")
+# 4. figures -> absolute path. Captions are numbered "**Figure N.**" paragraphs in PAPER.md
+# itself: they have to be visible in the repo doc on GitHub (alt text is not), and only one
+# source of numbering can exist if prose references are to stay correct. Every figure and
+# table therefore carries its own caption in the source, and the three pandoc calls run with
+# `-f markdown-implicit_figures` so LaTeX does not add a *second*, differently-numbered
+# "Figure N:" of its own on top of ours -- which it did, calling Figure 3 "Figure 1".
+body = re.sub(r"!\[([^\]]*)\]\(figures/([^)]+)\)",
+              lambda m: f"![{m.group(1)}]({FIGDIR / m.group(2)})", body)
 
 # 4b. headings: promote one level (## main section -> #) and strip the manual
 # "N." / "N.M" numbers so pandoc --number-sections produces clean 1 / 1.1 numbering.
@@ -146,6 +136,23 @@ def _references():
 
 REFS = _references()
 
+# 6. DOIs are digits and punctuation, so no hyphenation pattern applies to them and TeX has
+# nowhere to break: an unbreakable `doi:10.64898/2026.06.30.735539` simply overruns the right
+# margin, which is what pushed three lines of the reference list and the Zenodo DOI in Data &
+# code availability off the text block. Inserting explicit break points after `/` and `.` lets
+# them wrap with no hyphen invented inside the identifier. LaTeX output only -- the RTF/DOCX
+# variant must stay free of raw TeX, and Word wraps them on its own.
+DOI = re.compile(r"10\.\d{4,5}/[^\s)\]}]+")
+# Skip link targets and reference definitions: an \allowbreak inside a URL breaks the link.
+PROTECTED = re.compile(r"(\]\([^)]*\)|^\[[^\]]+\]:.*$)", re.M)
+
+
+def breakable_dois(text):
+    parts = PROTECTED.split(text)
+    return "".join(part if i % 2 else DOI.sub(
+        lambda m: re.sub(r"([/.])", r"\1\\allowbreak{}", m.group(0)), part)
+        for i, part in enumerate(parts))
+
 FRONT = f"""---
 title: |
   {TITLE}
@@ -182,7 +189,8 @@ header-includes:
 \\begin{{center}}\\small {AFFIL} \\\\ {CORR}\\end{{center}}
 """
 
-(ROOT / "manuscript" / "manuscript.md").write_text(FRONT + "\n" + body + "\n" + REFS)
+(ROOT / "manuscript" / "manuscript.md").write_text(
+    FRONT + "\n" + breakable_dois(body) + "\n" + breakable_dois(REFS))
 print("wrote manuscript/manuscript.md (PDF via LaTeX)")
 
 # ---- portable variant for RTF / DOCX (Pages-editable): no raw LaTeX; the

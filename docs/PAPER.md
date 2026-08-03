@@ -181,7 +181,7 @@ engineering win is the point, not an accuracy comparison.
 ### 2.2 Benchmarked methods
 
 | method | source | tier | engine | rejection | env |
-|------------|------------|--------|-----------------------|-----------|----------|
+|-----------|------------|-----------|----------------------|----------|----------|
 | **actinn-jax** | [Ma & Pellegrini 2020] | classical | JAX MLP | abstain (`min_prob`) | core |
 | SVM | [Pedregosa 2011] | classical | linear SVM (SGD) | — | core |
 | kNN | [Pedregosa 2011] | classical | k-nearest neighbors | — | core |
@@ -195,6 +195,11 @@ engineering win is the point, not an accuracy comparison.
 | **ProtoCloud** | [Guo & Ding 2026] | deep | prototype VAE + LRP attribution | ambiguity flag | protocloud |
 | scPRINT | [Kalfon 2025] | foundation | pretrained transformer, zero-shot | — | scprint (MPS) |
 | **Pan-human Azimuth** | [Sarkar et al. 2026] | pretrained | 8-level hierarchical NN, fixed 382-leaf typology | trained `Unassigned` | panhuman |
+
+
+**Table 1.** The benchmarked methods: model family (*tier*), the engine each one actually runs,
+whether it can decline to call a cell (*rejection*), and the pinned environment it was run in
+(§2.7). Bold marks the methods added to this panel here.
 
 † `linear-anova-pca` has no method paper: it is a baseline assembled here from scikit-learn
 components, tuned deliberately to be the strongest simple competitor we could build (§1).
@@ -230,13 +235,18 @@ API and older harmony versions do not compile on the current toolchain.
 ### 2.3 Datasets
 
 | dataset | source | split | tissue | #types | genes | notes |
-|-------------|----------|-------|---------|------|-------|-----------|
+|-------------|----------|-------|-----------|------|-------|-----------|
 | lung_intra | [Travaglini 2020] | within-dataset | lung (Krasnow) | 46 | Ensembl | 300 cells/type ref |
-| lung_cross | [Sikkema 2023] → [Travaglini 2020] | cross-dataset | lung (HLCA→Krasnow) | 46 | Ensembl | different lab/protocol |
+| lung_cross | [Sikkema 2023] → [Travaglini 2020] | cross-dataset | lung (HLCA → Krasnow) | 46 | Ensembl | different lab/protocol |
 | liver_intra | [Edgar 2026] | within-dataset | liver (HLiCA) | 36 | Ensembl | 150 cells/type |
 | liver_cross | [Edgar 2026] | cross-**study** | liver (HLiCA) | 34 | Ensembl | train 6 studies → test withheld study |
 | blood_gut_intra | [Alegbe 2026] | within-dataset | blood + gut (IBDverse) | 86 | Ensembl | high cardinality; no CL ids |
 | pbmc | [10x Genomics 2016] | within-dataset | PBMC (pbmc3k) | 8 | symbols | small-n; scPRINT skips (symbols) |
+
+
+**Table 2.** The six benchmark datasets. *split* separates within-dataset holdouts from
+cross-dataset and cross-study transfer; *genes* records whether the matrix is keyed by Ensembl
+ids or by gene symbols, which decides who can read it.
 
 The blood+gut set is a subsample of **IBDverse** (Wellcome Sanger Institute; blood, terminal
 ileum and rectum from 421 individuals), included here because 86 fine-grained labels make it
@@ -275,12 +285,12 @@ a vocabulary artifact and the ranking, not the level, is what transfers.
 
 ### 2.5 Harness, isolation, and hardware
 
-Each method runs in **its own virtual environment via subprocess isolation**
-(`benchmark/runner.py`), because the dependency sets are mutually unsatisfiable — scVI-based
+The runner, `benchmark/runner.py`, executes each method in **its own virtual environment
+under subprocess isolation**, because the dependency sets are mutually unsatisfiable — scVI-based
 methods, TensorFlow/Keras (Pan-human Azimuth), R (SingleR, scmap) and the JAX core cannot
-coexist in one interpreter. The driver (`benchmark/driver.py`) builds the reference/query
-split **once per dataset**, from a fixed seed, and hands the identical pair to every method,
-so no method sees a different split. **repeats = 3**; scPRINT and Pan-human Azimuth run once
+coexist in one interpreter. The driver, `benchmark/driver.py`, builds the reference/query
+split **once per dataset** from a fixed seed and hands the identical pair to every method, so
+no method sees a different split. **repeats = 3**; scPRINT and Pan-human Azimuth run once
 each, being deterministic given a fixed query and dominated by a single forward pass.
 
 Resource accounting is per subprocess: fit and predict are timed separately and peak RSS is
@@ -445,16 +455,23 @@ methods, all selectable without test labels:
 ### 3.1 Accuracy and cost
 
 ![accuracy heatmap](figures/fig_accuracy_heatmap.png)
+
+**Figure 1.** Accuracy by method (rows) and dataset (columns) across the in-house panel.
+
 ![speed and memory](figures/fig_speed_memory.png)
+
+**Figure 2.** Fit time, per-query predict time, and peak memory by method, averaged across the
+in-house panel. The methods sit within a few points of each other on accuracy (Table 3) and
+orders of magnitude apart on cost.
 
 Accuracy and cost belong in one table: the finding is not where either lands, but how little
 they relate. Accuracy is the mean over the **five shared-vocabulary datasets** (lung_cross
 excluded — its exact accuracy is a vocabulary artifact, see the † note below; means over all
 six are ~0.08 lower for every method, with the identical ranking); macro-F1 and ontology are
-means over all six; cost is the mean per query. Ordered by accuracy:
+means over all six; cost is the mean per query (Table 3):
 
 | method | acc (5) | macro-F1 (6) | ontology (6) | fit (s) | **predict (s)** | peak MB |
-|---|---:|---:|---:|---:|---:|---:|
+|----------|----:|----:|----:|----:|----:|----:|
 | **linear-anova-pca** | **0.839** | 0.699 | 0.808 | **3.0** | **0.34** | 4294 |
 | scANVI | 0.833 | 0.697 | 0.809 | 0.0* | 89.2 | 2099 |
 | scArches | 0.832 | **0.699** | 0.805 | 54.7 | 21.4 | 1819 |
@@ -467,7 +484,11 @@ means over all six; cost is the mean per query. Ordered by accuracy:
 | scTOP | 0.739 | 0.619 | 0.703 | 1.1 | 1.07 | 1928 |
 | scmap-cluster | 0.646 | 0.550 | 0.771 | 0.4 | 13.1 | 8073 |
 
-(*scANVI does most of its work in one train+predict pass, attributed to predict.)
+**Table 3.** Accuracy and cost together, ordered by accuracy. Accuracy is the mean over the five
+shared-vocabulary datasets, macro-F1 and ontology concordance are means over all six, and cost
+is the mean per query. Bold marks the best value in a column.
+
+*In Table 3, scANVI does most of its work in one train+predict pass, attributed to predict.
 
 **Read down the accuracy column, then across.** The top four span 0.008 in accuracy, **~130× in
 predict time** (0.34 s to 89 s) and 2.4× in memory. scANVI sits within 0.002 of second place and
@@ -480,7 +501,7 @@ while the linear pipeline refits scaler/PCA/classifier for every query. ProtoClo
 fit buys nothing at this reference size — and buys the top accuracy at atlas scale (§3.3).
 
 **Pretrained annotators, scored ontology-only.** The two methods with fixed label vocabularies
-(§2.2, §2.4) cannot appear in the table above, since they do not predict the dataset's label
+(§2.2, §2.4) cannot appear in Table 3, since they do not predict the dataset's label
 strings. They are scored by ontology concordance on the three datasets where reference and
 query both carry CL ids, with actinn-jax on the same splits for reference:
 
@@ -489,6 +510,11 @@ query both carry CL ids, with actinn-jax on the same splits for reference:
 | actinn-jax (reference-trained) | **0.917** | **0.846** | **0.731** | 0.27–0.37 |
 | Pan-human Azimuth (pretrained) | 0.700 | 0.521 | 0.408 | 2.2–3.4 |
 | scPRINT (zero-shot) | 0.201 | — | — | 62.3 |
+
+
+**Table 4.** Pretrained annotators, scored by ontology concordance only, on the three datasets
+where reference and query both carry Cell Ontology ids — with reference-trained actinn-jax on
+the same splits for scale. Not a like-for-like comparison; see the text below.
 
 **This is not a like-for-like comparison and should not be read as one.** actinn-jax is trained
 on a reference drawn from the same data and scored in its own vocabulary; Pan-human Azimuth has
@@ -516,6 +542,11 @@ low-cardinality problems. Per dataset (accuracy):
 | liver_cross (cross-study) | **0.686 exact / 0.731 ontology — #1 on both** | actinn-jax |
 | blood_gut (86 types) | 0.860 | linear-anova-pca 0.902 |
 | pbmc (8 types) | 0.913 | scArches 0.931 |
+
+
+**Table 5.** Per-dataset accuracy: actinn-jax against whichever method leads that dataset.
+† on lung_cross the exact-match score is a vocabulary artifact, so ontology concordance is the
+meaningful column.
 
 No single method leads everywhere: the linear pipeline and ProtoCloud each take two datasets,
 actinn-jax and scArches one apiece. actinn-jax leads the cross-study liver split — the hardest
@@ -547,6 +578,10 @@ exact scores are unaffected.
 
 ![Pareto](figures/fig_pareto_liver_intra.png)
 
+**Figure 3.** Accuracy against total wall time on liver_intra. The tuned linear pipeline holds
+the fast-frontier point; actinn-jax sits just inside it at this reference size, and what
+separates it is visible only on the scaling axes of Figure 4.
+
 Plotting accuracy against total wall time makes the frontier explicit. The **tuned linear
 pipeline** holds the fast-frontier point: highest matrix accuracy (0.839) at the lowest fit
 time of any accurate method (3.0 s), placing it above and to the left of actinn-jax, SVM, kNN
@@ -555,11 +590,14 @@ linear pipeline on every dataset except lung — for 30–130× the inference co
 sits just inside the frontier at this reference size; what separates it is not visible on a
 fixed-size plot but on the scaling axes of §3.3 and §5: predict time that stays flat as the
 reference grows, and ~2× lower peak memory that holds to atlas scale. The figure is drawn
-from the liver_intra panel and depicts the ranking in the tables above.
+from the liver_intra panel and depicts the ranking of Tables 3 and 5.
 
 ### 3.3 Scaling
 
 ![scaling](figures/fig_scaling.png)
+
+**Figure 4.** Fit and predict time against reference size and label cardinality. Fit time grows
+for every trained method; predict time stays flat and sub-second across the whole range.
 
 Training time grows with reference size and with #cell types for all trained methods —
 actinn-jax's fit goes 2.6 s → 17.4 s → 23.5 s as the reference grows 965 → 14.8k → 24k
@@ -611,10 +649,15 @@ three atlases plus a census-wide sample ([PANHUMAN_DISTILL.md](PANHUMAN_DISTILL.
 3,396 withheld cross-study liver cells:
 
 | broad-pass model | classes | ontology | cells/s |
-|---|---:|---:|---:|
+|------------------------------|------:|------:|--------:|
 | census-built (`broad_human_v1`) | 798 | 0.338 | 2,962 |
 | Pan-human Azimuth | 382 | 0.380 | 1,076–1,563 |
 | **distilled (`panhuman_distill_v1`)** | 324 | **0.406** | **8,937–10,021** |
+
+
+**Table 6.** Three broad-pass entry points on 3,396 withheld cross-study liver cells: the
+census-built reference, the Pan-human Azimuth teacher, and the model distilled from that
+teacher.
 
 This makes the entry point both better and ~3× faster than building it from the census
 directly, and it answers in a harmonized, ontology-mapped vocabulary rather than raw census
@@ -647,6 +690,11 @@ That substitution needs a control, since any grouping might help. Built from one
 | random grouping, same group sizes | 0.539 |
 | flat, no hierarchy | 0.547 |
 
+
+**Table 7.** Coarse-hierarchy ablation. Ontology concordance on the held-out lung atlas for a
+Cell Ontology lineage hierarchy, a random grouping with the same group sizes, and no hierarchy
+at all.
+
 Random lands on flat, so it is the structure doing the work rather than the mere presence of
 groups. On that basis, `broad_mouse_v1`: 27,026 cells → **453 cell types across 85 tissues**,
 305 CL terms collapsed to 21 coarse groups, **17 seconds of CPU** to train, 38 MB. Two mouse
@@ -657,6 +705,10 @@ datasets were excluded from the reference entirely and used as the test set — 
 |---|---:|---:|---:|
 | all cells | 0.638 | 100% | 9,712 |
 | `min_prob = 0.5` | **0.718** | 71% | |
+
+
+**Table 8.** `broad_mouse_v1` on 12,646 held-out mouse cells (137 truth types, 41 tissues, none
+of it in the reference), with and without abstain.
 
 Its abstain calibration is also better behaved than the human census model's — 0.88 accuracy
 at 82% coverage, against 0.80 at 46% — because mouse census carries fewer near-duplicate
@@ -709,6 +761,11 @@ cells are genuinely out-of-distribution), and sweeping a confidence threshold:
 | 0.5 | 0.919 / 0.93 / 0.30 | 0.936 / 0.68 / 0.68 |
 | 0.7 | 0.946 / 0.84 / 0.52 | 0.936 / 0.68 / 0.68 |
 | 0.9 | 0.969 / 0.66 / 0.73 | 0.937 / 0.68 / 0.68 |
+
+
+**Table 9.** Confidence-threshold sweep with 9 of 36 cell types held out of the liver reference,
+so 1,350 query cells are genuinely out-of-distribution. Each cell reads accuracy on kept cells /
+fraction of cells kept / fraction of held-out-type cells flagged.
 
 actinn-jax's probability gives a **smooth, tunable** abstain curve — accuracy on kept cells
 rises 0.885→0.969 as coverage falls 1.00→0.66 and OOD-flagging climbs 0.00→0.73 — so a user
@@ -766,6 +823,11 @@ method. This is the paper's cleanest cross-method cost comparison:
 | cellmapper_linear | 0.776 | 0.553 | 58 s | 31.5 GB |
 | naive_bayes | 0.738 | 0.613 | 31 s | 19.5 GB |
 
+
+**Table 10.** Open Problems methods re-run on a single AWS `r7i.8xlarge` — identical hardware,
+harness, storage, and trace instrumentation for every method — averaged over the benchmark's
+datasets.
+
 actinn-jax **ties its `mlp` sibling on accuracy at ~2× the speed** (165 vs 327 s) and
 **beats xgboost's accuracy at ~5.5× less runtime and ~4× less memory** (165 s / 21 GB vs
 905 s / 81 GB). The faster methods (knn, logistic) are less accurate; the more accurate
@@ -788,7 +850,7 @@ for CellTypist (half a core) and 117% for `mlp` (effectively single-threaded) to
 the linear pipeline (23 cores)**. Wall-clock under those conditions measures threading and
 contention as much as algorithmic cost. It also disagrees with the controlled run above for
 two methods (`mlp` 327 s → 769 s, `cellmapper_linear` 58 s → 717 s), which we flag rather
-than reconcile: the table above, run at low concurrency, remains the cost comparison we
+than reconcile: Table 10, run at low concurrency, remains the cost comparison we
 stand behind. Coverage was partial when a wall-clock budget stopped the run — six datasets
 for the SVM and CellTypist, four for scTOP, three for the linear pipeline — so per-method
 means over different dataset subsets would not be comparable either.
@@ -804,15 +866,27 @@ Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and
 in minutes — the gap to the top method was largely a gene-budget artifact, not the VAE. But
 more genes is **not** a universal win: it *regresses* tabula_sapiens by ~10 pt (its
 284-cell test batch across 160 fine types overfits reference-specific genes) and saturates
-hypomap ([gene_budget_curve.png](figures/gene_budget_curve.png)). Crucially, this is
+hypomap (Figure 6). Crucially, this is
 **selectable without test labels**: held-out *reference* cross-validation rises for the
 datasets that benefit and is the one signal that *drops* for tabula_sapiens, and a trivial
-query-cells-per-class check independently flags it ([gene_budget_signals.png](figures/gene_budget_signals.png)) —
+query-cells-per-class check independently flags it (Figure 7) —
 so the budget can be set deterministically per dataset. (iii) *Negative control* — a
 CPU-only, UCE-style protein-embedding featurization (expression-weighted mean of ESM2 gene
 embeddings) does **not** help and hurts the hardest case: the pooling discards the per-gene
 detail that separates fine types, so the value of a foundation model like UCE stays locked
 in its GPU transformer, not a portable averaging trick.
+
+![gene budget curve](figures/gene_budget_curve.png)
+
+**Figure 6.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
+Problems datasets. More genes help most datasets but regress the fine-grained,
+domain-shifted tabula_sapiens.
+
+![gene budget signals](figures/gene_budget_signals.png)
+
+**Figure 7.** Label-free signals for setting the gene budget without test labels. Held-out
+reference cross-validation and query-cells-per-class both single out tabula_sapiens, the one
+dataset where more genes hurt.
 
 ## 4. Discussion
 

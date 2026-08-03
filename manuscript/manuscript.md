@@ -146,7 +146,7 @@ engineering win is the point, not an accuracy comparison.
 ## Benchmarked methods
 
 | method | source | tier | engine | rejection | env |
-|------------|------------|--------|-----------------------|-----------|----------|
+|-----------|------------|-----------|----------------------|----------|----------|
 | **actinn-jax** | [Ma & Pellegrini 2020] | classical | JAX MLP | abstain (`min_prob`) | core |
 | SVM | [Pedregosa 2011] | classical | linear SVM (SGD) | — | core |
 | kNN | [Pedregosa 2011] | classical | k-nearest neighbors | — | core |
@@ -160,6 +160,11 @@ engineering win is the point, not an accuracy comparison.
 | **ProtoCloud** | [Guo & Ding 2026] | deep | prototype VAE + LRP attribution | ambiguity flag | protocloud |
 | scPRINT | [Kalfon 2025] | foundation | pretrained transformer, zero-shot | — | scprint (MPS) |
 | **Pan-human Azimuth** | [Sarkar et al. 2026] | pretrained | 8-level hierarchical NN, fixed 382-leaf typology | trained `Unassigned` | panhuman |
+
+
+**Table 1.** The benchmarked methods: model family (*tier*), the engine each one actually runs,
+whether it can decline to call a cell (*rejection*), and the pinned environment it was run in
+(§2.7). Bold marks the methods added to this panel here.
 
 † `linear-anova-pca` has no method paper: it is a baseline assembled here from scikit-learn
 components, tuned deliberately to be the strongest simple competitor we could build (§1).
@@ -195,13 +200,18 @@ API and older harmony versions do not compile on the current toolchain.
 ## Datasets
 
 | dataset | source | split | tissue | #types | genes | notes |
-|-------------|----------|-------|---------|------|-------|-----------|
+|-------------|----------|-------|-----------|------|-------|-----------|
 | lung_intra | [Travaglini 2020] | within-dataset | lung (Krasnow) | 46 | Ensembl | 300 cells/type ref |
-| lung_cross | [Sikkema 2023] → [Travaglini 2020] | cross-dataset | lung (HLCA→Krasnow) | 46 | Ensembl | different lab/protocol |
+| lung_cross | [Sikkema 2023] → [Travaglini 2020] | cross-dataset | lung (HLCA → Krasnow) | 46 | Ensembl | different lab/protocol |
 | liver_intra | [Edgar 2026] | within-dataset | liver (HLiCA) | 36 | Ensembl | 150 cells/type |
 | liver_cross | [Edgar 2026] | cross-**study** | liver (HLiCA) | 34 | Ensembl | train 6 studies → test withheld study |
 | blood_gut_intra | [Alegbe 2026] | within-dataset | blood + gut (IBDverse) | 86 | Ensembl | high cardinality; no CL ids |
 | pbmc | [10x Genomics 2016] | within-dataset | PBMC (pbmc3k) | 8 | symbols | small-n; scPRINT skips (symbols) |
+
+
+**Table 2.** The six benchmark datasets. *split* separates within-dataset holdouts from
+cross-dataset and cross-study transfer; *genes* records whether the matrix is keyed by Ensembl
+ids or by gene symbols, which decides who can read it.
 
 The blood+gut set is a subsample of **IBDverse** (Wellcome Sanger Institute; blood, terminal
 ileum and rectum from 421 individuals), included here because 86 fine-grained labels make it
@@ -240,12 +250,12 @@ a vocabulary artifact and the ranking, not the level, is what transfers.
 
 ## Harness, isolation, and hardware
 
-Each method runs in **its own virtual environment via subprocess isolation**
-(`benchmark/runner.py`), because the dependency sets are mutually unsatisfiable — scVI-based
+The runner, `benchmark/runner.py`, executes each method in **its own virtual environment
+under subprocess isolation**, because the dependency sets are mutually unsatisfiable — scVI-based
 methods, TensorFlow/Keras (Pan-human Azimuth), R (SingleR, scmap) and the JAX core cannot
-coexist in one interpreter. The driver (`benchmark/driver.py`) builds the reference/query
-split **once per dataset**, from a fixed seed, and hands the identical pair to every method,
-so no method sees a different split. **repeats = 3**; scPRINT and Pan-human Azimuth run once
+coexist in one interpreter. The driver, `benchmark/driver.py`, builds the reference/query
+split **once per dataset** from a fixed seed and hands the identical pair to every method, so
+no method sees a different split. **repeats = 3**; scPRINT and Pan-human Azimuth run once
 each, being deterministic given a fixed query and dominated by a single forward pass.
 
 Resource accounting is per subprocess: fit and predict are timed separately and peak RSS is
@@ -406,17 +416,24 @@ methods, all selectable without test labels:
 
 ## Accuracy and cost
 
-![Accuracy by method (rows) and dataset (columns), in-house panel.](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_accuracy_heatmap.png)
-![Per-query inference time and peak memory by method (in-house panel).](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_speed_memory.png)
+![accuracy heatmap](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_accuracy_heatmap.png)
+
+**Figure 1.** Accuracy by method (rows) and dataset (columns) across the in-house panel.
+
+![speed and memory](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_speed_memory.png)
+
+**Figure 2.** Fit time, per-query predict time, and peak memory by method, averaged across the
+in-house panel. The methods sit within a few points of each other on accuracy (Table 3) and
+orders of magnitude apart on cost.
 
 Accuracy and cost belong in one table: the finding is not where either lands, but how little
 they relate. Accuracy is the mean over the **five shared-vocabulary datasets** (lung_cross
 excluded — its exact accuracy is a vocabulary artifact, see the † note below; means over all
 six are ~0.08 lower for every method, with the identical ranking); macro-F1 and ontology are
-means over all six; cost is the mean per query. Ordered by accuracy:
+means over all six; cost is the mean per query (Table 3):
 
 | method | acc (5) | macro-F1 (6) | ontology (6) | fit (s) | **predict (s)** | peak MB |
-|---|---:|---:|---:|---:|---:|---:|
+|----------|----:|----:|----:|----:|----:|----:|
 | **linear-anova-pca** | **0.839** | 0.699 | 0.808 | **3.0** | **0.34** | 4294 |
 | scANVI | 0.833 | 0.697 | 0.809 | 0.0* | 89.2 | 2099 |
 | scArches | 0.832 | **0.699** | 0.805 | 54.7 | 21.4 | 1819 |
@@ -429,7 +446,11 @@ means over all six; cost is the mean per query. Ordered by accuracy:
 | scTOP | 0.739 | 0.619 | 0.703 | 1.1 | 1.07 | 1928 |
 | scmap-cluster | 0.646 | 0.550 | 0.771 | 0.4 | 13.1 | 8073 |
 
-(*scANVI does most of its work in one train+predict pass, attributed to predict.)
+**Table 3.** Accuracy and cost together, ordered by accuracy. Accuracy is the mean over the five
+shared-vocabulary datasets, macro-F1 and ontology concordance are means over all six, and cost
+is the mean per query. Bold marks the best value in a column.
+
+*In Table 3, scANVI does most of its work in one train+predict pass, attributed to predict.
 
 **Read down the accuracy column, then across.** The top four span 0.008 in accuracy, **~130× in
 predict time** (0.34 s to 89 s) and 2.4× in memory. scANVI sits within 0.002 of second place and
@@ -442,7 +463,7 @@ while the linear pipeline refits scaler/PCA/classifier for every query. ProtoClo
 fit buys nothing at this reference size — and buys the top accuracy at atlas scale (§3.3).
 
 **Pretrained annotators, scored ontology-only.** The two methods with fixed label vocabularies
-(§2.2, §2.4) cannot appear in the table above, since they do not predict the dataset's label
+(§2.2, §2.4) cannot appear in Table 3, since they do not predict the dataset's label
 strings. They are scored by ontology concordance on the three datasets where reference and
 query both carry CL ids, with actinn-jax on the same splits for reference:
 
@@ -451,6 +472,11 @@ query both carry CL ids, with actinn-jax on the same splits for reference:
 | actinn-jax (reference-trained) | **0.917** | **0.846** | **0.731** | 0.27–0.37 |
 | Pan-human Azimuth (pretrained) | 0.700 | 0.521 | 0.408 | 2.2–3.4 |
 | scPRINT (zero-shot) | 0.201 | — | — | 62.3 |
+
+
+**Table 4.** Pretrained annotators, scored by ontology concordance only, on the three datasets
+where reference and query both carry Cell Ontology ids — with reference-trained actinn-jax on
+the same splits for scale. Not a like-for-like comparison; see the text below.
 
 **This is not a like-for-like comparison and should not be read as one.** actinn-jax is trained
 on a reference drawn from the same data and scored in its own vocabulary; Pan-human Azimuth has
@@ -478,6 +504,11 @@ low-cardinality problems. Per dataset (accuracy):
 | liver_cross (cross-study) | **0.686 exact / 0.731 ontology — #1 on both** | actinn-jax |
 | blood_gut (86 types) | 0.860 | linear-anova-pca 0.902 |
 | pbmc (8 types) | 0.913 | scArches 0.931 |
+
+
+**Table 5.** Per-dataset accuracy: actinn-jax against whichever method leads that dataset.
+† on lung_cross the exact-match score is a vocabulary artifact, so ontology concordance is the
+meaningful column.
 
 No single method leads everywhere: the linear pipeline and ProtoCloud each take two datasets,
 actinn-jax and scArches one apiece. actinn-jax leads the cross-study liver split — the hardest
@@ -507,7 +538,11 @@ exact scores are unaffected.
 
 ## The accuracy × speed frontier
 
-![Accuracy versus total wall time (liver_intra); actinn-jax sits on the fast frontier.](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_pareto_liver_intra.png)
+![Pareto](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_pareto_liver_intra.png)
+
+**Figure 3.** Accuracy against total wall time on liver_intra. The tuned linear pipeline holds
+the fast-frontier point; actinn-jax sits just inside it at this reference size, and what
+separates it is visible only on the scaling axes of Figure 4.
 
 Plotting accuracy against total wall time makes the frontier explicit. The **tuned linear
 pipeline** holds the fast-frontier point: highest matrix accuracy (0.839) at the lowest fit
@@ -517,11 +552,14 @@ linear pipeline on every dataset except lung — for 30–130× the inference co
 sits just inside the frontier at this reference size; what separates it is not visible on a
 fixed-size plot but on the scaling axes of §3.3 and §5: predict time that stays flat as the
 reference grows, and ~2× lower peak memory that holds to atlas scale. The figure is drawn
-from the liver_intra panel and depicts the ranking in the tables above.
+from the liver_intra panel and depicts the ranking of Tables 3 and 5.
 
 ## Scaling
 
-![Fit and predict time versus reference size and cardinality; predict time stays flat and sub-second.](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_scaling.png)
+![scaling](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_scaling.png)
+
+**Figure 4.** Fit and predict time against reference size and label cardinality. Fit time grows
+for every trained method; predict time stays flat and sub-second across the whole range.
 
 Training time grows with reference size and with #cell types for all trained methods —
 actinn-jax's fit goes 2.6 s → 17.4 s → 23.5 s as the reference grows 965 → 14.8k → 24k
@@ -573,10 +611,15 @@ three atlases plus a census-wide sample. On
 3,396 withheld cross-study liver cells:
 
 | broad-pass model | classes | ontology | cells/s |
-|---|---:|---:|---:|
+|------------------------------|------:|------:|--------:|
 | census-built (`broad_human_v1`) | 798 | 0.338 | 2,962 |
 | Pan-human Azimuth | 382 | 0.380 | 1,076–1,563 |
 | **distilled (`panhuman_distill_v1`)** | 324 | **0.406** | **8,937–10,021** |
+
+
+**Table 6.** Three broad-pass entry points on 3,396 withheld cross-study liver cells: the
+census-built reference, the Pan-human Azimuth teacher, and the model distilled from that
+teacher.
 
 This makes the entry point both better and ~3× faster than building it from the census
 directly, and it answers in a harmonized, ontology-mapped vocabulary rather than raw census
@@ -609,6 +652,11 @@ That substitution needs a control, since any grouping might help. Built from one
 | random grouping, same group sizes | 0.539 |
 | flat, no hierarchy | 0.547 |
 
+
+**Table 7.** Coarse-hierarchy ablation. Ontology concordance on the held-out lung atlas for a
+Cell Ontology lineage hierarchy, a random grouping with the same group sizes, and no hierarchy
+at all.
+
 Random lands on flat, so it is the structure doing the work rather than the mere presence of
 groups. On that basis, `broad_mouse_v1`: 27,026 cells → **453 cell types across 85 tissues**,
 305 CL terms collapsed to 21 coarse groups, **17 seconds of CPU** to train, 38 MB. Two mouse
@@ -619,6 +667,10 @@ datasets were excluded from the reference entirely and used as the test set — 
 |---|---:|---:|---:|
 | all cells | 0.638 | 100% | 9,712 |
 | `min_prob = 0.5` | **0.718** | 71% | |
+
+
+**Table 8.** `broad_mouse_v1` on 12,646 held-out mouse cells (137 truth types, 41 tissues, none
+of it in the reference), with and without abstain.
 
 Its abstain calibration is also better behaved than the human census model's — 0.88 accuracy
 at 82% coverage, against 0.80 at 46% — because mouse census carries fewer near-duplicate
@@ -669,6 +721,11 @@ cells are genuinely out-of-distribution), and sweeping a confidence threshold:
 | 0.5 | 0.919 / 0.93 / 0.30 | 0.936 / 0.68 / 0.68 |
 | 0.7 | 0.946 / 0.84 / 0.52 | 0.936 / 0.68 / 0.68 |
 | 0.9 | 0.969 / 0.66 / 0.73 | 0.937 / 0.68 / 0.68 |
+
+
+**Table 9.** Confidence-threshold sweep with 9 of 36 cell types held out of the liver reference,
+so 1,350 query cells are genuinely out-of-distribution. Each cell reads accuracy on kept cells /
+fraction of cells kept / fraction of held-out-type cells flagged.
 
 actinn-jax's probability gives a **smooth, tunable** abstain curve — accuracy on kept cells
 rises 0.885→0.969 as coverage falls 1.00→0.66 and OOD-flagging climbs 0.00→0.73 — so a user
@@ -725,6 +782,11 @@ method. This is the paper's cleanest cross-method cost comparison:
 | cellmapper_linear | 0.776 | 0.553 | 58 s | 31.5 GB |
 | naive_bayes | 0.738 | 0.613 | 31 s | 19.5 GB |
 
+
+**Table 10.** Open Problems methods re-run on a single AWS `r7i.8xlarge` — identical hardware,
+harness, storage, and trace instrumentation for every method — averaged over the benchmark's
+datasets.
+
 actinn-jax **ties its `mlp` sibling on accuracy at ~2× the speed** (165 vs 327 s) and
 **beats xgboost's accuracy at ~5.5× less runtime and ~4× less memory** (165 s / 21 GB vs
 905 s / 81 GB). The faster methods (knn, logistic) are less accurate; the more accurate
@@ -747,7 +809,7 @@ for CellTypist (half a core) and 117% for `mlp` (effectively single-threaded) to
 the linear pipeline (23 cores)**. Wall-clock under those conditions measures threading and
 contention as much as algorithmic cost. It also disagrees with the controlled run above for
 two methods (`mlp` 327 s → 769 s, `cellmapper_linear` 58 s → 717 s), which we flag rather
-than reconcile: the table above, run at low concurrency, remains the cost comparison we
+than reconcile: Table 10, run at low concurrency, remains the cost comparison we
 stand behind. Coverage was partial when a wall-clock budget stopped the run — six datasets
 for the SVM and CellTypist, four for scTOP, three for the linear pipeline — so per-method
 means over different dataset subsets would not be comparable either.
@@ -763,20 +825,27 @@ Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and
 in minutes — the gap to the top method was largely a gene-budget artifact, not the VAE. But
 more genes is **not** a universal win: it *regresses* tabula_sapiens by ~10 pt (its
 284-cell test batch across 160 fine types overfits reference-specific genes) and saturates
-hypomap. Crucially, this is
+hypomap (Figure 6). Crucially, this is
 **selectable without test labels**: held-out *reference* cross-validation rises for the
 datasets that benefit and is the one signal that *drops* for tabula_sapiens, and a trivial
-query-cells-per-class check independently flags it —
+query-cells-per-class check independently flags it (Figure 7) —
 so the budget can be set deterministically per dataset. (iii) *Negative control* — a
 CPU-only, UCE-style protein-embedding featurization (expression-weighted mean of ESM2 gene
 embeddings) does **not** help and hurts the hardest case: the pooling discards the per-gene
 detail that separates fine types, so the value of a foundation model like UCE stays locked
 in its GPU transformer, not a portable averaging trick.
 
+![gene budget curve](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/gene_budget_curve.png)
 
-![actinn-jax accuracy and macro-F1 versus input gene budget across all six Open Problems datasets. More genes help most datasets but regress the fine-grained, domain-shifted tabula_sapiens.](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/gene_budget_curve.png)
+**Figure 6.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
+Problems datasets. More genes help most datasets but regress the fine-grained,
+domain-shifted tabula_sapiens.
 
-![Label-free signals for setting the gene budget without test labels. Held-out reference cross-validation and query-cells-per-class both single out tabula_sapiens (where more genes hurt).](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/gene_budget_signals.png)
+![gene budget signals](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/gene_budget_signals.png)
+
+**Figure 7.** Label-free signals for setting the gene budget without test labels. Held-out
+reference cross-validation and query-cells-per-class both single out tabula_sapiens, the one
+dataset where more genes hurt.
 
 # Discussion
 
@@ -991,14 +1060,14 @@ Cell-Ontology hierarchy it depends on are documented in the same repository.
 
 **Pre-trained references** — human (`broad_human_v1`, `panhuman_distill_v1`), mouse
 (`broad_mouse_v1`) and focused liver (`liver_hlica_v1`/`v2`) — are archived at
-[doi:10.5281/zenodo.21688151](https://doi.org/10.5281/zenodo.21688151) (CC BY 4.0; cite the
-concept DOI [10.5281/zenodo.21688150](https://doi.org/10.5281/zenodo.21688150) for the
+[doi:10.\allowbreak{}5281/\allowbreak{}zenodo.\allowbreak{}21688151](https://doi.org/10.5281/zenodo.21688151) (CC BY 4.0; cite the
+concept DOI [10.\allowbreak{}5281/\allowbreak{}zenodo.\allowbreak{}21688150](https://doi.org/10.5281/zenodo.21688150) for the
 latest version). actinn-jax's `bundled_reference` downloads and caches them on first
 use, so no manual retrieval is needed; `actinn-jax fetch` pre-downloads for offline use.
 
-HLiCA data © Edgar et al. 2026 (CC-BY 4.0), [doi:10.64898/2026.06.30.735539]. The distilled
+HLiCA data © Edgar et al. 2026 (CC-BY 4.0), [doi:10.\allowbreak{}64898/\allowbreak{}2026.\allowbreak{}06.\allowbreak{}30.\allowbreak{}735539]. The distilled
 reference derives from **Pan-human Azimuth** (Sarkar, Li, Molla, … Satija, bioRxiv 2026,
-[doi:10.64898/2026.07.16.738997](https://doi.org/10.64898/2026.07.16.738997)); its weights are
+[doi:10.\allowbreak{}64898/\allowbreak{}2026.\allowbreak{}07.\allowbreak{}16.\allowbreak{}738997](https://doi.org/10.64898/2026.07.16.738997)); its weights are
 © the authors under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), obtained via
 `panhumanpy` (MIT) and [Zenodo](https://doi.org/10.5281/zenodo.20401417). Attribution is a
 condition of that licence and travels inside the shipped model's `build_info.json`.
@@ -1012,28 +1081,28 @@ condition of that licence and travels inside the shipped model's `build_info.jso
 # References {-}
 
 1. 10x Genomics. 3k PBMCs from a healthy donor, Cell Ranger 1.1.0 (2016). Distributed with scanpy as `pbmc3k`.
-2. Abdelaal T, et al. A comparison of automatic cell identification methods for single-cell RNA sequencing data. *Genome Biology* 20:194 (2019). doi:10.1186/s13059-019-1795-z.
-3. Alegbe T, Harris BT, Fachal L, et al. Cell-type-resolved genetic variation shapes inflammatory bowel disease risk (IBDverse). *Nature* (2026). doi:10.1038/s41586-026-10627-z.
-4. Aran D, et al. Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage (SingleR). *Nature Immunology* 20:163-172 (2019). doi:10.1038/s41590-018-0276-y.
+2. Abdelaal T, et al. A comparison of automatic cell identification methods for single-cell RNA sequencing data. *Genome Biology* 20:194 (2019). doi:10.\allowbreak{}1186/\allowbreak{}s13059-019-1795-z.\allowbreak{}
+3. Alegbe T, Harris BT, Fachal L, et al. Cell-type-resolved genetic variation shapes inflammatory bowel disease risk (IBDverse). *Nature* (2026). doi:10.\allowbreak{}1038/\allowbreak{}s41586-026-10627-z.\allowbreak{}
+4. Aran D, et al. Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage (SingleR). *Nature Immunology* 20:163-172 (2019). doi:10.\allowbreak{}1038/\allowbreak{}s41590-018-0276-y.\allowbreak{}
 5. Bradbury J, et al. JAX: composable transformations of Python+NumPy programs (2018). github.com/google/jax.
 6. CZI Cell Science Program. CZ CELLxGENE Discover Census, LTS release 2025-11-08. chanzuckerberg.github.io/cellxgene-census.
 7. Chen T, Guestrin C. XGBoost: a scalable tree boosting system. *KDD* 785-794 (2016).
-8. Domínguez Conde C, et al. Cross-tissue immune cell analysis reveals tissue-specific features in humans (CellTypist). *Science* 376:eabl5197 (2022). doi:10.1126/science.abl5197.
-9. Edgar R, et al. The Human Liver Cell Atlas (HLiCA). *bioRxiv* (2026). doi:10.64898/2026.06.30.735539.
-10. Guo K, Ding J. ProtoCloud: a prototypical self-explaining model for single-cell analysis. *Cell Genomics* 6(6):101217 (2026). doi:10.1016/j.xgen.2026.101217.
+8. Domínguez Conde C, et al. Cross-tissue immune cell analysis reveals tissue-specific features in humans (CellTypist). *Science* 376:eabl5197 (2022). doi:10.\allowbreak{}1126/\allowbreak{}science.\allowbreak{}abl5197.\allowbreak{}
+9. Edgar R, et al. The Human Liver Cell Atlas (HLiCA). *bioRxiv* (2026). doi:10.\allowbreak{}64898/\allowbreak{}2026.\allowbreak{}06.\allowbreak{}30.\allowbreak{}735539.\allowbreak{}
+10. Guo K, Ding J. ProtoCloud: a prototypical self-explaining model for single-cell analysis. *Cell Genomics* 6(6):101217 (2026). doi:10.\allowbreak{}1016/\allowbreak{}j.\allowbreak{}xgen.\allowbreak{}2026.\allowbreak{}101217.\allowbreak{}
 11. Huang Q, et al. Benchmarking single-cell cell-type annotation methods. *Briefings in Bioinformatics* 25(5):bbae392 (2024).
-12. Kalfon J, Samaran J, Peyré G, Cantini L. scPRINT: pre-training on 50 million cells allows robust gene network predictions. *Nature Communications* (2025). doi:10.1038/s41467-025-58699-1.
-13. Kiselev VY, Yiu A, Hemberg M. scmap: projection of single-cell RNA-seq data across data sets. *Nature Methods* 15:359-362 (2018). doi:10.1038/nmeth.4644.
-14. Lin Z, et al. Evolutionary-scale prediction of atomic-level protein structure with a language model (ESM-2). *Science* 379:1123-1130 (2023). doi:10.1126/science.ade2574.
-15. Lotfollahi M, et al. Mapping single-cell data to reference atlases by transfer learning (scArches). *Nature Biotechnology* 40:121-130 (2022). doi:10.1038/s41587-021-01001-7.
-16. Ma F, Pellegrini M. ACTINN: automated identification of cell types in single cell RNA sequencing. *Bioinformatics* 36(2):533-538 (2020). doi:10.1093/bioinformatics/btz592.
+12. Kalfon J, Samaran J, Peyré G, Cantini L. scPRINT: pre-training on 50 million cells allows robust gene network predictions. *Nature Communications* (2025). doi:10.\allowbreak{}1038/\allowbreak{}s41467-025-58699-1.\allowbreak{}
+13. Kiselev VY, Yiu A, Hemberg M. scmap: projection of single-cell RNA-seq data across data sets. *Nature Methods* 15:359-362 (2018). doi:10.\allowbreak{}1038/\allowbreak{}nmeth.\allowbreak{}4644.\allowbreak{}
+14. Lin Z, et al. Evolutionary-scale prediction of atomic-level protein structure with a language model (ESM-2). *Science* 379:1123-1130 (2023). doi:10.\allowbreak{}1126/\allowbreak{}science.\allowbreak{}ade2574.\allowbreak{}
+15. Lotfollahi M, et al. Mapping single-cell data to reference atlases by transfer learning (scArches). *Nature Biotechnology* 40:121-130 (2022). doi:10.\allowbreak{}1038/\allowbreak{}s41587-021-01001-7.\allowbreak{}
+16. Ma F, Pellegrini M. ACTINN: automated identification of cell types in single cell RNA sequencing. *Bioinformatics* 36(2):533-538 (2020). doi:10.\allowbreak{}1093/\allowbreak{}bioinformatics/\allowbreak{}btz592.\allowbreak{}
 17. Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis. openproblems.bio (2024).
 18. Pedregosa F, et al. Scikit-learn: machine learning in Python. *JMLR* 12:2825-2830 (2011).
-19. Rosen Y, et al. Universal cell embeddings: a foundation model for cell biology (UCE). *Nature* (2026). doi:10.1038/s41586-026-10689-z.
-20. Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026). doi:10.64898/2026.07.16.738997.
-21. Sikkema L, et al. An integrated cell atlas of the lung in health and disease (HLCA). *Nature Medicine* 29:1563-1577 (2023). doi:10.1038/s41591-023-02327-2.
-22. Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. *bioRxiv* (2026). doi:10.64898/2026.02.11.705358.
-23. Travaglini KJ, Nabhan AN, Penland L, et al. A molecular cell atlas of the human lung from single-cell RNA sequencing. *Nature* 587(7835):619-625 (2020). doi:10.1038/s41586-020-2922-4.
-24. Xu C, et al. Probabilistic harmonization and annotation of single-cell transcriptomics data with deep generative models (scANVI). *Molecular Systems Biology* 17:e9620 (2021). doi:10.15252/msb.20209620.
+19. Rosen Y, et al. Universal cell embeddings: a foundation model for cell biology (UCE). *Nature* (2026). doi:10.\allowbreak{}1038/\allowbreak{}s41586-026-10689-z.\allowbreak{}
+20. Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026). doi:10.\allowbreak{}64898/\allowbreak{}2026.\allowbreak{}07.\allowbreak{}16.\allowbreak{}738997.\allowbreak{}
+21. Sikkema L, et al. An integrated cell atlas of the lung in health and disease (HLCA). *Nature Medicine* 29:1563-1577 (2023). doi:10.\allowbreak{}1038/\allowbreak{}s41591-023-02327-2.\allowbreak{}
+22. Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. *bioRxiv* (2026). doi:10.\allowbreak{}64898/\allowbreak{}2026.\allowbreak{}02.\allowbreak{}11.\allowbreak{}705358.\allowbreak{}
+23. Travaglini KJ, Nabhan AN, Penland L, et al. A molecular cell atlas of the human lung from single-cell RNA sequencing. *Nature* 587(7835):619-625 (2020). doi:10.\allowbreak{}1038/\allowbreak{}s41586-020-2922-4.\allowbreak{}
+24. Xu C, et al. Probabilistic harmonization and annotation of single-cell transcriptomics data with deep generative models (scANVI). *Molecular Systems Biology* 17:e9620 (2021). doi:10.\allowbreak{}15252/\allowbreak{}msb.\allowbreak{}20209620.\allowbreak{}
 25. Yampolskaya M, Souza H, et al. scTOP: cell identity from single-cell data via parameter-free projection. github.com/Emergent-Behaviors-in-Biology/scTOP.
 26. Munroe R. Standards. *xkcd* 927. xkcd.com/927.
