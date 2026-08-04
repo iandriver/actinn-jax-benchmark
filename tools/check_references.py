@@ -51,6 +51,69 @@ def as_list(v):
     return v if isinstance(v, list) else [v]
 
 
+def _norm(t):
+    """Lowercase, strip punctuation and our own parenthetical shorthand, collapse space.
+
+    The recorded text carries annotations the publisher record does not -- "(SingleR)",
+    "(UCE)", "(HLCA)" -- which are ours to add and must not count as a mismatch."""
+    t = re.sub(r"\((?:[A-Za-z][A-Za-z0-9+.-]*)\)", " ", t)
+    t = t.replace("\u2010", "-").replace("\u2013", "-").replace("\u2019", "'")
+    return re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()
+
+
+def verify_metadata(entries):
+    """Check each DOI entry's recorded title, first author and year against Crossref.
+
+    Two rounds of hand-checking found a citation whose author and title both belonged to a
+    different paper, and two more whose titles were paraphrases. None of that is visible by
+    reading the reference list, so it is checked instead. Entries with no DOI are listed for
+    manual attention rather than passed silently.
+    """
+    import json
+    import subprocess
+    import time
+
+    problems = []
+    for key, e in sorted(entries.items()):
+        if key.startswith("UNRESOLVED"):
+            continue
+        if not e.get("doi"):
+            print(f"skip {key:<24} no DOI ({e.get('url', 'no url')})")
+            continue
+        r = subprocess.run(
+            ["curl", "-sS", "--max-time", "40",
+             f"https://api.crossref.org/works/{e['doi']}?mailto=driver.ian@gmail.com"],
+            capture_output=True, text=True)
+        time.sleep(1)                      # Crossref rate-limits parallel/rapid callers
+        try:
+            m = json.loads(r.stdout)["message"]
+        except Exception:
+            problems.append(f"{key}: no Crossref record for {e['doi']}")
+            print(f"FAIL {key:<24} no Crossref record")
+            continue
+
+        text, bad = _norm(e["text"]), []
+        title = _norm((m.get("title") or [""])[0])
+        # Crossref sometimes stores a truncated title (XGBoost); accept either containment.
+        if title and not (title in text or text.find(title[:40]) >= 0):
+            bad.append(f'title != "{(m.get("title") or [""])[0][:70]}"')
+        au = m.get("author") or []
+        if au and _norm(au[0].get("family", "")) not in text:
+            bad.append(f"first author != {au[0].get('family')}")
+        years = {d["date-parts"][0][0] for k, d in m.items()
+                 if k in ("published-print", "published-online", "issued")
+                 and isinstance(d, dict) and d.get("date-parts")}
+        recorded = re.findall(r"\((\d{4})\)", e["text"])
+        if recorded and years and int(recorded[-1]) not in years:
+            bad.append(f"year {recorded[-1]} not in {sorted(years)}")
+
+        print(f"{'FAIL' if bad else 'ok  '} {key:<24} {'; '.join(bad)}")
+        problems += [f"{key}: {b}" for b in bad]
+
+    print(f"\n{len(problems)} metadata mismatch(es)")
+    return 1 if problems else 0
+
+
 def check_links(entries):
     """Resolve each entry's click target. A DOI that 404s is a citation nobody can check.
 
@@ -88,6 +151,8 @@ def main():
     ap.add_argument("--list", action="store_true", help="print the bibliography and exit")
     ap.add_argument("--links", action="store_true",
                     help="resolve every entry's doi/url over the network and exit")
+    ap.add_argument("--verify", action="store_true",
+                    help="compare every entry against Crossref metadata and exit")
     a = ap.parse_args()
 
     refs = yaml.safe_load(open(REFS))
@@ -131,6 +196,9 @@ def main():
 
     if a.links:
         return check_links(entries)
+
+    if a.verify:
+        return verify_metadata(entries)
 
     if a.list:
         for i, (key, e) in enumerate(sorted(entries.items()), 1):
