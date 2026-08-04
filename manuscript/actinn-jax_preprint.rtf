@@ -1125,9 +1125,9 @@ Lin 2023
 \cellx4320\cellx8640
 \trkeep\intbl
 {
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 random grouping, same group sizes\par}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 flat, no hierarchy\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.539\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.547\par}
 \cell}
 }
 \intbl\row}
@@ -1136,15 +1136,15 @@ Lin 2023
 \cellx4320\cellx8640
 \trkeep\intbl
 {
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 flat, no hierarchy\par}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 random grouping, same group sizes\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.547\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.539\par}
 \cell}
 }
 \intbl\row}
 {\pard \ql \f0 \sa180 \li0 \fi0 \par}
-{\pard \ql \f0 \sa180 \li0 \fi0 {\b Table 7.} Coarse-hierarchy ablation. Ontology concordance on the held-out lung atlas for a Cell Ontology lineage hierarchy, a random grouping with the same group sizes, and no hierarchy at all.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Random lands on flat, so it is the structure doing the work rather than the mere presence of groups. On that basis, {\f1 broad_mouse_v1}: 27,026 cells \u8594 ? {\b 453 cell types across 85 tissues}, 305 CL terms collapsed to 21 coarse groups, {\b 17 seconds of CPU} to train, 38 MB. Two mouse datasets were excluded from the reference entirely and used as the test set \u8212- 12,646 cells, 137 truth types, 41 tissues, none of it seen in training:\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\b Table 7.} Coarse-hierarchy ablation, ordered by accuracy. Ontology concordance on the held-out lung atlas for a Cell Ontology lineage hierarchy, no hierarchy at all, and a random grouping with the same group sizes as the ontology one.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Random grouping lands at flat rather than between flat and the ontology, so it is the structure doing the work rather than the mere presence of groups. On that basis, {\f1 broad_mouse_v1}: 27,026 cells \u8594 ? {\b 453 cell types across 85 tissues}, 305 CL terms collapsed to 21 coarse groups, {\b 17 seconds of CPU} to train, 38 MB. Two mouse datasets were excluded from the reference entirely and used as the test set \u8212- 12,646 cells, 137 truth types, 41 tissues, none of it seen in training:\par}
 {
 \trowd \trgaph120
 \clbrdrb\brdrs\cellx2160\clbrdrb\brdrs\cellx4320\clbrdrb\brdrs\cellx6480\clbrdrb\brdrs\cellx8640

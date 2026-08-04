@@ -649,16 +649,17 @@ That substitution needs a control, since any grouping might help. Built from one
 | coarse hierarchy | ontology |
 |---|---:|
 | **Cell Ontology lineage** | **0.616** |
-| random grouping, same group sizes | 0.539 |
 | flat, no hierarchy | 0.547 |
+| random grouping, same group sizes | 0.539 |
 
 
-**Table 7.** Coarse-hierarchy ablation. Ontology concordance on the held-out lung atlas for a
-Cell Ontology lineage hierarchy, a random grouping with the same group sizes, and no hierarchy
-at all.
+**Table 7.** Coarse-hierarchy ablation, ordered by accuracy. Ontology concordance on the
+held-out lung atlas for a Cell Ontology lineage hierarchy, no hierarchy at all, and a random
+grouping with the same group sizes as the ontology one.
 
-Random lands on flat, so it is the structure doing the work rather than the mere presence of
-groups. On that basis, `broad_mouse_v1`: 27,026 cells → **453 cell types across 85 tissues**,
+Random grouping lands at flat rather than between flat and the ontology, so it is the
+structure doing the work rather than the mere presence of groups. On that basis,
+`broad_mouse_v1`: 27,026 cells → **453 cell types across 85 tissues**,
 305 CL terms collapsed to 21 coarse groups, **17 seconds of CPU** to train, 38 MB. Two mouse
 datasets were excluded from the reference entirely and used as the test set — 12,646 cells,
 137 truth types, 41 tissues, none of it seen in training:
