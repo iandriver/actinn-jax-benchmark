@@ -815,18 +815,18 @@ method. This is the paper's cleanest cross-method cost comparison:
 
 | method (same box) | mean acc | macro-F1 | runtime/dataset | peak RSS |
 |---|---|---|---|---|
-| **actinn-jax** | 0.837 | 0.655 | **165 s** | 21.0 GB |
 | mlp | 0.838 | 0.664 | 327 s | 19.9 GB |
+| **actinn-jax** | 0.837 | 0.655 | **165 s** | 21.0 GB |
 | logistic_regression | 0.813 | 0.689 | 29 s | 20.0 GB |
-| knn | 0.793 | 0.648 | 11 s | 19.5 GB |
 | xgboost | 0.795 | 0.613 | 905 s | 80.7 GB |
+| knn | 0.793 | 0.648 | 11 s | 19.5 GB |
 | cellmapper_linear | 0.776 | 0.553 | 58 s | 31.5 GB |
 | naive_bayes | 0.738 | 0.613 | 31 s | 19.5 GB |
 
 
 **Table 10.** Open Problems methods re-run on a single AWS `r7i.8xlarge` — identical hardware,
 harness, storage, and trace instrumentation for every method — averaged over the benchmark's
-datasets.
+datasets, ordered by accuracy as in Table 3.
 
 actinn-jax **ties its `mlp` sibling on accuracy at ~2× the speed** (165 vs 327 s) and
 **beats xgboost's accuracy at ~5.5× less runtime and ~4× less memory** (165 s / 21 GB vs

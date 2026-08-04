@@ -1298,23 +1298,6 @@ Chen & Guestrin 2016
 \cellx1728\cellx3456\cellx5184\cellx6912\cellx8640
 \trkeep\intbl
 {
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b actinn-jax}\par}
-\cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 0.837\par}
-\cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 0.655\par}
-\cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b 165 s}\par}
-\cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 21.0 GB\par}
-\cell}
-}
-\intbl\row}
-{
-\trowd \trgaph120
-\cellx1728\cellx3456\cellx5184\cellx6912\cellx8640
-\trkeep\intbl
-{
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 mlp\par}
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 0.838\par}
@@ -1324,6 +1307,23 @@ Chen & Guestrin 2016
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 327 s\par}
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 19.9 GB\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx1728\cellx3456\cellx5184\cellx6912\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b actinn-jax}\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 0.837\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 0.655\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b 165 s}\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 21.0 GB\par}
 \cell}
 }
 \intbl\row}
@@ -1349,23 +1349,6 @@ Chen & Guestrin 2016
 \cellx1728\cellx3456\cellx5184\cellx6912\cellx8640
 \trkeep\intbl
 {
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 knn\par}
-\cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 0.793\par}
-\cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 0.648\par}
-\cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 11 s\par}
-\cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 19.5 GB\par}
-\cell}
-}
-\intbl\row}
-{
-\trowd \trgaph120
-\cellx1728\cellx3456\cellx5184\cellx6912\cellx8640
-\trkeep\intbl
-{
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 xgboost\par}
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 0.795\par}
@@ -1375,6 +1358,23 @@ Chen & Guestrin 2016
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 905 s\par}
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 80.7 GB\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx1728\cellx3456\cellx5184\cellx6912\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 knn\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 0.793\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 0.648\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 11 s\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 19.5 GB\par}
 \cell}
 }
 \intbl\row}
@@ -1413,7 +1413,7 @@ Chen & Guestrin 2016
 }
 \intbl\row}
 {\pard \ql \f0 \sa180 \li0 \fi0 \par}
-{\pard \ql \f0 \sa180 \li0 \fi0 {\b Table 10.} Open Problems methods re-run on a single AWS {\f1 r7i.8xlarge} \u8212- identical hardware, harness, storage, and trace instrumentation for every method \u8212- averaged over the benchmark\u8217's datasets.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\b Table 10.} Open Problems methods re-run on a single AWS {\f1 r7i.8xlarge} \u8212- identical hardware, harness, storage, and trace instrumentation for every method \u8212- averaged over the benchmark\u8217's datasets, ordered by accuracy as in Table 3.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 actinn-jax {\b ties its {\f1 mlp} sibling on accuracy at ~2\u215 ? the speed} (165 vs 327 s) and {\b beats xgboost\u8217's accuracy at ~5.5\u215 ? less runtime and ~4\u215 ? less memory} (165 s / 21 GB vs 905 s / 81 GB). The faster methods (knn, logistic) are less accurate; the more accurate heavyweight (xgboost) is far slower and heavier \u8212- Pareto-non-domination {\b within Open Problems\u8217' method set}, on controlled hardware. That set contains no carefully-tuned linear pipeline, and where we add one ourselves it leads on accuracy and fit time (\u167 ?3.1), so this is a statement about the OP panel rather than a general one.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 {\b Extension: our four added methods on the same harness.} We later ported the tuned linear pipeline, scTOP, the SGD-SVM and CellTypist into Open Problems components and ran them through the same pipeline on a fresh {\f1 r7i.8xlarge} ({\field{\*\fldinst{HYPERLINK "https://github.com/iandriver/actinn-jax-benchmark/blob/main/docs/results_openproblems_samehw_v2.csv"}}{\fldrslt{\ul
 {\f1 results_openproblems_samehw_v2.csv}
