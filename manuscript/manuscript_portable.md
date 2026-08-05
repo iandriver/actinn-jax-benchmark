@@ -633,9 +633,15 @@ That substitution needs a control, since any grouping might help. Built from one
 held-out lung atlas for a Cell Ontology lineage hierarchy, no hierarchy at all, and a random
 grouping with the same group sizes as the ontology one.
 
-Random grouping lands at flat rather than between flat and the ontology, so it is the
-structure doing the work rather than the mere presence of groups. On that basis,
-`broad_mouse_v1`: 27,026 cells → **453 cell types across 85 tissues**,
+Random grouping scores no better than no grouping at all (0.539 against 0.547), which rules
+out the simplest explanation for the gain: that splitting 867 types into 29 smaller problems
+makes each fine classifier's job easier, something any split would do. What matters is *which*
+types share a group. Each group has its own fine classifier and the coarse call decides which
+one ever sees the cell, so a group pays off only if the coarse classifier can recognize it
+*and* the right answer is inside it. Lineage groups manage both; groups of the same sizes
+drawn at random manage neither.
+
+On that basis, `broad_mouse_v1`: 27,026 cells → **453 cell types across 85 tissues**,
 305 CL terms collapsed to 21 coarse groups, **17 seconds of CPU** to train, 38 MB. Two mouse
 datasets were excluded from the reference entirely and used as the test set — 12,646 cells,
 137 truth types, 41 tissues, none of it seen in training:
