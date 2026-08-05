@@ -152,7 +152,7 @@ engineering win is the point, not an accuracy comparison.
 | kNN | [Pedregosa 2011] | classical | k-nearest neighbors | — | core |
 | CellTypist | [Domínguez Conde 2022] | linear | L2 logistic regression | prob threshold | core |
 | **linear-anova-pca** | [Pedregosa 2011] † | linear | normalize → ANOVA → PCA(220) → logreg | prob | core |
-| **scTOP** | [Yampolskaya 2023] | parameter-free | rank z-score class-average projection | — | core (`sctop`) |
+| **scTOP** | [Yampolskaya 2023] | parameter-free | rank z-score class-average projection | — | protocloud |
 | SingleR | [Aran 2019] | correlation | Spearman + fine-tuning | — | R/.Rlib |
 | scmap-cluster | [Kiselev 2018] | correlation | centroid cosine | yes (unassigned) | R/.Rlib |
 | scANVI | [Xu 2021] | deep | scVI semi-supervised VAE | prob | scvi (MPS) |
@@ -394,8 +394,9 @@ Two caveats govern how those numbers may be read. The leaderboard aggregates run
 the same-hardware run: every method on one AWS CPU instance. And in that run, **wall-clock is
 only meaningful at matched concurrency**: with several tasks per box, `%cpu` spanned 49% to
 2338% across methods, so cross-method runtime ratios measured at high concurrency rank
-threading and scheduler contention as much as algorithm. Where matched-concurrency data is
-missing, §3.7 reports coverage and memory and declines to report runtime ratios.
+threading and scheduler contention as much as algorithm. Cost is therefore reported only
+from the matched-concurrency run (Table 10); the four components we added to the harness are
+compared on accuracy alone (Table 11), which does not depend on the machine.
 
 ## Ablations
 
@@ -793,27 +794,49 @@ actinn-jax **ties its `mlp` sibling on accuracy at ~2× the speed** (165 vs 327 
 905 s / 81 GB). The faster methods (knn, logistic) are less accurate; the more accurate
 heavyweight (xgboost) is far slower and heavier — Pareto-non-domination **within Open
 Problems' method set**, on controlled hardware. That set contains no carefully-tuned linear
-pipeline, and where we add one ourselves it leads on accuracy and fit time (§3.1), so
-this is a statement about the OP panel rather than a general one.
+pipeline; we added one and ran it on the same six datasets, and it does not change the
+ranking (Table 11).
 
-**Extension: our four added methods on the same harness.** We later ported the tuned linear
-pipeline, scTOP, the SGD-SVM and CellTypist into Open Problems components and ran them
-through the same pipeline on a fresh `r7i.8xlarge`
-([`results_openproblems_samehw_v2.csv`](https://github.com/iandriver/actinn-jax-benchmark/blob/main/docs/results_openproblems_samehw_v2.csv), raw trace
-archived alongside). All four run correctly on a harness we did not write, which is the
-main thing this establishes; peak memory sits in the same 13–20 GB band as the incumbent
-methods (xgboost is the outlier at 55 GB). **We do not report cross-method runtimes from
-this run, and the reader should not infer them from the CSV.** Two confounds make the
-wall-clock numbers non-comparable: the run used a higher task concurrency (6 vs 2), and the
-methods differ enormously in how many cores they take — measured `%cpu` ranges from **49%
-for CellTypist (half a core) and 117% for `mlp` (effectively single-threaded) to 2338% for
-the linear pipeline (23 cores)**. Wall-clock under those conditions measures threading and
-contention as much as algorithmic cost. It also disagrees with the controlled run above for
-two methods (`mlp` 327 s → 769 s, `cellmapper_linear` 58 s → 717 s), which we flag rather
-than reconcile: Table 10, run at low concurrency, remains the cost comparison we
-stand behind. Coverage was partial when a wall-clock budget stopped the run — six datasets
-for the SVM and CellTypist, four for scTOP, three for the linear pipeline — so per-method
-means over different dataset subsets would not be comparable either.
+**Extension: our four added methods on the same datasets.** We ported the tuned linear
+pipeline, the SGD-SVM, CellTypist and scTOP into Open Problems components and ran all four
+on all six datasets
+([`results_openproblems_added_methods.csv`](https://github.com/iandriver/actinn-jax-benchmark/blob/main/docs/results_openproblems_added_methods.csv)).
+Accuracy and macro-F1 do not depend on the machine, so these were run locally rather than on
+the rented instance; **cost is not reported for them**, because that does depend on the
+machine and only Table 10 was measured under controlled conditions. The premise is
+checkable rather than assumed: running actinn-jax's component locally reproduces its
+controlled-run accuracy on every dataset to within **0.004** (mean difference 0.0005; three
+of six identical to four decimals), which is smaller than the spread between repeats.
+
+| method | mean acc | macro-F1 | dkd | gtex | hypomap | immune | pancreas | tabula |
+|------------|------:|-------:|-------:|-------:|-------:|-------:|-------:|-------:|
+| linear-anova-pca | 0.829 | 0.647 | 0.950 | 0.870 | 0.996 | 0.834 | 0.968 | 0.356 |
+| SVM (SGD) | 0.815 | 0.651 | 0.939 | 0.838 | 0.996 | 0.839 | 0.965 | 0.310 |
+| CellTypist | 0.809 | 0.644 | 0.938 | 0.837 | 0.996 | 0.843 | 0.964 | 0.275 |
+| scTOP | 0.581 | 0.462 | 0.898 | 0.124 | 0.991 | 0.495 | 0.939 | 0.042 |
+
+**Table 11.** The four methods we added to Open Problems, on all six of its datasets,
+ordered by accuracy. Dataset columns abbreviate the names used in Table 10 (immune =
+immune_cell_atlas, pancreas = mouse_pancreas_atlas, tabula = tabula_sapiens). Comparable to
+Table 10 on accuracy, which is machine-independent; not on cost, which is not measured here.
+
+Read against Table 10, **the tuned linear pipeline does not repeat its §3.1 win here**: 0.829
+places it third, behind `mlp` (0.838) and actinn-jax (0.837) and ahead of OP's own
+`logistic_regression` (0.813). The SGD-SVM (0.815) and CellTypist (0.809) land in the same
+band. The linear pipeline's lead on our own panel (§3.1) therefore does not generalize:
+whichever of the two panels is asked, the answer is a cluster of methods within a couple of
+points of each other, but which one tops the cluster changes with the datasets.
+
+**scTOP fails on two of the six, for a reason worth recording.** Its mean (0.581) is not a
+uniformly weak result but two collapses inside four ordinary ones: 0.124 on gtex_v9 and
+0.042 on tabula_sapiens against 0.90–0.99 elsewhere. Open Problems hands every method 1,000
+HVGs, and scTOP's rank projection needs genes expressed in an appreciable fraction of cells;
+after its expression filter only **106 of 1,000** genes survive on gtex_v9 and 210 on
+tabula_sapiens, against 306–405 where it works. At that point some test cells retain no
+counts at all — 185 of 11,508 on gtex_v9 — and cannot be placed; they are scored as wrong
+rather than dropped, so 0.124 is a floor. This is the same limitation §3.1 reports from the
+other direction: scTOP is built for small, low-cardinality problems, and a fixed 1,000-HVG
+budget over 53 and 160 types is neither.
 
 **Three cheap ablations, and their limits.** (i) *Input standardization* — z-scoring
 genes to the reference's frozen mean/std, a CPU-only domain-alignment inspired by scArches
@@ -986,17 +1009,17 @@ scientist can run, inspect, and run again.
   box; the GPU/R methods there are reported from OP's own cloud-CI trace (indicative). A
   same-hardware GPU-tier run to fold those into a single controlled table is the natural
   extension.
-- **Wall-clock comparisons across methods are only meaningful at matched concurrency, and
-  we learned this the expensive way.** A follow-up run that added our four components to the
-  OP harness (§3.7) used higher task concurrency and produced runtimes that disagree with
-  the controlled run by up to 12× for the same method. Measured `%cpu` across methods spans
-  49% to 2338% — some are single-threaded, some saturate 23 cores — so any wall-clock
-  ranking silently ranks threading and scheduler contention alongside algorithm. The
-  controlled low-concurrency run is the one we report; the extension establishes only that
-  the components run and what memory they need.
+- **Wall-clock comparisons across methods are only meaningful at matched concurrency.**
+  Measured `%cpu` on the OP harness spans 49% to 2338% across methods — some are
+  single-threaded, some saturate 23 cores — so the same method timed at two concurrency
+  settings differs by up to 12×, and any wall-clock ranking taken at high concurrency
+  silently ranks threading and scheduler contention alongside algorithm. Cost is therefore
+  reported only from the single matched-concurrency run (Table 10), which covers OP's own
+  seven methods; the four we added are compared on accuracy alone (Table 11). Putting all
+  eleven on one cost axis needs one more controlled run.
 - Subsampled references (to keep the matrix tractable); the scaling section characterizes
   the size dependence directly.
-- **The 12-method comparison is human only**; six datasets per benchmark; GPU foundation
+- **The cross-method comparison is human only**; six datasets per benchmark; GPU foundation
   models beyond scPRINT/UCE (scGPT, Geneformer, popV) not run locally. The shipped references
   now cover mouse (§3.4), but no *method comparison* was run on mouse data — the pan-mouse
   result establishes that the reference-building route works on a second organism, not that

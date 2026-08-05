@@ -76,7 +76,19 @@ print("Project the test cells onto the basis", flush=True)
 test = counts_matrix(input_test)
 sample = process(genes_by_cells(dense_aligned(test, genes), genes), chunk_size=2000)
 proj = score(basis, sample, chunk_size=2000)
-label_pred = proj.idxmax(axis=0).to_numpy().astype(str)
+
+# A test cell with no counts in any retained gene has no ranks to z-score, so its whole
+# projection column is NaN and a plain idxmax raises "Encountered all NA values" -- losing
+# the entire dataset over a handful of cells (185 of 11,508 on gtex_v9, 1 of 284 on
+# tabula_sapiens, none elsewhere). scTOP genuinely cannot place those cells, so they are
+# labelled `unassigned`, which scores as wrong: the run completes and what it reports is a
+# lower bound rather than a number obtained by dropping the inconvenient cells.
+unscorable = proj.isna().all(axis=0).to_numpy()
+label_pred = proj.fillna(-np.inf).idxmax(axis=0).to_numpy().astype(str)
+label_pred[unscorable] = "unassigned"
+if unscorable.any():
+    print(f"  {int(unscorable.sum())} of {len(unscorable)} test cells have no signal in the "
+          f"retained genes -> unassigned", flush=True)
 
 print("Create output data", flush=True)
 output = ad.AnnData(
