@@ -158,48 +158,48 @@ network (100/50/25 hidden units, ReLU, softmax) trained with Adam — in JAX/opt
 ([Bradbury 2018]), replacing
 the original's TensorFlow-1.x graph/session code. Key engineering:
 
-- **Sparse-aware preprocessing**: no `adata.to_df()` densification; CP10k+log2
-  normalization and the expression / coefficient-of-variation gene filter run on sparse
-  matrices; only the selected-gene
-  columns of each minibatch are densified.
-- **Cached reference model** (`ReferenceModel`): train once, `save()`/`load()`, map many
-  queries — the amortized cost of repeated annotation against a fixed reference drops to
-  the inference cost alone.
-- **Chunked prediction** for atlas-scale queries; **`use_raw='auto'`** to pick raw counts
-  from `.raw` (CELLxGENE convention).
-- **Optional reference-fit standardization** (`standardize=True`): z-score each selected
-  gene by the reference's frozen mean/std and apply it to the query — a cheap domain
-  alignment (§3.7). Opt-in, with a saved scaler that projects with the model; μ/σ persist in
-  the `.npz` (old models load standardization-off, backward-compatible).
+- **Sparse-aware preprocessing**: the count matrix is never densified in full. CP10k+log2
+  normalization and the expression / coefficient-of-variation gene filter run on the sparse
+  matrix; only the selected-gene columns of each minibatch are made dense.
+- **Cached reference model**: train once, write the fitted model to disk, reload it and map
+  many queries — the amortized cost of repeated annotation against a fixed reference drops
+  to the inference cost alone.
+- **Chunked prediction** for atlas-scale queries, and raw counts are picked up automatically
+  from the slot CELLxGENE files conventionally store them in.
+- **Optional reference-fit standardization**: z-score each selected gene by the reference's
+  frozen mean and standard deviation and apply that to the query — a cheap domain alignment
+  (§3.7). Off by default; when on, the scaler is saved alongside the model and travels with
+  it, and models saved without it still load.
+
 The reimplementation reproduces the original's accuracy to within repeat noise while being
 **substantially faster and lighter and, unlike the TensorFlow-1.x original, installable on
-current Python/ML environments** — the original's `tf.compat.v1` graph/session code no longer
+current Python/ML environments** — the original's graph/session code no longer
 runs on a modern stack without pinning a years-old TensorFlow. Because the two are the same
 model at equal accuracy, we do not carry the original as a separate benchmark row; the
 engineering win is the point, not an accuracy comparison.
 
 ### 2.2 Benchmarked methods
 
-| method | source | tier | engine | rejection | env |
-|-----------|------------|-----------|----------------------|----------|----------|
-| **actinn-jax** | [Ma & Pellegrini 2020] | classical | JAX MLP | abstain (`min_prob`) | core |
-| SVM | [Pedregosa 2011] | classical | linear SVM (SGD) | — | core |
-| kNN | [Pedregosa 2011] | classical | k-nearest neighbors | — | core |
-| CellTypist | [Domínguez Conde 2022] | linear | L2 logistic regression | prob threshold | core |
-| **linear-anova-pca** | [Pedregosa 2011] † | linear | normalize → ANOVA → PCA(220) → logreg | prob | core |
-| **scTOP** | [Yampolskaya 2023] | parameter-free | rank z-score class-average projection | — | protocloud |
-| SingleR | [Aran 2019] | correlation | Spearman + fine-tuning | — | R/.Rlib |
-| scmap-cluster | [Kiselev 2018] | correlation | centroid cosine | yes (unassigned) | R/.Rlib |
-| scANVI | [Xu 2021] | deep | scVI semi-supervised VAE | prob | scvi (MPS) |
-| scArches | [Lotfollahi 2022] | deep | scANVI reference surgery | prob | scvi (MPS) |
-| **ProtoCloud** | [Guo & Ding 2026] | deep | prototype VAE + LRP attribution | ambiguity flag | protocloud |
-| scPRINT | [Kalfon 2025] | foundation | pretrained transformer, zero-shot | — | scprint (MPS) |
-| **Pan-human Azimuth** | [Sarkar et al. 2026] | pretrained | 8-level hierarchical NN, fixed 382-leaf typology | trained `Unassigned` | panhuman |
+| method | source | tier | engine | rejection | runtime |
+|-----------|------------|-----------|--------------------|----------|------------|
+| **actinn-jax** | [Ma & Pellegrini 2020] | classical | JAX MLP | confidence threshold | JAX |
+| SVM | [Pedregosa 2011] | classical | linear SVM (SGD) | — | scikit-learn |
+| kNN | [Pedregosa 2011] | classical | k-nearest neighbors | — | scikit-learn |
+| CellTypist | [Domínguez Conde 2022] | linear | L2 logistic regression | prob threshold | scikit-learn |
+| **linear-anova-pca** | [Pedregosa 2011] † | linear | normalize → ANOVA → PCA(220) → logreg | prob | scikit-learn |
+| **scTOP** | [Yampolskaya 2023] | parameter-free | rank z-score class-average projection | — | NumPy |
+| SingleR | [Aran 2019] | correlation | Spearman + fine-tuning | — | R |
+| scmap-cluster | [Kiselev 2018] | correlation | centroid cosine | yes (unassigned) | R |
+| scANVI | [Xu 2021] | deep | scVI semi-supervised VAE | prob | scVI |
+| scArches | [Lotfollahi 2022] | deep | scANVI reference surgery | prob | scVI |
+| **ProtoCloud** | [Guo & Ding 2026] | deep | prototype VAE + LRP attribution | ambiguity flag | PyTorch |
+| scPRINT | [Kalfon 2025] | foundation | pretrained transformer, zero-shot | — | PyTorch |
+| **Pan-human Azimuth** | [Sarkar et al. 2026] | pretrained | 8-level hierarchical NN, fixed 382-leaf typology | trained `Unassigned` | TensorFlow |
 
 
 **Table 1.** The benchmarked methods: model family (*tier*), the engine each one actually runs,
-whether it can decline to call a cell (*rejection*), and the pinned environment it was run in
-(§2.7). Bold marks the methods added to this panel here.
+whether it can decline to call a cell (*rejection*), and the runtime stack it was run on;
+each has its own pinned environment (§2.5). Bold marks the methods added to this panel here.
 
 † `linear-anova-pca` has no method paper: it is a baseline assembled here from scikit-learn
 components, tuned deliberately to be the strongest simple competitor we could build (§1).
@@ -218,8 +218,7 @@ what can be measured rather than excusing them from measurement:
   panel, trained on 9.7M curated cells, with abstention *learned rather than thresholded* —
   the model is trained to answer `Unassigned`, instead of having a probability cutoff applied
   to its output afterwards. It is the closest published counterpart to this paper's broad
-  pass, and the teacher we distill in §3.4. Adapter:
-  [`panhuman_adapter.py`](../benchmark/adapters/panhuman_adapter.py).
+  pass, and the teacher we distill in §3.4.
 
 Neither predicts into the dataset's label strings, so **exact-match accuracy against those
 strings is a vocabulary artifact, not an accuracy signal** — `regulatory T cell` → `Treg cell`
@@ -271,13 +270,13 @@ different label vocabularies (§2.2), and it is reported only where both referen
 carry CL ids — so not on `blood_gut_intra`, and not on the symbol-keyed `pbmc`.
 
 Concordance depends on the ontology release, since ancestor sets change between them. All
-numbers here use **`cl-basic.obo`, CL release 2026-06-08**
-(sha256 `73996c63…`), resolved once and reused by every scoring pass (`benchmark/metrics.py`,
-via `pronto`). This is not a hypothetical concern: re-running `lung_cross` against a
-later-fetched release reproduced the splits exactly (14,390 reference / 13,550 query cells)
-and still moved concordance by 0.003, with no model changing. The release, its checksum, and
-exact versions for all six benchmark environments are recorded in `envs/locks/`
-(`tools/freeze_envs.py --check` reports drift).
+numbers here use the **Cell Ontology basic release of 2026-06-08** (sha256 73996c63…),
+resolved once and reused by every scoring pass. This is not a hypothetical concern:
+re-running lung_cross against a later-fetched release reproduced the splits exactly (14,390
+reference / 13,550 query cells) and still moved concordance by 0.003, with no model changing.
+That release, its checksum, and pinned versions for all six benchmark environments are
+recorded as lockfiles in the [benchmark repository][repo], which also carries a command that
+reports any drift from them.
 
 Exact-match accuracy is reported for the ten reference-trained methods and, on `lung_cross`,
 flagged: reference and query use different label vocabularies there, so its exact accuracy is
@@ -285,12 +284,11 @@ a vocabulary artifact and the ranking, not the level, is what transfers.
 
 ### 2.5 Harness, isolation, and hardware
 
-The runner, `benchmark/runner.py`, executes each method in **its own virtual environment
-under subprocess isolation**, because the dependency sets are mutually unsatisfiable — scVI-based
-methods, TensorFlow/Keras (Pan-human Azimuth), R (SingleR, scmap) and the JAX core cannot
-coexist in one interpreter. The driver, `benchmark/driver.py`, builds the reference/query
-split **once per dataset** from a fixed seed and hands the identical pair to every method, so
-no method sees a different split. **repeats = 3**; scPRINT and Pan-human Azimuth run once
+Each method runs in **its own virtual environment, as a separate process**, because the
+dependency sets are mutually unsatisfiable — scVI-based methods, TensorFlow/Keras (Pan-human
+Azimuth), R (SingleR, scmap) and the JAX core cannot coexist in one interpreter. One driver
+builds the reference/query split **once per dataset** from a fixed seed and hands the
+identical pair to every method, so no method sees a different split. **repeats = 3**; scPRINT and Pan-human Azimuth run once
 each, being deterministic given a fixed query and dominated by a single forward pass.
 
 Resource accounting is per subprocess: fit and predict are timed separately and peak RSS is
@@ -307,31 +305,32 @@ concurrency matters and is discussed (§2.10).
 ### 2.6 Building a broad reference
 
 The shipped broad-pass references (§3.4) are built once, offline, by a three-stage pipeline
-driven by one command (`update_broad_reference.sh`;
-[UPDATE_BROAD_REFERENCE.md](UPDATE_BROAD_REFERENCE.md)).
+driven by one command ([UPDATE_BROAD_REFERENCE.md](UPDATE_BROAD_REFERENCE.md) in the
+[benchmark repository][repo]).
 
-**Sampling.** All primary cells for one organism in the CELLxGENE Census [CZI Census 2025]
-(`is_primary_data == True`), stratified by `cell_type` at a fixed cap per type — 40 for
-`broad_human_v1`, 60 for the later human and mouse pulls — dropping types with fewer than 12
-cells and the uninformative labels (`unknown`, `native cell`, `eukaryotic cell`, `animal
-cell`). The pull is checkpointed per batch of ten datasets and retried, since transient
-TileDB/S3 read errors are routine at this scale. Both `feature_id` (Ensembl) and
-`feature_name` (symbol) are carried, because symbol-keyed consumers cannot use an
-Ensembl-only pull. `stable` is a moving pointer, so the resolved release is recorded; every
-reference here comes from **census 2025-11-08**.
+**Sampling.** Every primary cell for one organism in the CELLxGENE Census [CZI Census 2025]
+— primary meaning the copy the census designates canonical, so cells deposited in more than
+one study are counted once — stratified by cell type at a fixed cap per type: 40 for
+`broad_human_v1`, 60 for the later human and mouse pulls. Types with fewer than 12 cells are
+dropped, as are labels that carry no information ("unknown", "native cell", "eukaryotic
+cell", "animal cell"). The pull is checkpointed every ten datasets and retried, since
+transient object-store read errors are routine at this scale. Genes are carried under both
+Ensembl ids and symbols, because a symbol-keyed consumer cannot use an Ensembl-only pull.
+The census "stable" alias is a moving pointer, so the release it resolved to is recorded;
+every reference here comes from **census 2025-11-08**.
 
 **Coarse hierarchy — two interchangeable routes.** The model is a coarse classifier over
 groups plus one fine classifier per group, and the grouping comes from either:
 
-1. **Foundation-model embeddings.** scPRINT (`medium-v1.5`) embeds the reference once in
-   4,000-cell chunks; per-cell-type centroids are Ward-clustered into
-   `max(8, round(√n_types))` groups. scPRINT's QC drops cells, so the embedding is not
+1. **Foundation-model embeddings.** scPRINT (medium-v1.5) embeds the reference once in
+   4,000-cell chunks; per-cell-type centroids are Ward-clustered into roughly √(number of
+   types) groups, with a floor of eight. scPRINT's QC drops cells, so the embedding is not
    positionally aligned to the input and the label is carried through the model with the
    vectors. This is the only step that wants a GPU/MPS.
 2. **Cell Ontology lineage.** Each cell type is described by a binary indicator over the CL
    terms it descends from; terms appearing in fewer than two types, or in all of them, are
-   dropped as uninformative; the same Ward clustering is applied to those vectors
-   (`ontology_hierarchy.py`). Free, deterministic, and species-independent — which is what
+   dropped as uninformative; the same Ward clustering is applied to those vectors.
+   Free, deterministic, and species-independent — which is what
    makes the pan-mouse reference possible, since the distillation teacher is human-only and
    scPRINT's mouse support is untested here. §3.4 compares the two routes against a
    random-grouping control.
@@ -341,16 +340,16 @@ genes that differ most across cells, and so carry most of the signal for telling
 is selected on the reference; the coarse
 and per-group fine models are trained on it. Abstain calibration holds out **10% of cell types
 entirely** as out-of-distribution (OOD — types the model was never trained on, standing in for
-the novel populations a real query contains), plus a 20% within-type test split, and sweeps `min_prob` to
-trade coverage against accuracy on kept cells — the table each shipped reference reports.
+the novel populations a real query contains), plus a 20% within-type test split, and sweeps
+the confidence threshold to trade coverage against accuracy on kept cells — the table each
+shipped reference reports.
 
-**Shipping and verification.** Each reference is written with a `build_info.json` recording
-census release, corpus sizes, hierarchy route, organism and calibration table. Because a
-rebuild can train cleanly and annotate *worse*, the previous reference is backed up and the
-new one is scored on a held-out atlas before it is kept (`verify_reference.py`). For
-`broad_mouse_v1` the test set is carved from the census itself: two datasets are excluded from
-the reference sample and re-pulled as the query, so "held out" means held-out *datasets* and
-not merely held-out cells (`EXCLUDE_DATASETS` / `ONLY_DATASETS`).
+**Shipping and verification.** Each reference ships with a build record: census release,
+corpus sizes, hierarchy route, organism and calibration table. Because a rebuild can train
+cleanly and annotate *worse*, the previous reference is backed up and the new one is scored
+on a held-out atlas before it is kept. For `broad_mouse_v1` the test set is carved from the
+census itself: two datasets are excluded from the reference sample and re-pulled as the
+query, so "held out" means held-out *datasets* and not merely held-out cells.
 
 ### 2.7 Distilling a pretrained annotator
 
@@ -359,17 +358,17 @@ vocabulary and the hierarchy from an existing pretrained annotator
 ([PANHUMAN_DISTILL.md](PANHUMAN_DISTILL.md)). Keras/TensorFlow and JAX cannot share a process,
 so this runs in two stages.
 
-**Teacher pass** (`distill_dump.py`, `.venv-panhuman`). Pan-human Azimuth labels a corpus of
-raw counts through its low-level API (`AzimuthNN_base`, batch 8,192), which loads weights once
-rather than per call. All eight levels are retained. Where the package cannot reconcile a
-refined level with its coarser ones it blanks that column to boolean `False`; those cells still
+**Teacher pass.** Pan-human Azimuth labels a corpus of raw counts through its low-level API
+in batches of 8,192, which loads the weights once rather than once per call. All eight levels
+are retained. Where the package cannot reconcile a refined level with its coarser ones it
+blanks that column; those cells still
 carry a deepest-level call, so we fall back to it rather than discard them — dropping them
 would distill only the cells the teacher found easy. Predictions are mapped to CL ids through
 the package's own crosswalk.
 
-**Student pass** (`distill_train.py`, core venv). The student is a
-`HierarchicalReferenceModel` whose **classes** are the teacher's refined fine labels
-(including its trained `Unassigned` quality-control class) and whose **hierarchy** is the
+**Student pass.** The student is a hierarchical actinn-jax reference whose **classes** are
+the teacher's refined fine labels (including its trained `Unassigned` quality-control class)
+and whose **hierarchy** is the
 teacher's own broad level — so the coarse→fine structure is inherited rather than rediscovered.
 4,000-gene HVG panel; classes with fewer than 8 cells dropped, since a class that cannot be
 split into train and test makes fidelity depend on which side its cells landed.
@@ -390,21 +389,22 @@ that once the census pull is in the corpus, a withheld *atlas* is no longer a wi
 
 Four mechanisms operate on a trained reference at inference time, all label-free.
 
-- **`min_prob` abstention.** Cells whose final probability is below the threshold are relabeled
-  `unknown` rather than forced to the nearest class. Calibrated per reference (§2.6).
-- **`refine_to_query`.** The reference's class set is masked to those classes the query's own
-  predictions actually support, and the softmax renormalized — no ground truth, no retraining.
-- **`refine_to_tissue`.** Classes are masked to those the census records in the given tissue,
-  while **pan-tissue** types (immune, endothelial, stromal) stay available everywhere, so
-  liver-resident T cells are unaffected. The per-class `tissue_general` map is baked into the
-  shipped reference; tissue is passed explicitly or read from `adata.obs`, with common synonyms
-  (`PBMC`→blood, `hepatic`→liver) recognized. A tissue outside the reference's vocabulary
-  imposes no filter rather than an empty one.
+- **Confidence abstention.** Cells whose final probability is below a threshold are relabeled
+  "unknown" rather than forced to the nearest class. Calibrated per reference (§2.6).
+- **Refinement to the query.** The reference's class set is masked to those classes the
+  query's own predictions actually support, and the softmax renormalized — no ground truth,
+  no retraining.
+- **Refinement to a tissue.** Classes are masked to those the census records in the given
+  tissue, while **pan-tissue** types (immune, endothelial, stromal) stay available
+  everywhere, so liver-resident T cells are unaffected. The per-class tissue map is baked
+  into the shipped reference; the tissue is given explicitly or read from the query's own
+  metadata, with common synonyms (PBMC→blood, hepatic→liver) recognized. A tissue outside
+  the reference's vocabulary imposes no filter rather than an empty one.
 - **Cluster-level novelty screen.** A cell type absent from the reference appears not as
-  scattered uncertain cells but as a *coherent group the reference cannot confidently explain*.
-  `detect_novel_celltypes` flags clusters that are both large enough to be a real population
-  (`min_cells`) and predominantly low-confidence, and reports marker genes for each. This is
-  distinct from per-cell abstention.
+  scattered uncertain cells but as a *coherent group the reference cannot confidently
+  explain*. Clusters that are both large enough to be a real population and predominantly
+  low-confidence are flagged, with marker genes reported for each. This is distinct from
+  per-cell abstention.
 
 **Within-type state.** The same machinery resolves structure below a cell-type label: a
 hepatocyte zonation model trained on portal→central zone labels, scored by within-one-zone
@@ -423,8 +423,8 @@ reference grows, which no single reference size can show
 **Open Problems `label_projection`** [Open Problems 2024]
 ([OPENPROBLEMS.md](OPENPROBLEMS.md)) supplies the
 datasets, metrics and ranking — none chosen by us. actinn-jax is packaged as a viash 0.9.7
-component (`config.vsh.yaml` + `script.py`) declaring its `preferred_normalization`, and run
-through the project's own Nextflow workflow. We additionally built components for four
+component declaring the normalization it expects, and run through the project's own Nextflow
+workflow. We additionally built components for four
 baselines (linear-anova-pca, scTOP, SVM, CellTypist) so the same-hardware comparison covers
 more than the leaderboard's own set.
 
@@ -631,7 +631,7 @@ job is to establish that this is liver and route accordingly, not to name subtyp
 same cells at **0.73**, and its labels now track the clusters. *Right:* the study's own
 labels, on the shared palette, for comparison with the middle panel. Both models are
 leakage-free with respect to this query: the focused reference is trained only on the other
-six studies (the *shipped* `liver_hlica_v2` includes this study and would score 0.94 here,
+six studies (the *shipped* liver reference includes this study and would score 0.94 here,
 which is why it is not the model plotted). Abstention is switched off in all panels so the
 numbers measure labelling rather than coverage; §3.5 covers abstain separately.
 
@@ -672,8 +672,8 @@ should move these numbers, changing the distillation procedure should not. Two c
 modest. The 0.406/0.380 ordering is one query, and both actinn-jax models draw on a census
 sample that may include these studies while Pan-human Azimuth does not, so read the distilled
 model as *comparable to* the one it distills rather than better. And it does **not** inherit
-that model's trained abstention: its confidence separates right from wrong poorly (90.5%
-coverage at `p ≥ 0.5` moves concordance only 0.406 → 0.427), so the calibrated broad-pass abstain
+that model's trained abstention: its confidence separates right from wrong poorly (keeping the 90.5% of
+cells it calls with probability at least 0.5 moves concordance only 0.406 → 0.427), so the calibrated broad-pass abstain
 of §3.5 belongs to the census-built reference until this one is recalibrated.
 
 **A second organism, and a hierarchy that needs no GPU.** Neither route above
@@ -687,7 +687,8 @@ species-independent.
 
 That substitution needs a control, since any grouping might help. Built from one human corpus
 (51,346 cells / 867 types) and scored on the held-out lung atlas
-([`results_hierarchy_ablation.csv`](results_hierarchy_ablation.csv)):
+(per-run
+numbers in the [benchmark repository][repo]):
 
 | coarse hierarchy | ontology |
 |---|---:|
@@ -716,7 +717,7 @@ datasets were excluded from the reference entirely and used as the test set — 
 | | ontology | coverage | cells/s |
 |---|---:|---:|---:|
 | all cells | 0.638 | 100% | 9,712 |
-| `min_prob = 0.5` | **0.718** | 71% | |
+| confidence ≥ 0.5 | **0.718** | 71% | |
 
 
 **Table 8.** `broad_mouse_v1` on 12,646 held-out mouse cells (137 truth types, 41 tissues, none
@@ -851,8 +852,7 @@ ranking (Table 11).
 
 **Extension: our four added methods on the same datasets.** We ported the tuned linear
 pipeline, the SGD-SVM, CellTypist and scTOP into Open Problems components and ran all four
-on all six datasets
-([`results_openproblems_added_methods.csv`](results_openproblems_added_methods.csv)).
+on all six datasets (per-run numbers in the [benchmark repository][repo]).
 Accuracy and macro-F1 do not depend on the machine, so these were run locally rather than on
 the rented instance; **cost is not reported for them**, because that does depend on the
 machine and only Table 10 was measured under controlled conditions. The premise is
@@ -893,7 +893,7 @@ budget over 53 and 160 types is neither.
 **Three cheap ablations, and their limits.** (i) *Input standardization* — z-scoring
 genes to the reference's frozen mean/std, a CPU-only domain-alignment inspired by scArches
 reference surgery — lifts mean accuracy +0.2 and macro-F1 +1.2 pt (largest on batch-shifted
-datasets: gtex macro-F1 +7.9). It is shipped **opt-in** (`standardize=True`) because it
+datasets: gtex macro-F1 +7.9). It is shipped **off by default** because it
 shifts the softmax calibration that the two-stage abstain thresholds are tuned against.
 (ii) *Gene budget* — OP feeds every method 1000 HVGs, which most starves a gene-space MLP.
 Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and there
@@ -1105,8 +1105,8 @@ scientist can run, inspect, and run again.
 - **actinn-jax's memory advantage is bounded, and the linear pipeline scales further than
   extrapolation suggests** ([`SCALING_MEMORY.md`](SCALING_MEMORY.md)). Extrapolating the
   linear pipeline's small-reference footprint predicts ~32 GB and failure at atlas scale;
-  measured, it uses **13.2 GB** and completes, because `SelectKBest(k=20000)` caps the dense
-  matrix well below the full gene set. The linear/actinn-jax memory ratio is likewise
+  measured, it uses **13.2 GB** and completes, because its feature-selection step caps the
+  dense matrix at 20,000 genes, well below the full gene set. The linear/actinn-jax memory ratio is likewise
   **bounded at ~2–3×** (2.15× at full scale) rather than widening with data, so there is no
   scaling cliff and no regime tested where the linear pipeline stops being usable. Memory
   projections in this setting should be measured, not extrapolated.
@@ -1125,31 +1125,31 @@ scientist can run, inspect, and run again.
 
 ## Data & code availability
 
-All configs (`configs/paper*.yaml`, including `configs/paper_baselines.yaml` which fills the
-matrix for the three later-added methods on the identical splits), adapters
-(`benchmark/adapters/`), result CSVs (`results/paper*/` and `docs/results_*.csv`, which
-include the unified 11-method matrix), figure scripts, and the actinn-jax package
-([github.com/iandriver/actinn-jax](https://github.com/iandriver/actinn-jax)) are in these
-two repositories. Rebuilding the shipped broad reference is a single documented command
-(`benchmark/explore/update_broad_reference.sh`, [UPDATE_BROAD_REFERENCE.md](UPDATE_BROAD_REFERENCE.md));
-the distilled broad-pass reference is built by `distill_dump.py` → `distill_train.py`
-([PANHUMAN_DISTILL.md](PANHUMAN_DISTILL.md)); the pan-mouse reference and the
-Cell-Ontology hierarchy it depends on are documented in the same repository.
+Two repositories hold everything needed to reproduce this work. The
+[**benchmark repository**][repo] carries the harness, the per-method adapters, the run
+configurations that produce every number reported here, the environment lockfiles, the
+result tables including the unified eleven-method matrix, and the figure scripts. The
+[**actinn-jax package**](https://github.com/iandriver/actinn-jax) is on PyPI
+(`pip install actinn-jax`). Rebuilding the shipped broad reference is a single documented
+command; the distilled broad-pass reference, the pan-mouse reference and the Cell-Ontology
+hierarchy it depends on each have their own build documentation in the benchmark
+repository, and the file-level detail lives there rather than here.
 
 **Pre-trained references** — human (`broad_human_v1`, `panhuman_distill_v1`), mouse
 (`broad_mouse_v1`) and focused liver (`liver_hlica_v1`/`v2`) — are archived at
 [doi:10.5281/zenodo.21688151](https://doi.org/10.5281/zenodo.21688151) (CC BY 4.0; cite the
 concept DOI [10.5281/zenodo.21688150](https://doi.org/10.5281/zenodo.21688150) for the
-latest version). actinn-jax's `bundled_reference()` downloads and caches them on first
-use, so no manual retrieval is needed; `actinn-jax fetch` pre-downloads for offline use.
+latest version). The package downloads and caches them on first use, so no manual
+retrieval is needed, and can pre-download them for offline use.
 
 HLiCA data © Edgar et al. 2026 (CC-BY 4.0), [doi:10.64898/2026.06.30.735539]. The distilled
 reference derives from **Pan-human Azimuth** (Sarkar, Li, Molla, … Satija, bioRxiv 2026,
 [doi:10.64898/2026.07.16.738997](https://doi.org/10.64898/2026.07.16.738997)); its weights are
 © the authors under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), obtained via
 `panhumanpy` (MIT) and [Zenodo](https://doi.org/10.5281/zenodo.20401417). Attribution is a
-condition of that licence and travels inside the shipped model's `build_info.json`.
+condition of that licence and travels inside each shipped model's build record.
 
+[repo]: https://github.com/iandriver/actinn-jax-benchmark
 [Abdelaal 2019]: https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1795-z
 [Fu 2024]: https://academic.oup.com/bib/article/25/5/bbae392/7730135
 [Ma & Pellegrini 2020]: https://doi.org/10.1093/bioinformatics/btz592
