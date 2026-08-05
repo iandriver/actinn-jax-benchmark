@@ -62,7 +62,7 @@ at the lowest peak memory of the methods we carried to atlas scale (6.1 vs. 13.2
 linear pipeline at 49k cells). The components are not unique: ProtoCloud provides
 uncertainty, gene attribution and a retraining-based refinement path, and **Pan-human
 Azimuth** ships a pretrained, calibrated, hierarchical pan-human annotator that runs on a
-laptop — a better-resourced broad tier than ours, and one we can **distill into a broad-pass
+laptop — a better-resourced broad pass than ours, and one we can **distill into a broad-pass
 model of comparable accuracy at ~9× its throughput, built with no GPU and no labeled data**.
 What the workflow adds is the **hand-off into a label set the broad model was never trained
 on**: refinement against a user's own focused reference, and resolution below any fixed
@@ -99,9 +99,9 @@ while the linear baseline is tuned, which is the unfavourable direction (§5). M
 fixed across all methods and reported in full. Most importantly, the **external validation is
 somebody else's**: Open Problems `label_projection` (§3.7) sets the datasets, the metrics and
 the ranking, and we did not choose any of them. Where results contradict our own earlier
-claims or our method's interests — ProtoCloud overtaking actinn-jax at atlas scale, a bounded
-rather than widening memory advantage, a better-resourced broad annotator than our own — they
-are reported in those terms.
+claims or our method's interests — ProtoCloud overtaking actinn-jax at atlas scale, a memory
+advantage that stays a fixed factor instead of growing with the data, a better-resourced broad
+annotator than our own — they are reported in those terms.
 
 **On adding another method to a crowded field.** We are adding one, and we think it earns
 its place: the original ACTINN no longer installs or runs on current toolchains, and the
@@ -136,7 +136,7 @@ exists. Where a better-resourced model already exists, the productive move is to
    pulmonary ionocyte population and its marker ASCL3). We are precise about what is not
    ours: ProtoCloud offers uncertainty, attribution and a retraining-based refine, and
    Pan-human Azimuth ships a pretrained hierarchical pan-human annotator with trained
-   abstention, so the broad tier itself is not a distinguishing feature — we distill that
+   abstention, so the broad pass itself is not a distinguishing feature — we distill that
    model into a broad-pass reference rather than compete with it. What is distinct is
    **refinement into a label set no pretrained model carries** — the user's own focused
    reference, and states below a fixed typology's leaves. The same route builds a
@@ -414,7 +414,8 @@ agreement across donors and datasets ([ZONATION.md](ZONATION.md)).
 
 The reference is subsampled to five sizes up to **49k cells** with the query held fixed, so
 that accuracy, fit time, predict time and peak memory are functions of reference size alone.
-Reported per method; the point of interest is which curves cross
+Reported per method. The sweep exists to find where one method overtakes another as the
+reference grows, which no single reference size can show
 ([SCALING_MEMORY.md](SCALING_MEMORY.md)).
 
 ### 2.10 External validation protocol
@@ -664,7 +665,10 @@ This makes the entry point both better and ~3× faster than building it from the
 directly, and it answers in a harmonized, ontology-mapped vocabulary rather than raw census
 strings. Withholding a whole atlas from the corpus, the distilled model tracks the one it
 was distilled from to within **1.5 points** on lung (0.695 vs 0.710) and **3.0** on liver
-(0.481 vs 0.511) — the corpus, not the recipe, is what bounds it. Two caveats keep this
+(0.481 vs 0.511). Distillation itself therefore costs very little: on data neither model was
+built for, the student stays within a few points of its teacher. What holds the student back
+is which tissues and studies its training corpus happened to contain — widening the corpus
+should move these numbers, changing the distillation procedure should not. Two caveats keep this
 modest. The 0.406/0.380 ordering is one query, and both actinn-jax models draw on a census
 sample that may include these studies while Pan-human Azimuth does not, so read the distilled
 model as *comparable to* the one it distills rather than better. And it does **not** inherit
@@ -736,8 +740,9 @@ the *same cells* reaches **0.72 / 0.86** ([HLICA_LIVER.md](HLICA_LIVER.md),
 [HLICA_EDGE_CASES.md](HLICA_EDGE_CASES.md)). Refinement is where fine-grained accuracy comes
 from; the broad model's job is to route to it, not to be right about subtypes itself.
 
-**The two tiers switch; they do not stack** — we tested this and it is worth stating
-plainly, because the opposite is the natural assumption. On the leakage-free cross-study
+**The broad pass hands the query to the focused pass; the two do not combine.** The natural
+assumption is that a better broad call should also make the focused call better. It does not,
+and the test is worth stating plainly. On the leakage-free cross-study
 liver split, substituting the stronger **Pan-human Azimuth** for the broad pass lifts it
 (ontology 0.380 vs 0.338 for our own broad model) but changes nothing downstream. Using that
 broad call to *narrow* the focused pass's classes — the zero-retrain masking actinn-jax ships — makes
@@ -755,7 +760,7 @@ classifier on 3/4 datasets, matches an expert hierarchy, beats a random-grouping
 and never depends on the foundation model at prediction time. (ii) **Within-cell-type
 resolution**: the same machinery resolves hepatocyte zonation (portal→central) at ~0.99
 within-one-zone, generalizing across donors and datasets ([ZONATION.md](ZONATION.md)) — a
-third tier below the cell-type label. Together these make actinn-jax a *pipeline* (broad →
+third stage below the cell-type label. Together these make actinn-jax a *pipeline* (broad →
 tissue → subtype/state), not just a classifier, at classical-method speed throughout.
 
 ### 3.5 Rejection / abstain
@@ -839,8 +844,8 @@ datasets, ordered by accuracy as in Table 3.
 actinn-jax **ties its `mlp` sibling on accuracy at ~2× the speed** (165 vs 327 s) and
 **beats xgboost's accuracy at ~5.5× less runtime and ~4× less memory** (165 s / 21 GB vs
 905 s / 81 GB). The faster methods (knn, logistic) are less accurate; the more accurate
-heavyweight (xgboost) is far slower and heavier — Pareto-non-domination **within Open
-Problems' method set**, on controlled hardware. That set contains no carefully-tuned linear
+heavyweight (xgboost) is far slower and heavier: **within Open Problems' method set**, on
+controlled hardware, nothing beats actinn-jax on accuracy and cost at the same time. That set contains no carefully-tuned linear
 pipeline; we added one and ran it on the same six datasets, and it does not change the
 ranking (Table 11).
 
@@ -942,7 +947,7 @@ predict cost, where the linear pipeline refits scaler/PCA/classifier for every q
 *Those two properties are what the workflows are built on.* The practical gains come not from
 the flat classifier but from the **large→refined** pipeline (§3.4): a census-scale broad model
 with a calibrated abstain routes a query to a small focused reference that re-annotates at
-full resolution (cross-study liver 0.23/0.58 → 0.72/0.86), with zonation as a further tier.
+full resolution (cross-study liver 0.23/0.58 → 0.72/0.86), with zonation as a further stage.
 The pipeline is only usable because each hop is cheap — a flat sub-second call against a
 cached model, at bounded memory — so several models can be chained, and a large reference
 kept resident, on a laptop without a GPU. A method that is a few points more accurate but
@@ -997,8 +1002,9 @@ competitive, and it matches our own finding that the residual gap to heavier met
 further find that simple methods hold
 up *best* out-of-distribution — on novel cell types and unseen organisms. That matters for the
 abstain mechanism of §3.5, which is only useful if low confidence tracks genuine novelty
-rather than model noise: a method whose out-of-distribution behaviour degrades gracefully is
-one whose confidence can be thresholded.
+rather than model noise. A method that degrades gradually on unfamiliar data still assigns
+lower confidence to the cells it is getting wrong, so a threshold separates them; a method
+that degrades abruptly can be confidently wrong, and no threshold helps.
 
 **Practical guidance.** For a **one-off annotation** on laptop-sized data, use the **tuned
 linear pipeline** (normalize → ANOVA → PCA → logistic regression): it is the most
@@ -1012,7 +1018,7 @@ is **reused** across many queries (the cached model amortizes the fit), and when
 the **multi-stage workflow** rather than a single label — broad→refined hand-off, tissue-aware
 refinement, calibrated abstain, novel-cell-type screening.
 
-For the **broad tier specifically, prefer a purpose-built pan-human model**: **Pan-human
+For the **broad pass specifically, prefer a purpose-built pan-human model**: **Pan-human
 Azimuth** ([`PAN_HUMAN_AZIMUTH.md`](PAN_HUMAN_AZIMUTH.md)) ships a pretrained hierarchical
 classifier over a harmonized organism-wide typology (8 levels, 382 leaf types, trained on
 9.7M curated cells), with abstention learned rather than thresholded and an **expected
