@@ -460,12 +460,6 @@ methods, all selectable without test labels:
 
 **Figure 1.** Accuracy by method (rows) and dataset (columns) across the in-house panel.
 
-![speed and memory](figures/fig_speed_memory.png)
-
-**Figure 2.** Fit time, per-query predict time, and peak memory by method, averaged across the
-in-house panel. The methods sit within a few points of each other on accuracy (Table 3) and
-orders of magnitude apart on cost.
-
 Accuracy and cost belong in one table: the finding is not where either lands, but how little
 they relate. Accuracy is the mean over the **five shared-vocabulary datasets** (lung_cross
 excluded — its exact accuracy is a vocabulary artifact, see the † note below; means over all
@@ -580,9 +574,9 @@ exact scores are unaffected.
 
 ![Pareto](figures/fig_pareto_liver_intra.png)
 
-**Figure 3.** Accuracy against total wall time on liver_intra. The tuned linear pipeline holds
+**Figure 2.** Accuracy against total wall time on liver_intra. The tuned linear pipeline holds
 the fast-frontier point; actinn-jax sits just inside it at this reference size, and what
-separates it is visible only on the scaling axes of Figure 4.
+separates it is visible only on the scaling axes of Figure 3.
 
 Plotting accuracy against total wall time makes the frontier explicit. The **tuned linear
 pipeline** holds the fast-frontier point: highest matrix accuracy (0.839) at the lowest fit
@@ -598,7 +592,7 @@ from the liver_intra panel and depicts the ranking of Tables 3 and 5.
 
 ![scaling](figures/fig_scaling.png)
 
-**Figure 4.** Fit and predict time against reference size and label cardinality. Fit time grows
+**Figure 3.** Fit and predict time against reference size and label cardinality. Fit time grows
 for every trained method; predict time stays flat and sub-second across the whole range.
 
 Training time grows with reference size and with #cell types for all trained methods —
@@ -623,7 +617,7 @@ inference (§3.1, §3.3), the whole workflow runs on a laptop.
 
 ![the broad pass and the focused pass on one query](figures/fig_workflow_umap.png)
 
-**Figure 5.** The two passes on the withheld HLiCA liver study (3,396 cells), same UMAP
+**Figure 4.** The two passes on the withheld HLiCA liver study (3,396 cells), same UMAP
 throughout. *Left:* the shipped census reference spreads 137 of its 798 labels over the
 query with little correspondence to cluster structure — ontology concordance **0.34**. Its
 job is to establish that this is liver and route accordingly, not to name subtypes.
@@ -901,10 +895,10 @@ Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and
 in minutes — the gap to the top method was largely a gene-budget artifact, not the VAE. But
 more genes is **not** a universal win: it *regresses* tabula_sapiens by ~10 pt (its
 284-cell test batch across 160 fine types overfits reference-specific genes) and saturates
-hypomap (Figure 6). Crucially, this is
+hypomap (Figure 5). Crucially, this is
 **selectable without test labels**: held-out *reference* cross-validation rises for the
 datasets that benefit and is the one signal that *drops* for tabula_sapiens, and a trivial
-query-cells-per-class check independently flags it (Figure 7) —
+query-cells-per-class check independently flags it (Figure 6) —
 so the budget can be set deterministically per dataset. (iii) *Negative control* — a
 CPU-only, UCE-style protein-embedding featurization (expression-weighted mean of ESM2 gene
 embeddings) does **not** help and hurts the hardest case: the pooling discards the per-gene
@@ -913,13 +907,13 @@ in its GPU transformer, not a portable averaging trick.
 
 ![gene budget curve](figures/gene_budget_curve.png)
 
-**Figure 6.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
+**Figure 5.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
 Problems datasets. More genes help most datasets but regress the fine-grained,
 domain-shifted tabula_sapiens.
 
 ![gene budget signals](figures/gene_budget_signals.png)
 
-**Figure 7.** Label-free signals for setting the gene budget without test labels. Held-out
+**Figure 6.** Label-free signals for setting the gene budget without test labels. Held-out
 reference cross-validation and query-cells-per-class both single out tabula_sapiens, the one
 dataset where more genes hurt.
 
