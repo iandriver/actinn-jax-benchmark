@@ -471,8 +471,8 @@ low-cardinality problems. Per dataset (accuracy):
 |---|---|---|
 | lung_intra (46 types) | 0.894 | ProtoCloud 0.932 |
 | lung_cross (cross-dataset)† | 0.358 exact / 0.752 ontology | ProtoCloud 0.374 / **0.791 ontology** |
-| liver_intra (36 types) | 0.802 | linear-anova-pca 0.804 (actinn-jax #2) |
-| liver_cross (cross-study) | **0.686 exact / 0.731 ontology — #1 on both** | actinn-jax |
+| liver_intra (36 types) | 0.802 | linear-anova-pca 0.804 |
+| liver_cross (cross-study) | **0.686 exact / 0.731 ontology** | actinn-jax |
 | blood_gut (86 types) | 0.860 | linear-anova-pca 0.902 |
 | pbmc (8 types) | 0.913 | scArches 0.931 |
 
