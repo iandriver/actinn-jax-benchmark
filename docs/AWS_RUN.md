@@ -149,6 +149,18 @@ nextflow run target/nextflow/workflows/run_benchmark/main.nf \
 
 Notes learned the hard way on the r7i.8xlarge (32 vCPU / 256 GB):
 
+- **Driving the box as root over SSM changes three things from the SSH-era recipe.** The
+  checkout lands in `/root`, not `/home/ubuntu` — `op_aws_wire.py` reads `OP_REPO` for this,
+  so export it. `viash` reads `$HOME` and SSM's root shell does not set one, so it dies with
+  `java.util.NoSuchElementException: HOME`; export `HOME=/root` before any viash call. And
+  `scripts/sync_datasets.sh` runs a bare `aws s3 sync`, which signs with the instance
+  profile — that profile grants only SSM, so the public bucket answers **AccessDenied**.
+  Sync with `--no-sign-request` instead of running the script as-is.
+- **`aws ssm send-command --parameters 'commands=[...]'` shorthand does not survive newlines
+  or quotes.** It silently corrupts the command (a `tail /root/logs/run.log` arrived as
+  `tail /root/logs/run.logn`). Pass a JSON file — `--parameters file://params.json` — or
+  base64 a script across and run that.
+
 - **Don't use `common/nextflow_helpers/labels_ci.config`** — it caps *every* label's memory
   at 5 GB (a CI-only config), so `random_labels`/`singler` OOM (exit 137) loading the 20 GB
   Tabula Sapiens h5ad. Use a generous custom config (`big.config`): `lowmem 80 / midmem 100 /
