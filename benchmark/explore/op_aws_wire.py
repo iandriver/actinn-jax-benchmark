@@ -9,11 +9,14 @@ scgpt_*, scimilarity*, scprint, uce) need accelerators and multi-GB model downlo
 they are out of scope for this CPU box and are dropped rather than left to fail.
 """
 
+import os
 import pathlib
 import re
 import sys
 
-REPO = pathlib.Path("/home/ubuntu/task_label_projection")
+# The checkout location depends on which user drives the box; hardcoding /home/ubuntu
+# broke the run when it was driven as root over SSM.
+REPO = pathlib.Path(os.environ.get("OP_REPO", "/home/ubuntu/task_label_projection"))
 OURS = ["actinn_jax", "linear_anova_pca", "sctop", "svm_sgd", "celltypist"]
 
 # CPU-runnable OP methods + controls, in the order they should appear.
