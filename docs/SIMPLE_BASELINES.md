@@ -6,7 +6,7 @@
 > those are the authoritative figures ([`PAPER.md`](PAPER.md) §3.1–§3.2, raw in
 > [`results_paper_matrix_unified.csv`](results_paper_matrix_unified.csv)). On the full matrix
 > the linear pipeline leads accuracy at **0.839 vs actinn-jax 0.831** (5-dataset mean) and
-> fits **4× faster**; scTOP is **0.739** (mid-pack). This doc is kept as the original probe;
+> fits **7× faster** (2.97 s vs 21.90 s mean); scTOP is **0.739** (mid-pack). This doc is kept as the original probe;
 > the conclusions are unchanged, only the exact numbers differ with the larger splits.
 
 Souza & Mehta ([bioRxiv 2026](https://doi.org/10.64898/2026.02.11.705358)) show that

@@ -1004,8 +1004,9 @@ scientist can run, inspect, and run again.
 # Limitations
 
 - Single hardware family for the in-house panel (Apple Silicon); no discrete-GPU numbers
-  there (deep/foundation tiers would be faster on CUDA — out of scope for the
-  "runs-on-a-laptop" question). The §3.7 controlled run covers the **CPU tier** on one cloud
+  there. The deep and foundation methods are written for CUDA and we would expect them to be
+  faster on it, but we did not measure that — it is outside the "runs-on-a-laptop" question,
+  and every timing here should be read as this hardware's. The §3.7 controlled run covers the **CPU tier** on one cloud
   box; the GPU/R methods there are reported from OP's own cloud-CI trace (indicative). A
   same-hardware GPU-tier run to fold those into a single controlled table is the natural
   extension.
@@ -1043,11 +1044,14 @@ scientist can run, inspect, and run again.
 - **Our classical tier (SVM, kNN, CellTypist) is untuned, and a tuned linear baseline beats
   actinn-jax.** Souza & Mehta's pipeline (normalize → ANOVA → standardize → PCA(220) →
   logistic regression) leads the matrix on accuracy (0.839 vs 0.831) and macro-F1 (0.699 vs
-  0.683) while fitting 4× faster, with its largest margin on the 86-type blood+gut set
-  (+4.2 pt) (`SIMPLE_BASELINES.md`). The §3.1 margins over the
+  0.683) while fitting 7× faster on this panel's hardware (§2.5), with its largest margin
+  on the 86-type blood+gut set (+4.2 pt) (`SIMPLE_BASELINES.md`).
+  Wall-clock ratios between a JAX model and a scikit-learn pipeline shift with the CPU and
+  the threading available, so read them as this machine's, not as constants. The §3.1
+  margins over the
   classical tier should therefore be read as margins over *untuned* baselines; a like-for-like
-  tuning effort on SVM or CellTypist would likely narrow them further. scTOP is cheaper still
-  on time (~1 s) but competitive only at small, low cardinality — best pbmc macro-F1 (0.837),
+  tuning effort on SVM or CellTypist would likely narrow them further. scTOP is cheaper
+  still to fit but competitive only at small, low cardinality — best pbmc macro-F1 (0.837),
   degrading to 0.649 on liver.
 - **actinn-jax's memory advantage is bounded, and the linear pipeline scales further than a
   naive extrapolation implies** (`SCALING_MEMORY.md`). Extrapolating the
