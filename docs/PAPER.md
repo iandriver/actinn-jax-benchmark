@@ -96,8 +96,8 @@ methods outside that matrix are named with reasons (§2.2). The panel was chosen
 the baselines most likely to beat a small MLP — a carefully tuned linear pipeline, scTOP,
 ProtoCloud — and each of them does beat it somewhere; our own classical tier is left untuned
 while the linear baseline is tuned, which is the unfavourable direction (§5). Metrics are
-fixed across all methods and reported in full. Most importantly, the **external validation is
-somebody else's**: Open Problems `label_projection` (§3.7) sets the datasets, the metrics and
+fixed across all methods and reported in full. And the **external validation is somebody
+else's**: Open Problems `label_projection` (§3.7) sets the datasets, the metrics and
 the ranking, and we did not choose any of them. Where results contradict our own earlier
 claims or our method's interests — ProtoCloud overtaking actinn-jax at atlas scale, a memory
 advantage that stays a fixed factor instead of growing with the data, a better-resourced broad
@@ -715,7 +715,7 @@ Its abstain calibration is also better behaved than the human census model's —
 at 82% coverage, against 0.80 at 46% — because mouse census carries fewer near-duplicate
 subtypes than human's ~800-way vocabulary. Read across organisms with care: these are
 different queries, so the mouse numbers sit in the same regime as the human ones rather than
-being comparable to them. Two limits are worth stating on the spot. The ablation above was run
+being comparable to them. Two limits apply. The ablation above was run
 on **human** and applied to mouse; CL is species-neutral by construction, but nothing here
 shows it groups mouse types as well. And mouse census is shallow in *datasets* — 51 in total,
 one embryo atlas holding 11.4M of 18.4M cells — so tissue breadth is good while lab and
@@ -730,8 +730,8 @@ the *same cells* reaches **0.72 / 0.86** ([HLICA_LIVER.md](HLICA_LIVER.md),
 from; the broad model's job is to route to it, not to be right about subtypes itself.
 
 **The broad pass hands the query to the focused pass; the two do not combine.** The natural
-assumption is that a better broad call should also make the focused call better. It does not,
-and the test is worth stating plainly. On the leakage-free cross-study
+assumption is that a better broad call should also make the focused call better. It does not.
+On the leakage-free cross-study
 liver split, substituting the stronger **Pan-human Azimuth** for the broad pass lifts it
 (ontology 0.380 vs 0.338 for our own broad model) but changes nothing downstream. Using that
 broad call to *narrow* the focused pass's classes — the zero-retrain masking actinn-jax ships — makes
@@ -867,7 +867,7 @@ band. The linear pipeline's lead on our own panel (§3.1) therefore does not gen
 whichever of the two panels is asked, the answer is a cluster of methods within a couple of
 points of each other, but which one tops the cluster changes with the datasets.
 
-**scTOP fails on two of the six, for a reason worth recording.** Its mean (0.581) is not a
+**scTOP fails on two of the six.** Its mean (0.581) is not a
 uniformly weak result but two collapses inside four ordinary ones: 0.124 on gtex_v9 and
 0.042 on tabula_sapiens against 0.90–0.99 elsewhere. Open Problems hands every method 1,000
 HVGs, and scTOP's rank projection needs genes expressed in an appreciable fraction of cells;
@@ -889,7 +889,7 @@ Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and
 in minutes — the gap to the top method was largely a gene-budget artifact, not the VAE. But
 more genes is **not** a universal win: it *regresses* tabula_sapiens by ~10 pt (its
 284-cell test batch across 160 fine types overfits reference-specific genes) and saturates
-hypomap (Figure 4). Crucially, this is
+hypomap (Figure 4). The budget is
 **selectable without test labels**: held-out *reference* cross-validation rises for the
 datasets that benefit and is the one signal that *drops* for tabula_sapiens, and a trivial
 query-cells-per-class check independently flags it (Figure 5) —
