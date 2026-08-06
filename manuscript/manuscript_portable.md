@@ -393,12 +393,7 @@ methods, all selectable without test labels:
 
 ## Accuracy and cost
 
-![accuracy heatmap](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_accuracy_heatmap.png)
-
-**Figure 1.** Accuracy by method (rows) and dataset (columns) across the in-house panel.
-
-Accuracy and cost belong in one table: the finding is not where either lands, but how little
-they relate. Accuracy is the mean over the **five shared-vocabulary datasets** (lung_cross
+Accuracy is the mean over the **five shared-vocabulary datasets** (lung_cross
 excluded — its exact accuracy is a vocabulary artifact, see the † note below; means over all
 six are ~0.08 lower for every method, with the identical ranking); macro-F1 and ontology are
 means over all six; cost is the mean per query (Table 3):
@@ -423,8 +418,8 @@ is the mean per query. Bold marks the best value in a column.
 
 *In Table 3, scANVI does most of its work in one train+predict pass, attributed to predict.
 
-**Read down the accuracy column, then across.** The top four span 0.008 in accuracy, **~130× in
-predict time** (0.34 s to 89 s) and 2.4× in memory. scANVI sits within 0.002 of second place and
+The top four methods span **0.008 in accuracy, ~130× in predict time** (0.34 s to 89 s) and
+2.4× in memory. scANVI sits within 0.002 of second place and
 **134× slower than actinn-jax** at tied accuracy. The linear pipeline is both the most accurate
 and the fastest to fit, and pays for it in memory — 4294 vs 2399 MB — because ANOVA/PCA densify
 a cells × genes matrix while actinn-jax stays sparse; that ~1.8× ratio widens to ~2× at atlas
@@ -511,12 +506,11 @@ exact scores are unaffected.
 
 ![Pareto](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_pareto_liver_intra.png)
 
-**Figure 2.** Accuracy against total wall time on liver_intra. The tuned linear pipeline holds
+**Figure 1.** Accuracy against total wall time on liver_intra. The tuned linear pipeline holds
 the fast-frontier point; actinn-jax sits just inside it at this reference size, and what
-separates it is visible only on the scaling axes of Figure 3.
+separates it is visible only on the scaling axes of Figure 2.
 
-Plotting accuracy against total wall time makes the frontier explicit. The **tuned linear
-pipeline** holds the fast-frontier point: highest matrix accuracy (0.839) at the lowest fit
+The **tuned linear pipeline** holds the fast-frontier point: highest matrix accuracy (0.839) at the lowest fit
 time of any accurate method (3.0 s), placing it above and to the left of actinn-jax, SVM, kNN
 and CellTypist. The deep methods buy little or nothing on accuracy here — at or below the
 linear pipeline on every dataset except lung — for 30–130× the inference cost. actinn-jax
@@ -529,7 +523,7 @@ from the liver_intra panel and depicts the ranking of Tables 3 and 5.
 
 ![scaling](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_scaling.png)
 
-**Figure 3.** Fit and predict time against reference size and label cardinality. Fit time grows
+**Figure 2.** Fit and predict time against reference size and label cardinality. Fit time grows
 for every trained method; predict time stays flat and sub-second across the whole range.
 
 Training time grows with reference size and with #cell types for all trained methods —
@@ -554,7 +548,7 @@ inference (§3.1, §3.3), the whole workflow runs on a laptop.
 
 ![the broad pass and the focused pass on one query](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_workflow_umap.png)
 
-**Figure 4.** The two passes on the withheld HLiCA liver study (3,396 cells), same UMAP
+**Figure 3.** The two passes on the withheld HLiCA liver study (3,396 cells), same UMAP
 throughout. *Left:* the shipped census reference spreads 137 of its 798 labels over the
 query with little correspondence to cluster structure — ontology concordance **0.34**. Its
 job is to establish that this is liver and route accordingly, not to name subtypes.
@@ -829,10 +823,10 @@ Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and
 in minutes — the gap to the top method was largely a gene-budget artifact, not the VAE. But
 more genes is **not** a universal win: it *regresses* tabula_sapiens by ~10 pt (its
 284-cell test batch across 160 fine types overfits reference-specific genes) and saturates
-hypomap (Figure 5). Crucially, this is
+hypomap (Figure 4). Crucially, this is
 **selectable without test labels**: held-out *reference* cross-validation rises for the
 datasets that benefit and is the one signal that *drops* for tabula_sapiens, and a trivial
-query-cells-per-class check independently flags it (Figure 6) —
+query-cells-per-class check independently flags it (Figure 5) —
 so the budget can be set deterministically per dataset. (iii) *Negative control* — a
 CPU-only, UCE-style protein-embedding featurization (expression-weighted mean of ESM2 gene
 embeddings) does **not** help and hurts the hardest case: the pooling discards the per-gene
@@ -841,13 +835,13 @@ in its GPU transformer, not a portable averaging trick.
 
 ![gene budget curve](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/gene_budget_curve.png)
 
-**Figure 5.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
+**Figure 4.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
 Problems datasets. More genes help most datasets but regress the fine-grained,
 domain-shifted tabula_sapiens.
 
 ![gene budget signals](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/gene_budget_signals.png)
 
-**Figure 6.** Label-free signals for setting the gene budget without test labels. Held-out
+**Figure 5.** Label-free signals for setting the gene budget without test labels. Held-out
 reference cross-validation and query-cells-per-class both single out tabula_sapiens, the one
 dataset where more genes hurt.
 
