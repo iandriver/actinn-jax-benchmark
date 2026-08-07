@@ -12,7 +12,7 @@ abstract: |
 
 Annotating cell types by mapping to a labeled reference is one of the most frequently run
 operations in single-cell RNA-seq. The method landscape is large (S4),
-but published comparisons ([Abdelaal 2019], [Fu 2024]) emphasize accuracy and rarely
+but published comparisons ([\[Abdelaal 2019\]](https://doi.org/10.1186/s13059-019-1795-z), [\[Fu 2024\]](https://doi.org/10.1093/bib/bbae392)) emphasize accuracy and rarely
 report the axis that decides what a working scientist actually runs on their own machine:
 **wall-clock time and memory on commodity hardware**, without a GPU. Foundation models
 (scGPT, Geneformer, scPRINT) push accuracy in some settings but need GPUs and minutes-to-
@@ -93,9 +93,9 @@ exists. Where a better-resourced model already exists, the productive move is to
 
 ## actinn-jax
 
-actinn-jax reimplements ACTINN ([Ma & Pellegrini 2020]) — a 4-layer fully-connected
+actinn-jax reimplements ACTINN ([\[Ma & Pellegrini 2020\]](https://doi.org/10.1093/bioinformatics/btz592)) — a 4-layer fully-connected
 network (100/50/25 hidden units, ReLU, softmax) trained with Adam — in JAX/optax
-([Bradbury 2018]), replacing
+([\[Bradbury 2018\]](https://github.com/jax-ml/jax)), replacing
 the original's TensorFlow-1.x graph/session code. Key engineering:
 
 - **Sparse-aware preprocessing**: the count matrix is never densified in full. CP10k+log2
@@ -122,19 +122,19 @@ engineering win is the point, not an accuracy comparison.
 
 | method | source | tier | engine | rejection | runtime |
 |-----------|------------|-----------|--------------------|----------|------------|
-| **actinn-jax** | [Ma & Pellegrini 2020] | classical | JAX MLP | confidence threshold | JAX |
-| SVM | [Pedregosa 2011] | classical | linear SVM (SGD) | — | scikit-learn |
-| kNN | [Pedregosa 2011] | classical | k-nearest neighbors | — | scikit-learn |
-| CellTypist | [Domínguez Conde 2022] | linear | L2 logistic regression | prob threshold | scikit-learn |
-| **linear-anova-pca** | [Pedregosa 2011] † | linear | normalize → ANOVA → PCA(220) → logreg | prob | scikit-learn |
-| **scTOP** | [Yampolskaya 2023] | parameter-free | rank z-score class-average projection | — | NumPy |
-| SingleR | [Aran 2019] | correlation | Spearman + fine-tuning | — | R |
-| scmap-cluster | [Kiselev 2018] | correlation | centroid cosine | yes (unassigned) | R |
-| scANVI | [Xu 2021] | deep | scVI semi-supervised VAE | prob | scVI |
-| scArches | [Lotfollahi 2022] | deep | scANVI reference surgery | prob | scVI |
-| **ProtoCloud** | [Guo & Ding 2026] | deep | prototype VAE + LRP attribution | ambiguity flag | PyTorch |
-| scPRINT | [Kalfon 2025] | foundation | pretrained transformer, zero-shot | — | PyTorch |
-| **Pan-human Azimuth** | [Sarkar et al. 2026] | pretrained | 8-level hierarchical NN, fixed 382-leaf typology | trained `Unassigned` | TensorFlow |
+| **actinn-jax** | [\[Ma & Pellegrini 2020\]](https://doi.org/10.1093/bioinformatics/btz592) | classical | JAX MLP | confidence threshold | JAX |
+| SVM | [\[Pedregosa 2011\]](https://www.jmlr.org/papers/v12/pedregosa11a.html) | classical | linear SVM (SGD) | — | scikit-learn |
+| kNN | [\[Pedregosa 2011\]](https://www.jmlr.org/papers/v12/pedregosa11a.html) | classical | k-nearest neighbors | — | scikit-learn |
+| CellTypist | [\[Domínguez Conde 2022\]](https://doi.org/10.1126/science.abl5197) | linear | L2 logistic regression | prob threshold | scikit-learn |
+| **linear-anova-pca** | [\[Pedregosa 2011\]](https://www.jmlr.org/papers/v12/pedregosa11a.html) † | linear | normalize → ANOVA → PCA(220) → logreg | prob | scikit-learn |
+| **scTOP** | [\[Yampolskaya 2023\]](https://doi.org/10.1242/dev.201873) | parameter-free | rank z-score class-average projection | — | NumPy |
+| SingleR | [\[Aran 2019\]](https://doi.org/10.1038/s41590-018-0276-y) | correlation | Spearman + fine-tuning | — | R |
+| scmap-cluster | [\[Kiselev 2018\]](https://doi.org/10.1038/nmeth.4644) | correlation | centroid cosine | yes (unassigned) | R |
+| scANVI | [\[Xu 2021\]](https://doi.org/10.15252/msb.20209620) | deep | scVI semi-supervised VAE | prob | scVI |
+| scArches | [\[Lotfollahi 2022\]](https://doi.org/10.1038/s41587-021-01001-7) | deep | scANVI reference surgery | prob | scVI |
+| **ProtoCloud** | [\[Guo & Ding 2026\]](https://doi.org/10.1016/j.xgen.2026.101217) | deep | prototype VAE + LRP attribution | ambiguity flag | PyTorch |
+| scPRINT | [\[Kalfon 2025\]](https://doi.org/10.1038/s41467-025-58699-1) | foundation | pretrained transformer, zero-shot | — | PyTorch |
+| **Pan-human Azimuth** | [\[Sarkar et al. 2026\]](https://doi.org/10.64898/2026.07.16.738997) | pretrained | 8-level hierarchical NN, fixed 382-leaf typology | trained `Unassigned` | TensorFlow |
 
 
 **Table 1.** The benchmarked methods: model family (*tier*), the engine each one actually runs,
@@ -153,7 +153,7 @@ what can be measured rather than excusing them from measurement:
  CL being the standard controlled vocabulary of cell types, used throughout as the common
  ground between datasets that name the same cell differently; it cannot
  emit labels outside that set and skips symbol-keyed datasets.
-- **Pan-human Azimuth** ([Sarkar et al. 2026]) is a supervised hierarchical classifier over a
+- **Pan-human Azimuth** ([\[Sarkar et al. 2026\]](https://doi.org/10.64898/2026.07.16.738997)) is a supervised hierarchical classifier over a
  single organism-wide typology — 8 levels, 382 leaves, ~7M parameters, a fixed 5,055-gene
  panel, trained on 9.7M curated cells, with abstention *learned rather than thresholded* —
  the model is trained to answer `Unassigned`, instead of having a probability cutoff applied
@@ -175,12 +175,12 @@ API and older harmony versions do not compile on the current toolchain.
 
 | dataset | source | split | tissue | #types | genes | notes |
 |-------------|----------|-------|-----------|------|-------|-----------|
-| lung_intra | [Travaglini 2020] | within-dataset | lung (Krasnow) | 46 | Ensembl | 300 cells/type ref |
-| lung_cross | [Sikkema 2023] → [Travaglini 2020] | cross-dataset | lung (HLCA → Krasnow) | 46 | Ensembl | different lab/protocol |
-| liver_intra | [Edgar 2026] | within-dataset | liver (HLiCA) | 36 | Ensembl | 150 cells/type |
-| liver_cross | [Edgar 2026] | cross-**study** | liver (HLiCA) | 34 | Ensembl | train 6 studies → test withheld study |
-| blood_gut_intra | [Alegbe 2026] | within-dataset | blood + gut (IBDverse) | 86 | Ensembl | high cardinality; no CL ids |
-| pbmc | [10x Genomics 2016] | within-dataset | PBMC (pbmc3k) | 8 | symbols | small-n; scPRINT skips (symbols) |
+| lung_intra | [\[Travaglini 2020\]](https://doi.org/10.1038/s41586-020-2922-4) | within-dataset | lung (Krasnow) | 46 | Ensembl | 300 cells/type ref |
+| lung_cross | [\[Sikkema 2023\]](https://doi.org/10.1038/s41591-023-02327-2) → [\[Travaglini 2020\]](https://doi.org/10.1038/s41586-020-2922-4) | cross-dataset | lung (HLCA → Krasnow) | 46 | Ensembl | different lab/protocol |
+| liver_intra | [\[Edgar 2026\]](https://doi.org/10.64898/2026.06.30.735539) | within-dataset | liver (HLiCA) | 36 | Ensembl | 150 cells/type |
+| liver_cross | [\[Edgar 2026\]](https://doi.org/10.64898/2026.06.30.735539) | cross-**study** | liver (HLiCA) | 34 | Ensembl | train 6 studies → test withheld study |
+| blood_gut_intra | [\[Alegbe 2026\]](https://doi.org/10.1038/s41586-026-10627-z) | within-dataset | blood + gut (IBDverse) | 86 | Ensembl | high cardinality; no CL ids |
+| pbmc | [\[10x Genomics 2016\]](https://www.10xgenomics.com/datasets/3-k-pbm-cs-from-a-healthy-donor-1-standard-1-1-0) | within-dataset | PBMC (pbmc3k) | 8 | symbols | small-n; scPRINT skips (symbols) |
 
 
 **Table 2.** The six benchmark datasets. *split* separates within-dataset holdouts from
@@ -248,7 +248,7 @@ The shipped broad-pass references (§3.4) are built once, offline, by a three-st
 driven by one command (S5 in the
 [benchmark repository][repo]).
 
-**Sampling.** Every primary cell for one organism in the CELLxGENE Census [CZI Census 2025]
+**Sampling.** Every primary cell for one organism in the CELLxGENE Census [\[CZI Census 2025\]](https://chanzuckerberg.github.io/cellxgene-census/)
 — primary meaning the copy the census designates canonical, so cells deposited in more than
 one study are counted once — stratified by cell type at a fixed cap per type: 40 for
 `broad_human_v1`, 60 for the later human and mouse pulls. Types with fewer than 12 cells are
@@ -360,7 +360,7 @@ reference grows, which no single reference size can show
 
 ## External validation protocol
 
-**Open Problems `label_projection`** [Open Problems 2024]
+**Open Problems `label_projection`** [\[Open Problems 2024\]](https://openproblems.bio)
 (S8) supplies the
 datasets, metrics and ranking — none chosen by us. actinn-jax is packaged as a viash 0.9.7
 component declaring the normalization it expects, and run through the project's own Nextflow
@@ -394,8 +394,8 @@ methods, all selectable without test labels:
 - **Gene budget** — Open Problems feeds every method 1,000 HVGs; we sweep wider panels and
  select per dataset by **held-out reference cross-validation**, which is label-free with
  respect to the test set.
-- **Protein-embedding featurization** (negative control) — a CPU-only featurization in the style of **Universal Cell Embeddings (UCE)** [Rosen 2026] — an
- expression-weighted mean of ESM2 [Lin 2023] protein-language-model gene embeddings — to test whether a foundation model's value
+- **Protein-embedding featurization** (negative control) — a CPU-only featurization in the style of **Universal Cell Embeddings (UCE)** [\[Rosen 2026\]](https://doi.org/10.1038/s41586-026-10689-z) — an
+ expression-weighted mean of ESM2 [\[Lin 2023\]](https://doi.org/10.1126/science.ade2574) protein-language-model gene embeddings — to test whether a foundation model's value
  survives a cheap pooling shortcut.
 
 # Results
@@ -750,7 +750,7 @@ published v2.0.0 leaderboard (S8).
 17 on mean accuracy (0.837), 1st among all methods that complete every dataset**, beats its
 PCA-space `mlp` sibling, and posts the best accuracy of any completing method on the hardest
 dataset (tabula_sapiens, 160 types: 0.394 vs mlp 0.342). It is upper-mid on macro-F1 and
-**not the top method overall** — scANVI+scArches surgery and xgboost [Chen & Guestrin 2016] score higher on the
+**not the top method overall** — scANVI+scArches surgery and xgboost [\[Chen & Guestrin 2016\]](https://doi.org/10.1145/2939672.2939785) score higher on the
 datasets they finish, though both **fail to complete tabula_sapiens**, which is why they
 rank above actinn-jax only on a mean over the 5 easier datasets. The foundation models again
 land at the bottom (scgpt_zeroshot 0.639, uce 0.131 ≈ the random-labels control),
@@ -904,7 +904,7 @@ matrix, ahead on lung, and the strongest method of all at atlas scale (§3.1, §
 (S2). The richer model pays off where it has the data to
 support it, and not before — which is an argument for matching model capacity to reference
 size, not for preferring small models everywhere. Second, and more broadly,
-Souza & Mehta [Souza & Mehta 2026] report that
+Souza & Mehta [\[Souza & Mehta 2026\]](https://doi.org/10.64898/2026.02.11.705358) report that
 **parameter-free linear representations** match or exceed single-cell foundation models across
 cross-species transfer, human cell-type classification and disease-state prediction — on
 Tabula Sapiens 2.0 their normalize→ANOVA→PCA→logistic-regression pipeline reaches mean
@@ -1061,7 +1061,7 @@ concept DOI [10.5281/zenodo.21688150](https://doi.org/10.5281/zenodo.21688150) f
 latest version). The package downloads and caches them on first use, so no manual
 retrieval is needed, and can pre-download them for offline use.
 
-HLiCA data © Edgar et al. 2026 (CC-BY 4.0), [doi:10.64898/2026.06.30.735539]. The distilled
+HLiCA data © Edgar et al. 2026 (CC-BY 4.0), [\[doi:10.64898/2026.06.30.735539\]](https://doi.org/10.64898/2026.06.30.735539). The distilled
 reference derives from **Pan-human Azimuth** (Sarkar, Li, Molla, … Satija, bioRxiv 2026,
 [doi:10.64898/2026.07.16.738997](https://doi.org/10.64898/2026.07.16.738997)); its weights are
 © the authors under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), obtained via

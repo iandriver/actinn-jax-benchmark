@@ -30,11 +30,11 @@ abstract: |
 Annotating cells by mapping to a labeled reference is run constantly and rarely reported as a
 cost. Existing comparisons [Abdelaal 2019, Fu 2024] emphasize accuracy; the axis that decides
 what runs on a laptop — wall-clock and memory without a GPU — is usually absent. Foundation
-models [Kalfon 2025] raise accuracy in some settings but need accelerators, and their
+models [\[Kalfon 2025\]](https://doi.org/10.1038/s41467-025-58699-1) raise accuracy in some settings but need accelerators, and their
 zero-shot label predictions underperform small models trained on curated references.
 
 Concurrent work sharpens the question rather than settling it. **Pan-human Azimuth**
-[Sarkar et al. 2026] ships a supervised hierarchical classifier over a harmonized
+[\[Sarkar et al. 2026\]](https://doi.org/10.64898/2026.07.16.738997) ships a supervised hierarchical classifier over a harmonized
 organism-wide typology — 8 levels, 382 leaf types, ~7M parameters over a fixed 5,055-gene
 panel, trained on 9.7M curated cells, with abstention *learned* rather than thresholded
 (expected calibration error 0.0044) — and runs on a laptop. It is better resourced than any
@@ -57,7 +57,7 @@ linear baseline is tuned; and the external validation is somebody else's benchma
 
 # Materials and methods
 
-**actinn-jax.** A dependency-light JAX reimplementation of ACTINN [Ma & Pellegrini 2020] — a
+**actinn-jax.** A dependency-light JAX reimplementation of ACTINN [\[Ma & Pellegrini 2020\]](https://doi.org/10.1093/bioinformatics/btz592) — a
 4-layer network (100/50/25 hidden units, ReLU, softmax, Adam) — replacing TensorFlow-1.x
 graph/session code that no longer installs on current toolchains. Preprocessing is
 sparse-aware; a fitted reference is cached and reused across queries; prediction is chunked
@@ -84,7 +84,7 @@ Because wall-clock on a shared machine depends on co-scheduled load, external co
 reported as a ratio to a method present in every run. Environments are pinned and the Cell
 Ontology release is recorded (Supplementary Note S3).
 
-**Workflow components.** A broad reference built from the CELLxGENE Census [CZI Census 2025];
+**Workflow components.** A broad reference built from the CELLxGENE Census [\[CZI Census 2025\]](https://chanzuckerberg.github.io/cellxgene-census/);
 a coarse→fine hierarchy obtained either from foundation-model embeddings or from Cell Ontology
 lineage; confidence-threshold abstention calibrated per reference by withholding 10% of cell
 types; masking-based refinement to a query's own supported classes or to a tissue; and a
@@ -193,7 +193,7 @@ reference re-annotates the same cells at 0.73. *Right:* the study's own labels.
 ## A pretrained annotator can be distilled without a GPU or labels
 
 Building the broad pass from the census requires a foundation model on a GPU to discover its
-hierarchy. A pretrained pan-human annotator [Sarkar et al. 2026] already publishes one, so
+hierarchy. A pretrained pan-human annotator [\[Sarkar et al. 2026\]](https://doi.org/10.64898/2026.07.16.738997) already publishes one, so
 labelling a corpus with it and training on those labels transfers both vocabulary and
 structure — using **only raw counts**. On withheld cross-study liver cells the distilled model
 **beats both the teacher and the census-built reference**, at several times the teacher's

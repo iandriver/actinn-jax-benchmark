@@ -181,10 +181,35 @@ def _references():
             # ... and the same target makes every inline [Key] in the body clickable.
             inline_links[key] = url
     defs = "\n".join(f"[{k}]: {u}" for k, u in sorted(inline_links.items()))
+    globals()["CITE_URLS"] = dict(inline_links)
     return "\n".join(out) + "\n\n" + defs + "\n"
 
 
 REFS = _references()
+
+# 5b. Citations rendered inconsistently: a shortcut link like [Kalfon 2025] resolves and
+# markdown eats its brackets ("Foundation models Kalfon 2025 raise accuracy"), while an
+# unresolvable multi-key one like [Abdelaal 2019, Fu 2024] stays literal and keeps them. So
+# half the citations in the text had brackets and half did not. Rewriting each resolvable
+# key as an inline link whose *text* is the escaped bracketed key gives every citation the
+# same [Author Year] shape while staying clickable.
+CITEKEY = re.compile(r"\d{4}$")          # a citation key ends in a year; `repo` does not
+
+
+def bracket_citations(text):
+    # Only citation-shaped keys. `inline_links` also holds plumbing keys such as [repo],
+    # and rewriting that one shattered the reference-style link [benchmark repository][repo]
+    # into literal brackets plus a bare URL -- a 157pt overfull line.
+    cites = {k: u for k, u in CITE_URLS.items() if CITEKEY.search(k)}
+    for key, url in sorted(cites.items(), key=lambda kv: -len(kv[0])):
+        text = text.replace(f"[{key}]", f"[\\[{key}\\]]({url})")
+    # a multi-key citation is plain text; escape it so LaTeX does not read the brackets
+    text = re.sub(r"(?<!\\)\[([A-Z][^\]]*?\d{4}(?:, [^\]]*?\d{4})+)\]",
+                  lambda m: "[" + m.group(1) + "]", text)
+    return text
+
+
+body = bracket_citations(body)
 
 # 6. DOIs are digits and punctuation, so no hyphenation pattern applies to them and TeX has
 # nowhere to break: an unbreakable `doi:10.64898/2026.06.30.735539` simply overruns the right
