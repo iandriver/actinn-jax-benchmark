@@ -63,7 +63,7 @@ linear pipeline at 49k cells). The components are not unique: ProtoCloud provide
 uncertainty, gene attribution and a retraining-based refinement path, and **Pan-human
 Azimuth** ships a pretrained, calibrated, hierarchical pan-human annotator that runs on a
 laptop — a better-resourced broad pass than ours, and one we can **distill into a broad-pass
-model of comparable accuracy at ~9× its throughput, built with no GPU and no labeled data**.
+model of comparable accuracy at 6–9× its throughput, built with no GPU and no labeled data**.
 What the workflow adds is the **hand-off into a label set the broad model was never trained
 on**: refinement against a user's own focused reference, and resolution below any fixed
 typology's leaves.
@@ -1001,7 +1001,7 @@ calibration error (ECE)** of 0.0044 — meaning its stated confidence sits withi
 percentage point of its observed accuracy — running at ~1,000 cells/s on a laptop. It is better resourced than
 our census-built reference and we make no claim to improve on its annotations. What we do
 with it instead is **use it**: distilling its labels and its hierarchy into actinn-jax
-produces a broad-pass model of comparable accuracy at roughly nine times its throughput, built
+produces a broad-pass model of comparable accuracy at six to nine times its throughput, built
 without a GPU and without labeled data (§3.4). A curated pan-human model is the right thing
 to start from; a small fast model is the right thing to iterate with.
 

@@ -20,9 +20,10 @@ several methods are now both accurate and cheap, the useful question is not whic
 which fits a given job. We show that a low, flat inference cost enables multi-stage
 annotation on a laptop — a shipped ~800-type reference with calibrated abstention, hand-off
 to a user's own focused reference (cross-study liver 0.23/0.58 → 0.72/0.86, exact/ontology),
-resolution below the cell-type label, and cluster-level novelty screening — and that a
-pretrained pan-human annotator can be distilled into such a reference with no GPU and no
-labeled data. We release the reimplementation (actinn-jax), the harness, and the
+resolution below the cell-type label, and cluster-level novelty screening. We further show
+that **Pan-human Azimuth**, a concurrent purpose-built pan-human annotator, can be distilled
+into such a reference from raw counts alone — no GPU, no labeled input — reaching higher
+concordance than the teacher at 6–9× its throughput. We release the reimplementation (actinn-jax), the harness, and the
 pre-trained references.
 
 ## Key Points
@@ -37,7 +38,8 @@ pre-trained references.
   (0.08–0.33 s from 1k to 24k reference cells), which is what makes chaining several
   annotation stages practical on a laptop.
 - A pretrained pan-human annotator can be distilled into a fast reference using only raw
-  counts — no GPU, no labels — reaching comparable concordance at ~9× the throughput.
+  counts — no GPU, no labels — reaching higher concordance than either the teacher or a
+  census-built reference, at 6–9× the teacher's throughput.
 - Zero-shot foundation-model labels remain the weakest option in both our benchmark and the
   external one; their value is in learned structure, not in their label heads.
 
@@ -48,6 +50,17 @@ cost. Existing comparisons [Abdelaal 2019, Fu 2024] emphasize accuracy; the axis
 what runs on a laptop — wall-clock and memory without a GPU — is usually absent. Foundation
 models [Kalfon 2025] raise accuracy in some settings but need accelerators, and their
 zero-shot label predictions underperform small models trained on curated references.
+
+Concurrent work sharpens the question rather than settling it. **Pan-human Azimuth**
+[Sarkar et al. 2026] ships a supervised hierarchical classifier over a harmonized
+organism-wide typology — 8 levels, 382 leaf types, ~7M parameters over a fixed 5,055-gene
+panel, trained on 9.7M curated cells, with abstention *learned* rather than thresholded
+(expected calibration error 0.0044) — and runs on a laptop. It is better resourced than any
+reference we could build, and its authors reach a conclusion parallel to ours: training-data
+quality and organization matter as much as architecture or scale, with accuracy saturating
+past ~5M training cells. A purpose-built pan-human model is therefore the right thing to
+*start* from; the open question is what to do next, since no fixed typology can re-annotate
+into a user's own label set or resolve states below its own leaves.
 
 We therefore ask a practical question: for a given annotation job on commodity hardware,
 which method should be run, and what does the surrounding workflow look like? Several methods
@@ -201,9 +214,19 @@ Building the broad pass from the census requires a foundation model on a GPU to 
 hierarchy. A pretrained pan-human annotator [Sarkar et al. 2026] already publishes one, so
 labelling a corpus with it and training on those labels transfers both vocabulary and
 structure — using **only raw counts**. On withheld cross-study liver cells the distilled model
-reaches **0.406** concordance against 0.338 for the census-built reference and 0.380 for the
-teacher, at roughly **9× the teacher's throughput**, in under ten minutes of CPU
-(Supplementary Note S6). Replacing the embedding-derived hierarchy with one derived from Cell
+**beats both the teacher and the census-built reference**, at several times the teacher's
+throughput, in under ten minutes of CPU (Table 3).
+
+| broad-pass model | classes | ontology | cells/s |
+|------------------------------|------:|------:|--------:|
+| census-built, ours | 798 | 0.338 | 2,962 |
+| Pan-human Azimuth (teacher) | 382 | 0.380 | 1,076–1,563 |
+| **distilled from Azimuth, ours** | 324 | **0.406** | **8,937–10,021** |
+
+**Table 3.** Broad-pass entry points on 3,396 withheld cross-study liver cells. The distilled
+student needs only raw human counts to build — no GPU, no labeled input — and inherits the
+teacher's vocabulary and hierarchy. It does not inherit the teacher's calibrated abstention,
+which remains a limitation (Supplementary Note S6). Replacing the embedding-derived hierarchy with one derived from Cell
 Ontology lineage removes the GPU from the build entirely and outperforms it (0.616 vs 0.547
 flat; a same-sized random grouping scores 0.539), which extends the route to a second organism
 (Supplementary Note S10).
