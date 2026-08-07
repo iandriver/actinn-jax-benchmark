@@ -28,6 +28,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import scanpy as sc
+import matplotlib.patheffects as pe
 from matplotlib.lines import Line2D
 
 sys.path.insert(0, os.environ.get("ACTINN_JAX_REPO",
@@ -39,6 +40,119 @@ import actinn_jax as aj
 from benchmark import metrics
 
 GREY = "#d9d9d9"
+
+# Twelve hand-picked hues (Paul Tol bright/muted, extended). tab20 was the default and its
+# paired light/dark ramps are hard to tell apart at 3-point marker size, which is exactly
+# the regime this figure lives in.
+PALETTE12 = ["#4477AA", "#EE6677", "#228833", "#CCBB44", "#66CCEE", "#AA3377",
+             "#EE8866", "#117733", "#882255", "#44AA99", "#999933", "#332288"]
+OTHER = "other"
+
+
+# Blind truncation destroyed the distinction the figure exists to show: four endothelial
+# subtypes all became "endothelial cell o…". Abbreviate the boilerplate instead, then check
+# uniqueness, and only truncate what is still too long.
+ABBREV = [
+    ("CD8-positive, alpha-beta cytotoxic T cell", "CD8+ cytotoxic T"),
+    ("CD8-positive, alpha-beta T cell", "CD8+ T"),
+    ("mucosal-associated invariant T cell", "MAIT cell"),
+    ("vascular associated smooth muscle cell", "vascular SMC"),
+    ("endothelial cell of pericentral hepatic sinusoid", "EC pericentral sinusoid"),
+    ("endothelial cell of periportal hepatic sinusoid", "EC periportal sinusoid"),
+    ("endothelial cell of lymphatic vessel", "EC lymphatic"),
+    ("endothelial cell of vascular tree", "EC vascular tree"),
+    ("endothelial cell of sinusoid", "EC sinusoid"),
+    ("endothelial cell of artery", "EC artery"),
+    ("plasmacytoid dendritic cell", "pDC"),
+    ("conventional dendritic cell", "cDC"),
+    ("migratory dendritic cell", "migratory DC"),
+    ("liver dendritic cell", "liver DC"),
+    ("lipid-associated macrophage", "LAM"),
+    ("large mucus secreting cholangiocyte", "mucus-secreting cholangiocyte"),
+    ("centrilobular region hepatocyte", "centrilobular hepatocyte"),
+    ("periportal region hepatocyte", "periportal hepatocyte"),
+    ("midzonal region hepatocyte", "midzonal hepatocyte"),
+    ("hepatic portal fibroblast", "portal fibroblast"),
+    ("non-classical monocyte", "non-classical mono."),
+    ("classical monocyte", "classical mono."),
+    ("natural killer cell", "NK cell"),
+    ("regulatory T cell", "Treg"),
+    ("dendritic cell", "DC"),
+]
+
+
+def short_name(label, limit=24):
+    out = label
+    for long, brief in ABBREV:
+        if out == long:
+            out = brief
+            break
+    return (out[: limit - 1] + "…") if len(out) > limit else out
+
+
+def short_names(labels, limit=24):
+    """Shorten a set of labels, lengthening any that would otherwise collide."""
+    out, seen = {}, {}
+    for l in labels:
+        cand = short_name(l, limit)
+        if cand in seen and seen[cand] != l:      # two names collapsed onto one
+            cand = short_name(l, limit + 12)
+        seen[cand] = l
+        out[l] = cand
+    return out
+
+
+def anchor(xy, mask, bins=14):
+    """Where to write a label: the centre of its densest patch, not its median. A cell type
+    split across two lobes of the embedding has its median in the empty space between them,
+    which labels nothing and collides with whatever is there."""
+    pts = xy[mask]
+    if len(pts) < 25:
+        return float(np.median(pts[:, 0])), float(np.median(pts[:, 1]))
+    H, xe, ye = np.histogram2d(pts[:, 0], pts[:, 1], bins=bins)
+    i, j = np.unravel_index(int(np.argmax(H)), H.shape)
+    sel = ((pts[:, 0] >= xe[i]) & (pts[:, 0] <= xe[i + 1]) &
+           (pts[:, 1] >= ye[j]) & (pts[:, 1] <= ye[j + 1]))
+    core = pts[sel] if sel.any() else pts
+    return float(np.median(core[:, 0])), float(np.median(core[:, 1]))
+
+
+def declash(pos, min_dx, min_dy, iters=400):
+    """Separate labels that would overlap. Text placed at cluster centres collided in six
+    pairs on the first version ('hepatclymphocyte'), so nudge them apart vertically -- the
+    cheap axis, since these names are wide and short."""
+    p = np.array(pos, dtype=float)
+    for _ in range(iters):
+        moved = False
+        for i in range(len(p)):
+            for j in range(i + 1, len(p)):
+                dx, dy = p[j, 0] - p[i, 0], p[j, 1] - p[i, 1]
+                if abs(dx) < min_dx and abs(dy) < min_dy:
+                    push = (min_dy - abs(dy)) / 2 + 1e-6
+                    sign = 1.0 if dy >= 0 else -1.0
+                    p[i, 1] -= sign * push
+                    p[j, 1] += sign * push
+                    moved = True
+        if not moved:
+            break
+    return p
+
+
+def top_labels(labels, n=12):
+    """The n most abundant labels, most-frequent first. Everything else is folded into a
+    single grey class: past a dozen categories a qualitative palette stops being readable,
+    and the tail here is a long list of one-cell types."""
+    counts = {}
+    for l in labels:
+        counts[l] = counts.get(l, 0) + 1
+    ranked = [l for l, _ in sorted(counts.items(), key=lambda kv: -kv[1])
+              if l not in ("unknown",)]
+    return ranked[:n]
+
+
+def collapse(labels, keep):
+    keep = set(keep)
+    return np.array([l if l in keep else (l if l == "unknown" else OTHER) for l in labels])
 
 
 def concordance(true_cl, pred_cl, anc):
@@ -52,29 +166,50 @@ def concordance(true_cl, pred_cl, anc):
     return ok / n if n else float("nan")
 
 
-def panel(ax, xy, labels, title, palette, subtitle=None, max_legend=8):
+def panel(ax, xy, labels, title, palette, subtitle=None, style="legend", n_show=12):
+    """Draw one UMAP. `style` is 'legend' (key below the panel) or 'ondata' (names written
+    on the clusters). Grey classes are drawn first so coloured cells sit on top of them."""
     order = [l for l, _ in sorted(
         ((l, int((labels == l).sum())) for l in set(labels)),
         key=lambda kv: -kv[1])]
-    for lab in order:
+    named = [l for l in order if l not in (OTHER, "unknown")][:n_show]
+    for lab in [l for l in order if l in (OTHER, "unknown")] + named:
         m = labels == lab
-        ax.scatter(xy[m, 0], xy[m, 1], s=3, linewidths=0,
-                   c=palette.get(lab, GREY), label=lab if lab in order[:max_legend] else None)
+        ax.scatter(xy[m, 0], xy[m, 1], s=3, linewidths=0, c=palette.get(lab, GREY),
+                   zorder=1 if lab in (OTHER, "unknown") else 2)
     ax.set_title(title, fontsize=11, pad=6)
     if subtitle:
-        ax.text(0.5, -0.06, subtitle, transform=ax.transAxes, ha="center", fontsize=8.5,
-                color="#444")
+        ax.text(0.5, -0.04 if style == "ondata" else -0.06, subtitle,
+                transform=ax.transAxes, ha="center", fontsize=8.5, color="#444")
     ax.set_xticks([]); ax.set_yticks([])
-    for s in ax.spines.values():
-        s.set_visible(False)
+    for sp in ax.spines.values():
+        sp.set_visible(False)
+
+    if style == "ondata":
+        drawn = [(lab, anchor(xy, labels == lab)) for lab in named
+                 if int((labels == lab).sum()) >= 12]
+        if drawn:
+            xr = float(xy[:, 0].max() - xy[:, 0].min())
+            yr = float(xy[:, 1].max() - xy[:, 1].min())
+            pos = declash([p for _, p in drawn], min_dx=0.34 * xr, min_dy=0.052 * yr)
+            names = short_names([lab for lab, _ in drawn], limit=26)
+            for (lab, (x0, y0)), (x, y) in zip(drawn, pos):
+                short = names[lab]
+                if abs(y - y0) > 0.012 * yr:      # show where a nudged label belongs
+                    ax.plot([x0, x], [y0, y], lw=0.6, color="#555", zorder=3, alpha=0.8)
+                ax.text(x, y, short, fontsize=7.0, ha="center", va="center", zorder=4,
+                        color="#111", fontweight="semibold",
+                        path_effects=[pe.withStroke(linewidth=2.8, foreground="white")])
+        return
+
+    names = short_names(named, limit=30)
     handles = [Line2D([], [], marker="o", linestyle="", markersize=5,
-                      color=palette.get(l, GREY),
-                      label=(l[:26] + "…") if len(l) > 27 else l)
-               for l in order[:max_legend]]
-    extra = len(order) - max_legend
-    if extra > 0:
-        handles.append(Line2D([], [], marker="", linestyle="",
-                              label=f"+{extra} more label{'s' if extra > 1 else ''}"))
+                      color=palette.get(l, GREY), label=names[l])
+               for l in named]
+    n_other = int((labels == OTHER).sum())
+    if n_other:
+        handles.append(Line2D([], [], marker="o", linestyle="", markersize=5, color=GREY,
+                              label=f"other ({n_other:,} cells)"))
     ax.legend(handles=handles, loc="upper left", bbox_to_anchor=(0, -0.10),
               frameon=False, fontsize=7.5, ncol=2, handletextpad=0.4,
               columnspacing=0.9, labelspacing=0.25)
@@ -100,11 +235,16 @@ def main():
     ap.add_argument("--min-prob", type=float, default=None)
     ap.add_argument("--obo", default="/tmp/cl-basic.obo")
     ap.add_argument("--out", default="docs/figures/fig_workflow_umap.png")
+    ap.add_argument("--style", choices=("legend", "ondata"), default="legend",
+                    help="legend below each panel, or names written on the clusters")
+    ap.add_argument("--top", type=int, default=12,
+                    help="colour only the N most abundant labels per panel; rest go grey")
     a = ap.parse_args()
 
     anc = metrics.load_cl_ancestors(a.obo)
     q = sc.read_h5ad(a.query)
     truth = q.obs["cell_type"].astype(str).to_numpy()
+    n_truth = len(set(truth))
     true_cl = q.obs["cell_type_ontology_term_id"].astype(str).to_numpy()
     print(f"query {q.shape} | {len(set(truth))} truth types", flush=True)
 
@@ -160,18 +300,25 @@ def main():
     sc.tl.umap(e)
     xy = e.obsm["X_umap"]
 
-    # Focused and truth share the study's vocabulary, so they share colours and can be read
-    # against each other. The broad panel gets its own palette by necessity.
-    cmap = plt.get_cmap("tab20")
-    shared = sorted(set(truth) | set(calls["focused"]) - {"unknown"})
-    pal_shared = {l: cmap(i % 20) for i, l in enumerate(shared)}
-    pal_shared["unknown"] = GREY
-    broad_labels = sorted(set(calls["broad"]) - {"unknown"})
-    cmap2 = plt.get_cmap("tab20b")
-    pal_broad = {l: cmap2(i % 20) for i, l in enumerate(broad_labels)}
-    pal_broad["unknown"] = GREY
+    # Only the most abundant labels get a colour. The focused pass and the truth share the
+    # study's vocabulary, so their top set is taken from the union ranked by truth abundance
+    # -- that keeps a type the same colour in both panels, which is the comparison the figure
+    # is for. The broad panel answers in the census vocabulary and is ranked on its own.
+    truth_top = top_labels(truth, a.top)
+    focused_extra = [l for l in top_labels(calls["focused"], a.top) if l not in truth_top]
+    shared_named = truth_top + focused_extra[:max(0, a.top - len(truth_top))]
+    pal_shared = {l: PALETTE12[i % len(PALETTE12)] for i, l in enumerate(shared_named)}
+    pal_shared.update({"unknown": GREY, OTHER: GREY})
 
-    fig, axes = plt.subplots(1, 3, figsize=(13.5, 5.4))
+    broad_named = top_labels(calls["broad"], a.top)
+    pal_broad = {l: PALETTE12[i % len(PALETTE12)] for i, l in enumerate(broad_named)}
+    pal_broad.update({"unknown": GREY, OTHER: GREY})
+
+    truth = collapse(truth, shared_named)
+    calls["focused"] = collapse(calls["focused"], shared_named)
+    calls["broad"] = collapse(calls["broad"], broad_named)
+
+    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.8 if a.style == "ondata" else 5.4))
     ob, ab, nb = scores["broad"]
     of, af, nf = scores["focused"]
     ab_txt = f" · {ab:.0%} abstained (grey)" if a.min_prob else ""
@@ -179,13 +326,13 @@ def main():
     panel(axes[0], xy, calls["broad"],
           f"broad pass — census reference ({nb} types)",
           pal_broad,
-          f"ontology concordance {ob:.2f}{ab_txt}")
+          f"ontology concordance {ob:.2f}{ab_txt}", style=a.style, n_show=a.top)
     panel(axes[1], xy, calls["focused"],
           f"focused pass — liver reference ({nf} types)",
           pal_shared,
-          f"ontology concordance {of:.2f}{af_txt}")
+          f"ontology concordance {of:.2f}{af_txt}", style=a.style, n_show=a.top)
     panel(axes[2], xy, truth, "study's own labels", pal_shared,
-          f"{len(set(truth))} types")
+          f"{n_truth} types, {a.top} shown", style=a.style, n_show=a.top)
     fig.suptitle("One query, two passes: the broad pass routes, the focused pass resolves",
                  fontsize=12.5, y=0.99)
     fig.tight_layout(rect=(0, 0, 1, 0.96))
