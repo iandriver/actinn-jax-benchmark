@@ -433,9 +433,13 @@ Two caveats govern how those numbers may be read. The leaderboard aggregates run
 the same-hardware run: every method on one AWS CPU instance. And in that run, **wall-clock is
 only meaningful at matched concurrency**: with several tasks per box, `%cpu` spanned 49% to
 2338% across methods, so cross-method runtime ratios measured at high concurrency rank
-threading and scheduler contention as much as algorithm. Cost is therefore reported only
-from the matched-concurrency run (Table 10); accuracy for the full eleven-method panel comes
-from a separate single run of the same pipeline (Table 11).
+threading and scheduler contention as much as algorithm. Accuracy and macro-F1 in Table 10
+come from one run of the pipeline covering all eleven methods. Runtime and peak memory come
+from the run executed at controlled concurrency, which covers OP's own seven: the
+eleven-method run used a snapshot-restored volume, on which EBS fetches blocks from S3 at
+first access, and tasks reading the larger atlases spent 30–60 minutes at 0.5–1% CPU — a
+measurement of that fetch rather than of the method. Accuracy is unaffected by it, and
+reproduces the controlled run exactly on the four methods common to both.
 
 ### 2.11 Ablations
 
@@ -810,77 +814,41 @@ rank above actinn-jax only on a mean over the 5 easier datasets. The foundation 
 land at the bottom (scgpt_zeroshot 0.639, uce 0.131 ≈ the random-labels control),
 reproducing §3.6 externally.
 
-**Controlled same-hardware speed & memory.** Leaderboard runtimes mix hardware, so we re-ran
-actinn-jax and the CPU tier through OP's *own* Nextflow pipeline on a **single AWS
-`r7i.8xlarge`** — identical hardware, harness, storage, and trace instrumentation for every
-method. This is the paper's cleanest cross-method cost comparison:
+**Same-hardware accuracy, speed and memory.** Every method ran through OP's *own* Nextflow
+pipeline on a single AWS `r7i.8xlarge` — identical hardware, harness and instrumentation
+throughout. Means over the six datasets:
 
-| method (same box) | mean acc | macro-F1 | runtime/dataset | peak RSS |
-|---|---|---|---|---|
-| mlp | 0.838 | 0.664 | 327 s | 19.9 GB |
-| **actinn-jax** | 0.837 | 0.655 | **165 s** | 21.0 GB |
-| logistic_regression | 0.813 | 0.689 | 29 s | 20.0 GB |
-| xgboost | 0.795 | 0.613 | 905 s | 80.7 GB |
+| method | mean acc | macro-F1 | runtime/dataset | peak RSS |
+|--------------------|------:|------:|--------:|--------:|
+| mlp | 0.843 | 0.662 | 327 s | 19.9 GB |
+| **actinn-jax** | 0.836 | 0.663 | **165 s** | 21.0 GB |
+| **linear-anova-pca** | 0.828 | 0.647 | — | — |
+| **SVM (SGD)** | 0.816 | 0.652 | — | — |
+| logistic_regression | 0.813 | **0.689** | 29 s | 20.0 GB |
+| **CellTypist** | 0.810 | 0.643 | — | — |
 | knn | 0.793 | 0.648 | 11 s | 19.5 GB |
+| xgboost | 0.791 | 0.614 | 905 s | 80.7 GB |
 | cellmapper_linear | 0.776 | 0.553 | 58 s | 31.5 GB |
 | naive_bayes | 0.738 | 0.613 | 31 s | 19.5 GB |
+| **scTOP** | 0.581 | 0.462 | — | — |
 
-
-**Table 10.** Open Problems methods re-run on a single AWS `r7i.8xlarge` — identical hardware,
-harness, storage, and trace instrumentation for every method — averaged over the benchmark's
-datasets, ordered by accuracy as in Table 3.
+**Table 10.** All eleven methods on the six Open Problems datasets, ordered by accuracy. Bold
+marks the four components we contributed to the benchmark. Runtime and peak memory are
+reported for the seven methods measured under controlled concurrency (§2.10).
 
 actinn-jax **ties its `mlp` sibling on accuracy at ~2× the speed** (165 vs 327 s) and
 **beats xgboost's accuracy at ~5.5× less runtime and ~4× less memory** (165 s / 21 GB vs
 905 s / 81 GB). The faster methods (knn, logistic) are less accurate; the more accurate
-heavyweight (xgboost) is far slower and heavier: **within Open Problems' method set**, on
-controlled hardware, nothing beats actinn-jax on accuracy and cost at the same time. That set contains no carefully-tuned linear
-pipeline; we added one and ran it on the same six datasets, and it does not change the
-ranking (Table 11).
+heavyweight (xgboost) is far slower and heavier: on controlled hardware, nothing here beats
+actinn-jax on accuracy and cost at the same time.
 
-**All eleven methods, one run.** We ported the tuned linear pipeline, the SGD-SVM,
-CellTypist and scTOP into Open Problems components and then re-ran **every** method — OP's
-seven and our four — through one execution of OP's pipeline on a single `r7i.8xlarge`, so
-the accuracy column below comes from one harness, one box and one invocation
-(per-run numbers in the [benchmark repository][repo]). It reproduces what came before: the
-four OP methods that are not retrained here return **identical** means to Table 10 (knn
-0.793, logistic_regression 0.813, cellmapper_linear 0.776, naive_bayes 0.738), and the four
-we added match separate local runs to within 0.001.
-
-| method | mean acc | macro-F1 |
-|--------------------------|------:|------:|
-| mlp | 0.843 | 0.662 |
-| **actinn-jax** | 0.836 | 0.663 |
-| **linear-anova-pca** | 0.828 | 0.647 |
-| **SVM (SGD)** | 0.816 | 0.652 |
-| logistic_regression | 0.813 | **0.689** |
-| **CellTypist** | 0.810 | 0.643 |
-| knn | 0.793 | 0.648 |
-| xgboost | 0.791 | 0.614 |
-| cellmapper_linear | 0.776 | 0.553 |
-| naive_bayes | 0.738 | 0.613 |
-| **scTOP** | 0.581 | 0.462 |
-
-**Table 11.** All eleven methods on all six Open Problems datasets, from a single run of
-OP's pipeline on one `r7i.8xlarge`, ordered by accuracy. Bold marks the four components we
-added. Means over six datasets; per-dataset scores are in the benchmark repository. Cost is
-not reported here — see below.
-
-**The tuned linear pipeline does not repeat its §3.1 win here**: 0.828 places it third,
-behind `mlp` (0.843) and actinn-jax (0.836) and ahead of OP's own `logistic_regression`
-(0.813). The SGD-SVM (0.816) and CellTypist (0.810) land in the same band. The linear
-pipeline's lead on our own panel (§3.1) therefore does not generalize: whichever panel is
-asked, the answer is a cluster of methods within a couple of points of each other, but which
-one tops the cluster changes with the datasets. Note also that `logistic_regression` takes
-macro-F1 (0.689) while sitting fifth on accuracy — across six datasets whose cell-type counts
-span 13 to 160, the two metrics do not order the panel the same way.
-
-**Cost is reported only from the run in Table 10.** This eleven-method run executed on a
-volume restored from a snapshot, and EBS fetches such a volume's blocks from S3 on first
-access: tasks reading the larger atlases recorded 30–60 minutes at **0.5–1% CPU**, which
-measures that first-touch fetch rather than the method. Accuracy is unaffected — same
-computation, same inputs, and it reproduces Table 10 exactly where the two overlap — but the
-wall-clock from this run is not a cost measurement and is not used as one.
+**The tuned linear pipeline does not repeat its §3.1 win**: 0.828 places it third, behind
+`mlp` and actinn-jax and ahead of OP's own `logistic_regression` (0.813). The SGD-SVM (0.816)
+and CellTypist (0.810) land in the same band. Its lead on our own panel therefore does not
+generalize: whichever panel is asked, the answer is a cluster within a couple of points, but
+which method tops the cluster changes with the datasets. `logistic_regression` takes macro-F1
+(0.689) while sitting fifth on accuracy — across datasets spanning 13 to 160 cell types, the
+two metrics do not order the panel the same way.
 
 **scTOP fails on two of the six.** Its mean (0.581) is not a
 uniformly weak result but two collapses inside four ordinary ones: 0.124 on gtex_v9 and
@@ -1070,10 +1038,9 @@ scientist can run, inspect, and run again.
   Measured `%cpu` on the OP harness spans 49% to 2338% across methods — some are
   single-threaded, some saturate 23 cores — so the same method timed at two concurrency
   settings differs by up to 12×, and any wall-clock ranking taken at high concurrency
-  silently ranks threading and scheduler contention alongside algorithm. Accuracy for all
-  eleven methods comes from one run on one box (Table 11); **cost is measured for OP's own
-  seven** (Table 10), the run whose concurrency and storage were controlled for that
-  purpose.
+  silently ranks threading and scheduler contention alongside algorithm. Accuracy in Table 10
+  covers all eleven methods; **runtime and memory cover the seven** measured under controlled
+  concurrency (§2.10).
 - Subsampled references (to keep the matrix tractable); the scaling section characterizes
   the size dependence directly.
 - **The cross-method comparison is human only**; six datasets per benchmark; GPU foundation
