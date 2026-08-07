@@ -428,27 +428,20 @@ workflow. We additionally built components for four
 baselines (linear-anova-pca, scTOP, SVM, CellTypist) so the same-hardware comparison covers
 more than the leaderboard's own set.
 
-Two caveats govern how those numbers may be read. The leaderboard aggregates runs from
-**heterogeneous cloud hardware**, so its timings are not a controlled cost comparison — hence
-the same-hardware run: every method on one AWS CPU instance. And in that run, **wall-clock is
-only meaningful at matched concurrency**: with several tasks per box, `%cpu` spanned 49% to
-2338% across methods, so cross-method runtime ratios measured at high concurrency rank
-threading and scheduler contention as much as algorithm. Accuracy and macro-F1 in Table 10
-come from one run of the pipeline covering all eleven methods.
+**Where each number is measured.** The paper reports two environments. The in-house panel
+(§3.1–§3.5) runs on the Apple Silicon laptop described in §2.5. The Open Problems results
+(§3.7) run on AWS `r7i.8xlarge` instances (32 vCPU, 247 GB) through OP's own Nextflow
+pipeline, two tasks at a time.
 
-Cost is reported as a **ratio to actinn-jax measured in the same run**, for that reason.
-Two runs were needed to cover eleven methods, and actinn-jax was included in both as an
-anchor: it averaged 165 s/dataset alongside OP's seven and 87 s/dataset alongside our four,
-on the same instance type with the same executor settings. The difference is what
-co-scheduling does — the seven-method run held 196 GB of inputs and included an 81 GB
-xgboost task, the five-method run held 60 GB and fitted entirely in page cache. Absolute
-seconds are therefore not comparable across the two, while ratios measured within one are;
-the anchor is what joins them. Peak memory, which does not move with contention, is reported
-as measured.
+**Accuracy** in Table 10 comes from a single AWS run covering all eleven methods, so every
+score is one harness, one machine, one invocation.
 
-Neither run's wall-clock came from snapshot-restored storage. An earlier attempt did, and
-EBS fetching blocks from S3 on first access left tasks on the larger atlases at 0.5–1% CPU
-for 30–60 minutes; that run supplies accuracy only.
+**Cost** is reported as a ratio to actinn-jax rather than in seconds, because wall-clock on a
+shared box depends on what else is running: measured `%cpu` spans 49% to 2338% across these
+methods, and actinn-jax itself averaged 165 s/dataset when scheduled alongside OP's seven and
+87 s/dataset alongside our four. Ratios taken within one run are stable where absolute times
+are not, and actinn-jax was included in both runs to join them. Peak memory does not move
+with contention and is reported as measured.
 
 ### 2.11 Ablations
 
@@ -823,9 +816,7 @@ rank above actinn-jax only on a mean over the 5 easier datasets. The foundation 
 land at the bottom (scgpt_zeroshot 0.639, uce 0.131 ≈ the random-labels control),
 reproducing §3.6 externally.
 
-**Same-hardware accuracy, speed and memory.** Every method ran through OP's *own* Nextflow
-pipeline on a single AWS `r7i.8xlarge` — identical hardware, harness and instrumentation
-throughout. Means over the six datasets:
+Means over the six datasets, every method through the same pipeline on one instance:
 
 | method | mean acc | macro-F1 | cost | peak RSS |
 |--------------------|------:|------:|------:|--------:|
@@ -842,30 +833,26 @@ throughout. Means over the six datasets:
 | **scTOP** | 0.581 | 0.462 | **0.16×** | 20.4 GB |
 
 **Table 10.** All eleven methods on the six Open Problems datasets, ordered by accuracy. Bold
-marks the four components we contributed to the benchmark. *cost* is per-dataset wall-clock
-relative to actinn-jax on the same box (§2.10); at actinn-jax's measured 87–165 s/dataset,
-1.00× is roughly two minutes.
+marks the four components we contributed. *cost* is per-dataset wall-clock relative to
+actinn-jax (§2.10), for which 1.00× is roughly two minutes.
 
-actinn-jax **ties its `mlp` sibling on accuracy at half the cost** and **beats xgboost's
-accuracy at 5.5× less runtime and 4× less memory** (21 vs 81 GB). The methods that are
-cheaper — knn, logistic_regression, naive_bayes, scTOP — are all less accurate; the more
-accurate heavyweight is far slower and heavier. Nothing here beats actinn-jax on accuracy
-and cost at once.
+actinn-jax **matches its `mlp` sibling on accuracy at half the cost**, and **beats xgboost on
+accuracy at 5.5× less runtime and 4× less memory** (21 vs 81 GB). Everything cheaper — knn,
+logistic_regression, naive_bayes, scTOP — is less accurate, and the one heavyweight is slower
+and heavier. Nothing here beats it on accuracy and cost together.
 
-**The cheapest method on our own panel is not the cheapest here.** The tuned linear pipeline
-fits 7× faster than actinn-jax on the in-house panel (§3.1) and costs **2.7× more** on Open
-Problems. The difference is the input: OP hands every method 1,000 HVGs, and an
-ANOVA→PCA→logistic pipeline pays for the decomposition on every query, while a gene-space
-MLP amortizes its cost into a single fit. CellTypist (7.6×) and the SGD-SVM (6.1×) shift the
-same way. Cost rankings do not survive a change of feature budget.
+**The tuned linear pipeline loses its §3.1 advantage on both axes.** It places third on
+accuracy (0.828, behind `mlp` and actinn-jax), and where it fits 7× *faster* than actinn-jax
+on the in-house panel it costs **2.7× more** here. The input budget explains the reversal: OP
+hands every method 1,000 HVGs, and an ANOVA→PCA→logistic pipeline pays for the decomposition
+on every query while a gene-space MLP amortizes it into one fit. CellTypist (7.6×) and the
+SGD-SVM (6.1×) shift the same way. Neither a cost ranking nor an accuracy ranking survives a
+change of feature budget — which is the case for reporting both panels rather than picking
+one.
 
-**The tuned linear pipeline does not repeat its §3.1 win**: 0.828 places it third, behind
-`mlp` and actinn-jax and ahead of OP's own `logistic_regression` (0.813). The SGD-SVM (0.816)
-and CellTypist (0.810) land in the same band. Its lead on our own panel therefore does not
-generalize: whichever panel is asked, the answer is a cluster within a couple of points, but
-which method tops the cluster changes with the datasets. `logistic_regression` takes macro-F1
-(0.689) while sitting fifth on accuracy — across datasets spanning 13 to 160 cell types, the
-two metrics do not order the panel the same way.
+`logistic_regression` is worth noting separately: it takes macro-F1 (0.689) from fifth on
+accuracy, at the second-lowest cost. Across datasets spanning 13 to 160 cell types, accuracy
+and macro-F1 do not order the panel the same way.
 
 **scTOP fails on two of the six.** Its mean (0.581) is not a
 uniformly weak result but two collapses inside four ordinary ones: 0.124 on gtex_v9 and
