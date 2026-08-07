@@ -371,12 +371,21 @@ the same-hardware run: every method on one AWS CPU instance. And in that run, **
 only meaningful at matched concurrency**: with several tasks per box, `%cpu` spanned 49% to
 2338% across methods, so cross-method runtime ratios measured at high concurrency rank
 threading and scheduler contention as much as algorithm. Accuracy and macro-F1 in Table 10
-come from one run of the pipeline covering all eleven methods. Runtime and peak memory come
-from the run executed at controlled concurrency, which covers OP's own seven: the
-eleven-method run used a snapshot-restored volume, on which EBS fetches blocks from S3 at
-first access, and tasks reading the larger atlases spent 30–60 minutes at 0.5–1% CPU — a
-measurement of that fetch rather than of the method. Accuracy is unaffected by it, and
-reproduces the controlled run exactly on the four methods common to both.
+come from one run of the pipeline covering all eleven methods.
+
+Cost is reported as a **ratio to actinn-jax measured in the same run**, for that reason.
+Two runs were needed to cover eleven methods, and actinn-jax was included in both as an
+anchor: it averaged 165 s/dataset alongside OP's seven and 87 s/dataset alongside our four,
+on the same instance type with the same executor settings. The difference is what
+co-scheduling does — the seven-method run held 196 GB of inputs and included an 81 GB
+xgboost task, the five-method run held 60 GB and fitted entirely in page cache. Absolute
+seconds are therefore not comparable across the two, while ratios measured within one are;
+the anchor is what joins them. Peak memory, which does not move with contention, is reported
+as measured.
+
+Neither run's wall-clock came from snapshot-restored storage. An earlier attempt did, and
+EBS fetching blocks from S3 on first access left tasks on the larger atlases at 0.5–1% CPU
+for 30–60 minutes; that run supplies accuracy only.
 
 ## Ablations
 
@@ -752,29 +761,37 @@ reproducing §3.6 externally.
 pipeline on a single AWS `r7i.8xlarge` — identical hardware, harness and instrumentation
 throughout. Means over the six datasets:
 
-| method | mean acc | macro-F1 | runtime/dataset | peak RSS |
-|--------------------|------:|------:|--------:|--------:|
-| mlp | 0.843 | 0.662 | 327 s | 19.9 GB |
-| **actinn-jax** | 0.836 | 0.663 | **165 s** | 21.0 GB |
-| **linear-anova-pca** | 0.828 | 0.647 | — | — |
-| **SVM (SGD)** | 0.816 | 0.652 | — | — |
-| logistic_regression | 0.813 | **0.689** | 29 s | 20.0 GB |
-| **CellTypist** | 0.810 | 0.643 | — | — |
-| knn | 0.793 | 0.648 | 11 s | 19.5 GB |
-| xgboost | 0.791 | 0.614 | 905 s | 80.7 GB |
-| cellmapper_linear | 0.776 | 0.553 | 58 s | 31.5 GB |
-| naive_bayes | 0.738 | 0.613 | 31 s | 19.5 GB |
-| **scTOP** | 0.581 | 0.462 | — | — |
+| method | mean acc | macro-F1 | cost | peak RSS |
+|--------------------|------:|------:|------:|--------:|
+| mlp | 0.843 | 0.662 | 1.98× | 19.9 GB |
+| **actinn-jax** | 0.836 | 0.663 | 1.00× | 21.0 GB |
+| **linear-anova-pca** | 0.828 | 0.647 | 2.67× | 20.1 GB |
+| **SVM (SGD)** | 0.816 | 0.652 | 6.07× | 20.1 GB |
+| logistic_regression | 0.813 | **0.689** | **0.18×** | 20.0 GB |
+| **CellTypist** | 0.810 | 0.643 | 7.62× | 20.1 GB |
+| knn | 0.793 | 0.648 | **0.07×** | 19.5 GB |
+| xgboost | 0.791 | 0.614 | 5.48× | 80.7 GB |
+| cellmapper_linear | 0.776 | 0.553 | 0.35× | 31.5 GB |
+| naive_bayes | 0.738 | 0.613 | 0.19× | 19.5 GB |
+| **scTOP** | 0.581 | 0.462 | **0.16×** | 20.4 GB |
 
 **Table 10.** All eleven methods on the six Open Problems datasets, ordered by accuracy. Bold
-marks the four components we contributed to the benchmark. Runtime and peak memory are
-reported for the seven methods measured under controlled concurrency (§2.10).
+marks the four components we contributed to the benchmark. *cost* is per-dataset wall-clock
+relative to actinn-jax on the same box (§2.10); at actinn-jax's measured 87–165 s/dataset,
+1.00× is roughly two minutes.
 
-actinn-jax **ties its `mlp` sibling on accuracy at ~2× the speed** (165 vs 327 s) and
-**beats xgboost's accuracy at ~5.5× less runtime and ~4× less memory** (165 s / 21 GB vs
-905 s / 81 GB). The faster methods (knn, logistic) are less accurate; the more accurate
-heavyweight (xgboost) is far slower and heavier: on controlled hardware, nothing here beats
-actinn-jax on accuracy and cost at the same time.
+actinn-jax **ties its `mlp` sibling on accuracy at half the cost** and **beats xgboost's
+accuracy at 5.5× less runtime and 4× less memory** (21 vs 81 GB). The methods that are
+cheaper — knn, logistic_regression, naive_bayes, scTOP — are all less accurate; the more
+accurate heavyweight is far slower and heavier. Nothing here beats actinn-jax on accuracy
+and cost at once.
+
+**The cheapest method on our own panel is not the cheapest here.** The tuned linear pipeline
+fits 7× faster than actinn-jax on the in-house panel (§3.1) and costs **2.7× more** on Open
+Problems. The difference is the input: OP hands every method 1,000 HVGs, and an
+ANOVA→PCA→logistic pipeline pays for the decomposition on every query, while a gene-space
+MLP amortizes its cost into a single fit. CellTypist (7.6×) and the SGD-SVM (6.1×) shift the
+same way. Cost rankings do not survive a change of feature budget.
 
 **The tuned linear pipeline does not repeat its §3.1 win**: 0.828 places it third, behind
 `mlp` and actinn-jax and ahead of OP's own `logistic_regression` (0.813). The SGD-SVM (0.816)
@@ -972,9 +989,9 @@ scientist can run, inspect, and run again.
   Measured `%cpu` on the OP harness spans 49% to 2338% across methods — some are
   single-threaded, some saturate 23 cores — so the same method timed at two concurrency
   settings differs by up to 12×, and any wall-clock ranking taken at high concurrency
-  silently ranks threading and scheduler contention alongside algorithm. Accuracy in Table 10
-  covers all eleven methods; **runtime and memory cover the seven** measured under controlled
-  concurrency (§2.10).
+  silently ranks threading and scheduler contention alongside algorithm. Table 10 therefore
+  reports cost as a ratio within a run, anchored by a method common to both (§2.10) — the
+  anchor itself moved 165 s → 87 s between them, which is the size of the effect.
 - Subsampled references (to keep the matrix tractable); the scaling section characterizes
   the size dependence directly.
 - **The cross-method comparison is human only**; six datasets per benchmark; GPU foundation

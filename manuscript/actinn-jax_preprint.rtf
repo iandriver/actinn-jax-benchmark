@@ -577,7 +577,9 @@ CZI Census 2025
 Open Problems 2024
 }}}
  supplies the datasets, metrics and ranking \u8212- none chosen by us. actinn-jax is packaged as a viash 0.9.7 component declaring the normalization it expects, and run through the project\u8217's own Nextflow workflow. We additionally built components for four baselines (linear-anova-pca, scTOP, SVM, CellTypist) so the same-hardware comparison covers more than the leaderboard\u8217's own set.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 Two caveats govern how those numbers may be read. The leaderboard aggregates runs from {\b heterogeneous cloud hardware}, so its timings are not a controlled cost comparison \u8212- hence the same-hardware run: every method on one AWS CPU instance. And in that run, {\b wall-clock is only meaningful at matched concurrency}: with several tasks per box, {\f1 %cpu} spanned 49% to 2338% across methods, so cross-method runtime ratios measured at high concurrency rank threading and scheduler contention as much as algorithm. Accuracy and macro-F1 in Table 10 come from one run of the pipeline covering all eleven methods. Runtime and peak memory come from the run executed at controlled concurrency, which covers OP\u8217's own seven: the eleven-method run used a snapshot-restored volume, on which EBS fetches blocks from S3 at first access, and tasks reading the larger atlases spent 30\u8211-60 minutes at 0.5\u8211-1% CPU \u8212- a measurement of that fetch rather than of the method. Accuracy is unaffected by it, and reproduces the controlled run exactly on the four methods common to both.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Two caveats govern how those numbers may be read. The leaderboard aggregates runs from {\b heterogeneous cloud hardware}, so its timings are not a controlled cost comparison \u8212- hence the same-hardware run: every method on one AWS CPU instance. And in that run, {\b wall-clock is only meaningful at matched concurrency}: with several tasks per box, {\f1 %cpu} spanned 49% to 2338% across methods, so cross-method runtime ratios measured at high concurrency rank threading and scheduler contention as much as algorithm. Accuracy and macro-F1 in Table 10 come from one run of the pipeline covering all eleven methods.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Cost is reported as a {\b ratio to actinn-jax measured in the same run}, for that reason. Two runs were needed to cover eleven methods, and actinn-jax was included in both as an anchor: it averaged 165 s/dataset alongside OP\u8217's seven and 87 s/dataset alongside our four, on the same instance type with the same executor settings. The difference is what co-scheduling does \u8212- the seven-method run held 196 GB of inputs and included an 81 GB xgboost task, the five-method run held 60 GB and fitted entirely in page cache. Absolute seconds are therefore not comparable across the two, while ratios measured within one are; the anchor is what joins them. Peak memory, which does not move with contention, is reported as measured.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Neither run\u8217's wall-clock came from snapshot-restored storage. An earlier attempt did, and EBS fetching blocks from S3 on first access left tasks on the larger atlases at 0.5\u8211-1% CPU for 30\u8211-60 minutes; that run supplies accuracy only.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Ablations\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Three cheap interventions characterize {\i when} a gene-space MLP gains or loses against heavier methods, all selectable without test labels:\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab {\b Input standardization} \u8212- z-score each selected gene by the reference\u8217's frozen mean/std and apply to the query (a scArches-style domain alignment). Opt-in, because it shifts the probability calibration the abstain thresholds are tuned against.\par}
@@ -1288,7 +1290,7 @@ Chen & Guestrin 2016
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 macro-F1\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 runtime/dataset\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 cost\par}
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 peak RSS\par}
 \cell}
@@ -1305,7 +1307,7 @@ Chen & Guestrin 2016
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.662\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 327 s\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 1.98\u215 ?\par}
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 19.9 GB\par}
 \cell}
@@ -1322,7 +1324,7 @@ Chen & Guestrin 2016
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.663\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 {\b 165 s}\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 1.00\u215 ?\par}
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 21.0 GB\par}
 \cell}
@@ -1339,9 +1341,9 @@ Chen & Guestrin 2016
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.647\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 \u8212-\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 2.67\u215 ?\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 \u8212-\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 20.1 GB\par}
 \cell}
 }
 \intbl\row}
@@ -1356,9 +1358,9 @@ Chen & Guestrin 2016
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.652\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 \u8212-\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 6.07\u215 ?\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 \u8212-\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 20.1 GB\par}
 \cell}
 }
 \intbl\row}
@@ -1373,7 +1375,7 @@ Chen & Guestrin 2016
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 {\b 0.689}\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 29 s\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 {\b 0.18\u215 ?}\par}
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 20.0 GB\par}
 \cell}
@@ -1390,9 +1392,9 @@ Chen & Guestrin 2016
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.643\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 \u8212-\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 7.62\u215 ?\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 \u8212-\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 20.1 GB\par}
 \cell}
 }
 \intbl\row}
@@ -1407,7 +1409,7 @@ Chen & Guestrin 2016
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.648\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 11 s\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 {\b 0.07\u215 ?}\par}
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 19.5 GB\par}
 \cell}
@@ -1424,7 +1426,7 @@ Chen & Guestrin 2016
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.614\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 905 s\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 5.48\u215 ?\par}
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 80.7 GB\par}
 \cell}
@@ -1441,7 +1443,7 @@ Chen & Guestrin 2016
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.553\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 58 s\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.35\u215 ?\par}
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 31.5 GB\par}
 \cell}
@@ -1458,7 +1460,7 @@ Chen & Guestrin 2016
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.613\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 31 s\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.19\u215 ?\par}
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 19.5 GB\par}
 \cell}
@@ -1475,15 +1477,16 @@ Chen & Guestrin 2016
 \cell}
 {{\pard\intbl \qr \f0 \sa0 \li0 \fi0 0.462\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 \u8212-\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 {\b 0.16\u215 ?}\par}
 \cell}
-{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 \u8212-\par}
+{{\pard\intbl \qr \f0 \sa0 \li0 \fi0 20.4 GB\par}
 \cell}
 }
 \intbl\row}
 {\pard \ql \f0 \sa180 \li0 \fi0 \par}
-{\pard \ql \f0 \sa180 \li0 \fi0 {\b Table 10.} All eleven methods on the six Open Problems datasets, ordered by accuracy. Bold marks the four components we contributed to the benchmark. Runtime and peak memory are reported for the seven methods measured under controlled concurrency (\u167 ?2.10).\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 actinn-jax {\b ties its {\f1 mlp} sibling on accuracy at ~2\u215 ? the speed} (165 vs 327 s) and {\b beats xgboost\u8217's accuracy at ~5.5\u215 ? less runtime and ~4\u215 ? less memory} (165 s / 21 GB vs 905 s / 81 GB). The faster methods (knn, logistic) are less accurate; the more accurate heavyweight (xgboost) is far slower and heavier: on controlled hardware, nothing here beats actinn-jax on accuracy and cost at the same time.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\b Table 10.} All eleven methods on the six Open Problems datasets, ordered by accuracy. Bold marks the four components we contributed to the benchmark. {\i cost} is per-dataset wall-clock relative to actinn-jax on the same box (\u167 ?2.10); at actinn-jax\u8217's measured 87\u8211-165 s/dataset, 1.00\u215 ? is roughly two minutes.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 actinn-jax {\b ties its {\f1 mlp} sibling on accuracy at half the cost} and {\b beats xgboost\u8217's accuracy at 5.5\u215 ? less runtime and 4\u215 ? less memory} (21 vs 81 GB). The methods that are cheaper \u8212- knn, logistic_regression, naive_bayes, scTOP \u8212- are all less accurate; the more accurate heavyweight is far slower and heavier. Nothing here beats actinn-jax on accuracy and cost at once.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\b The cheapest method on our own panel is not the cheapest here.} The tuned linear pipeline fits 7\u215 ? faster than actinn-jax on the in-house panel (\u167 ?3.1) and costs {\b 2.7\u215 ? more} on Open Problems. The difference is the input: OP hands every method 1,000 HVGs, and an ANOVA\u8594 ?PCA\u8594 ?logistic pipeline pays for the decomposition on every query, while a gene-space MLP amortizes its cost into a single fit. CellTypist (7.6\u215 ?) and the SGD-SVM (6.1\u215 ?) shift the same way. Cost rankings do not survive a change of feature budget.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 {\b The tuned linear pipeline does not repeat its \u167 ?3.1 win}: 0.828 places it third, behind {\f1 mlp} and actinn-jax and ahead of OP\u8217's own {\f1 logistic_regression} (0.813). The SGD-SVM (0.816) and CellTypist (0.810) land in the same band. Its lead on our own panel therefore does not generalize: whichever panel is asked, the answer is a cluster within a couple of points, but which method tops the cluster changes with the datasets. {\f1 logistic_regression} takes macro-F1 (0.689) while sitting fifth on accuracy \u8212- across datasets spanning 13 to 160 cell types, the two metrics do not order the panel the same way.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 {\b scTOP fails on two of the six.} Its mean (0.581) is not a uniformly weak result but two collapses inside four ordinary ones: 0.124 on gtex_v9 and 0.042 on tabula_sapiens against 0.90\u8211-0.99 elsewhere. Open Problems hands every method 1,000 HVGs, and scTOP\u8217's rank projection needs genes expressed in an appreciable fraction of cells; after its expression filter only {\b 106 of 1,000} genes survive on gtex_v9 and 210 on tabula_sapiens, against 306\u8211-405 where it works. At that point some test cells retain no counts at all \u8212- 185 of 11,508 on gtex_v9 \u8212- and cannot be placed; they are scored as wrong rather than dropped, so 0.124 is a floor. This is the same limitation \u167 ?3.1 reports from the other direction: scTOP is built for small, low-cardinality problems, and a fixed 1,000-HVG budget over 53 and 160 types is neither.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 {\b Three cheap ablations, and their limits.} (i) {\i Input standardization} \u8212- z-scoring genes to the reference\u8217's frozen mean/std, a CPU-only domain-alignment inspired by scArches reference surgery \u8212- lifts mean accuracy +0.2 and macro-F1 +1.2 pt (largest on batch-shifted datasets: gtex macro-F1 +7.9). It is shipped {\b off by default} because it shifts the softmax calibration that the two-stage abstain thresholds are tuned against. (ii) {\i Gene budget} \u8212- OP feeds every method 1000 HVGs, which most starves a gene-space MLP. Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and there {\b matches scANVI+scArches\u8217's full-config leaderboard accuracy} (immune 0.891 \u8776 ? 0.892) on CPU in minutes \u8212- the gap to the top method was largely a gene-budget artifact, not the VAE. But more genes is {\b not} a universal win: it {\i regresses} tabula_sapiens by ~10 pt (its 284-cell test batch across 160 fine types overfits reference-specific genes) and saturates hypomap (Figure 4). The budget is {\b selectable without test labels}: held-out {\i reference} cross-validation rises for the datasets that benefit and is the one signal that {\i drops} for tabula_sapiens, and a trivial query-cells-per-class check independently flags it (Figure 5) \u8212- so the budget can be set deterministically per dataset. (iii) {\i Negative control} \u8212- a CPU-only, UCE-style protein-embedding featurization (expression-weighted mean of ESM2 gene embeddings) does {\b not} help and hurts the hardest case: the pooling discards the per-gene detail that separates fine types, so the value of a foundation model like UCE stays locked in its GPU transformer, not a portable averaging trick.\par}
@@ -1507,7 +1510,7 @@ Souza & Mehta 2026
 {\pard \ql \f0 \sa180 \li0 \fi0 {\b What the speed is for.} Annotation is almost never the result; it is the step before the biology, and it is usually run more than once \u8212- the labels change when a reference is swapped, a threshold moves, a new sample arrives, or a cluster turns out to be two things. The argument of this paper is not that a faster classifier produces better labels; at equal data most of these methods produce much the same labels (\u167 ?3.1). It is that when a stage costs a second instead of a minute, and a chain of stages fits in memory on the machine already on the desk, the loop from question to annotated data to the next question closes in an afternoon rather than across a queue. That is the contribution we would defend: not a better number in a table, but a workflow \u8212- start from the best pan-human model available, refine into the labels a given study actually uses, and flag what neither covers \u8212- that a working scientist can run, inspect, and run again.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel0 \b \fs36 Limitations\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Single hardware family for the in-house panel (Apple Silicon); no discrete-GPU numbers there. The deep and foundation methods are written for CUDA and we would expect them to be faster on it, but we did not measure that \u8212- it is outside the \u8220"runs-on-a-laptop\u8221" question, and every timing here should be read as this hardware\u8217's. The \u167 ?3.7 controlled run covers the {\b CPU tier} on one cloud box; the GPU/R methods there are reported from OP\u8217's own cloud-CI trace (indicative). A same-hardware GPU-tier run to fold those into a single controlled table is the natural extension.\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab {\b Wall-clock comparisons across methods are only meaningful at matched concurrency.} Measured {\f1 %cpu} on the OP harness spans 49% to 2338% across methods \u8212- some are single-threaded, some saturate 23 cores \u8212- so the same method timed at two concurrency settings differs by up to 12\u215 ?, and any wall-clock ranking taken at high concurrency silently ranks threading and scheduler contention alongside algorithm. Accuracy in Table 10 covers all eleven methods; {\b runtime and memory cover the seven} measured under controlled concurrency (\u167 ?2.10).\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab {\b Wall-clock comparisons across methods are only meaningful at matched concurrency.} Measured {\f1 %cpu} on the OP harness spans 49% to 2338% across methods \u8212- some are single-threaded, some saturate 23 cores \u8212- so the same method timed at two concurrency settings differs by up to 12\u215 ?, and any wall-clock ranking taken at high concurrency silently ranks threading and scheduler contention alongside algorithm. Table 10 therefore reports cost as a ratio within a run, anchored by a method common to both (\u167 ?2.10) \u8212- the anchor itself moved 165 s \u8594 ? 87 s between them, which is the size of the effect.\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Subsampled references (to keep the matrix tractable); the scaling section characterizes the size dependence directly.\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab {\b The cross-method comparison is human only}; six datasets per benchmark; GPU foundation models beyond scPRINT/UCE (scGPT, Geneformer, popV) not run locally. The shipped references now cover mouse (\u167 ?3.4), but no {\i method comparison} was run on mouse data \u8212- the pan-mouse result establishes that the reference-building route works on a second organism, not that actinn-jax\u8217's standing against other methods carries over to it.\par}
 {\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab actinn-jax needs more cells/type than linear methods to reach parity (\u167 ?3.1); on very small references it trails.\par}
