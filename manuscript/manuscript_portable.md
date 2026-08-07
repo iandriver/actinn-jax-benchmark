@@ -371,8 +371,8 @@ the same-hardware run: every method on one AWS CPU instance. And in that run, **
 only meaningful at matched concurrency**: with several tasks per box, `%cpu` spanned 49% to
 2338% across methods, so cross-method runtime ratios measured at high concurrency rank
 threading and scheduler contention as much as algorithm. Cost is therefore reported only
-from the matched-concurrency run (Table 10); the four components we added to the harness are
-compared on accuracy alone (Table 11), which does not depend on the machine.
+from the matched-concurrency run (Table 10); accuracy for the full eleven-method panel comes
+from a separate single run of the same pipeline (Table 11).
 
 ## Ablations
 
@@ -772,34 +772,49 @@ controlled hardware, nothing beats actinn-jax on accuracy and cost at the same t
 pipeline; we added one and ran it on the same six datasets, and it does not change the
 ranking (Table 11).
 
-**Extension: our four added methods on the same datasets.** We ported the tuned linear
-pipeline, the SGD-SVM, CellTypist and scTOP into Open Problems components and ran all four
-on all six datasets (per-run numbers in the [benchmark repository][repo]).
-Accuracy and macro-F1 do not depend on the machine, so these were run locally rather than on
-the rented instance; **cost is not reported for them**, because that does depend on the
-machine and only Table 10 was measured under controlled conditions. The premise is
-checkable rather than assumed: running actinn-jax's component locally reproduces its
-controlled-run accuracy on every dataset to within **0.004** (mean difference 0.0005; three
-of six identical to four decimals), which is smaller than the spread between repeats.
+**All eleven methods, one run.** We ported the tuned linear pipeline, the SGD-SVM,
+CellTypist and scTOP into Open Problems components and then re-ran **every** method — OP's
+seven and our four — through one execution of OP's pipeline on a single `r7i.8xlarge`, so
+the accuracy column below comes from one harness, one box and one invocation
+(per-run numbers in the [benchmark repository][repo]). It reproduces what came before: the
+four OP methods that are not retrained here return **identical** means to Table 10 (knn
+0.793, logistic_regression 0.813, cellmapper_linear 0.776, naive_bayes 0.738), and the four
+we added match separate local runs to within 0.001.
 
-| method | mean acc | macro-F1 | dkd | gtex | hypomap | immune | pancreas | tabula |
-|------------|------:|-------:|-------:|-------:|-------:|-------:|-------:|-------:|
-| linear-anova-pca | 0.829 | 0.647 | 0.950 | 0.870 | 0.996 | 0.834 | 0.968 | 0.356 |
-| SVM (SGD) | 0.815 | 0.651 | 0.939 | 0.838 | 0.996 | 0.839 | 0.965 | 0.310 |
-| CellTypist | 0.809 | 0.644 | 0.938 | 0.837 | 0.996 | 0.843 | 0.964 | 0.275 |
-| scTOP | 0.581 | 0.462 | 0.898 | 0.124 | 0.991 | 0.495 | 0.939 | 0.042 |
+| method | mean acc | macro-F1 |
+|--------------------------|------:|------:|
+| mlp | 0.843 | 0.662 |
+| **actinn-jax** | 0.836 | 0.663 |
+| **linear-anova-pca** | 0.828 | 0.647 |
+| **SVM (SGD)** | 0.816 | 0.652 |
+| logistic_regression | 0.813 | **0.689** |
+| **CellTypist** | 0.810 | 0.643 |
+| knn | 0.793 | 0.648 |
+| xgboost | 0.791 | 0.614 |
+| cellmapper_linear | 0.776 | 0.553 |
+| naive_bayes | 0.738 | 0.613 |
+| **scTOP** | 0.581 | 0.462 |
 
-**Table 11.** The four methods we added to Open Problems, on all six of its datasets,
-ordered by accuracy. Dataset columns abbreviate the names used in Table 10 (immune =
-immune_cell_atlas, pancreas = mouse_pancreas_atlas, tabula = tabula_sapiens). Comparable to
-Table 10 on accuracy, which is machine-independent; not on cost, which is not measured here.
+**Table 11.** All eleven methods on all six Open Problems datasets, from a single run of
+OP's pipeline on one `r7i.8xlarge`, ordered by accuracy. Bold marks the four components we
+added. Means over six datasets; per-dataset scores are in the benchmark repository. Cost is
+not reported here — see below.
 
-Read against Table 10, **the tuned linear pipeline does not repeat its §3.1 win here**: 0.829
-places it third, behind `mlp` (0.838) and actinn-jax (0.837) and ahead of OP's own
-`logistic_regression` (0.813). The SGD-SVM (0.815) and CellTypist (0.809) land in the same
-band. The linear pipeline's lead on our own panel (§3.1) therefore does not generalize:
-whichever of the two panels is asked, the answer is a cluster of methods within a couple of
-points of each other, but which one tops the cluster changes with the datasets.
+**The tuned linear pipeline does not repeat its §3.1 win here**: 0.828 places it third,
+behind `mlp` (0.843) and actinn-jax (0.836) and ahead of OP's own `logistic_regression`
+(0.813). The SGD-SVM (0.816) and CellTypist (0.810) land in the same band. The linear
+pipeline's lead on our own panel (§3.1) therefore does not generalize: whichever panel is
+asked, the answer is a cluster of methods within a couple of points of each other, but which
+one tops the cluster changes with the datasets. Note also that `logistic_regression` takes
+macro-F1 (0.689) while sitting fifth on accuracy — across six datasets whose cell-type counts
+span 13 to 160, the two metrics do not order the panel the same way.
+
+**Cost is reported only from the run in Table 10.** This eleven-method run executed on a
+volume restored from a snapshot, and EBS fetches such a volume's blocks from S3 on first
+access: tasks reading the larger atlases recorded 30–60 minutes at **0.5–1% CPU**, which
+measures that first-touch fetch rather than the method. Accuracy is unaffected — same
+computation, same inputs, and it reproduces Table 10 exactly where the two overlap — but the
+wall-clock from this run is not a cost measurement and is not used as one.
 
 **scTOP fails on two of the six.** Its mean (0.581) is not a
 uniformly weak result but two collapses inside four ordinary ones: 0.124 on gtex_v9 and
@@ -989,10 +1004,10 @@ scientist can run, inspect, and run again.
   Measured `%cpu` on the OP harness spans 49% to 2338% across methods — some are
   single-threaded, some saturate 23 cores — so the same method timed at two concurrency
   settings differs by up to 12×, and any wall-clock ranking taken at high concurrency
-  silently ranks threading and scheduler contention alongside algorithm. Cost is therefore
-  reported only from the single matched-concurrency run (Table 10), which covers OP's own
-  seven methods; the four we added are compared on accuracy alone (Table 11). Putting all
-  eleven on one cost axis needs one more controlled run.
+  silently ranks threading and scheduler contention alongside algorithm. Accuracy for all
+  eleven methods comes from one run on one box (Table 11); **cost is measured for OP's own
+  seven** (Table 10), the run whose concurrency and storage were controlled for that
+  purpose.
 - Subsampled references (to keep the matrix tractable); the scaling section characterizes
   the size dependence directly.
 - **The cross-method comparison is human only**; six datasets per benchmark; GPU foundation
