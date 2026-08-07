@@ -34,15 +34,23 @@ PDF (via LaTeX) and DOCX imply standalone and need neither flag.
 After building, sanity-check the RTF: it should start with ``{\\rtf1`` and contain
 both the title and the first line of the abstract.
 """
-import re, pathlib
+import re, pathlib, sys
 
 ROOT = pathlib.Path("/Users/iandriver/Downloads/actinn-jax-benchmark")
 FIGDIR = ROOT / "docs" / "figures"
-src = (ROOT / "docs" / "PAPER.md").read_text()
+# Two manuscripts share this pipeline: the full report and a condensed, journal-length
+# version. `python build_manuscript.py brief` builds the second.
+VARIANT = (sys.argv[1] if len(sys.argv) > 1 else "full").lower()
+SOURCE = {"full": "PAPER.md", "brief": "PAPER_BRIEF.md"}[VARIANT]
+STEM = {"full": "manuscript", "brief": "manuscript_brief"}[VARIANT]
+src = (ROOT / "docs" / SOURCE).read_text()
 
 # ---- author block (confirmed 2026-08-01; not a placeholder) ----
 TITLE = ("Annotating single-cell data on a laptop: a 13-method benchmark and practical "
          "low-memory workflows, with actinn-jax")
+if VARIANT == "brief":
+    TITLE = ("Accuracy is not the binding constraint in single-cell annotation: "
+             "a 13-method benchmark of cost, scaling and workflow")
 # "Independent Researcher" is the standard bioRxiv affiliation for unaffiliated authors,
 # and is the intended value here -- this work is not submitted under an institution.
 AUTHORS = "Ian Driver$^{\\ast}$"
@@ -71,9 +79,10 @@ body = "\n".join(out)
 # "$ before a digit isn't math" rule that would mangle e.g. 8->86 or x195.
 
 # 2. extract Abstract -> yaml
-m = re.search(r"## Abstract\n(.*?)\n## 1\. Introduction", body, re.S)
+nxt = "## 1. Introduction" if VARIANT == "full" else "## Key Points"
+m = re.search(r"## Abstract\n(.*?)\n" + re.escape(nxt), body, re.S)
 abstract = re.sub(r"\s+", " ", m.group(1)).strip()
-body = body[m.end()-len("## 1. Introduction"):]        # start body at Introduction
+body = body[m.end()-len(nxt):]                 # body starts at the next heading
 
 # 3. handle internal .md/.png links (NOT image embeds, hence (?<!!)). If the
 # link text is itself a filename (a self-referential pointer), drop it;
@@ -130,6 +139,8 @@ def headings(text):
         if h:
             level = max(1, len(h.group(1)) - 1)
             title = re.sub(r"^\d+(\.\d+)?\.?\s+", "", h.group(2))
+            # the brief's gene-budget figures live only in the full report
+
             tag = " {-}" if title.strip() in ("Data & code availability",) else ""
             out.append("#" * level + " " + title + tag)
         else:
@@ -228,9 +239,9 @@ header-includes:
 \\begin{{center}}\\small {AFFIL} \\\\ {CORR}\\end{{center}}
 """
 
-(ROOT / "manuscript" / "manuscript.md").write_text(
+(ROOT / "manuscript" / f"{STEM}.md").write_text(
     FRONT + "\n" + breakable_dois(body) + "\n" + breakable_dois(REFS))
-print("wrote manuscript/manuscript.md (PDF via LaTeX)")
+print(f"wrote manuscript/{STEM}.md (PDF via LaTeX)")
 
 # ---- portable variant for RTF / DOCX (Pages-editable): no raw LaTeX; the
 # unicode chars are kept literal (Word/Pages render them natively). ----
@@ -247,5 +258,5 @@ abstract: |
 
 *{AFFIL}*  ·  *Correspondence: driver.ian@gmail.com*
 """
-(ROOT / "manuscript" / "manuscript_portable.md").write_text(FRONT_PORTABLE + "\n" + body + "\n" + REFS)
-print("wrote manuscript/manuscript_portable.md (RTF/DOCX)")
+(ROOT / "manuscript" / f"{STEM}_portable.md").write_text(FRONT_PORTABLE + "\n" + body + "\n" + REFS)
+print(f"wrote manuscript/{STEM}_portable.md (RTF/DOCX)")

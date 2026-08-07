@@ -1,0 +1,286 @@
+---
+title: "Accuracy is not the binding constraint in single-cell annotation: a 13-method benchmark of cost, scaling and workflow"
+author: "Ian Driver"
+date: ""
+abstract: |
+  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** spanning classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model families across **six datasets** (8–86 cell types; within-dataset, cross-dataset and cross-study splits) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span 0.008 — while their inference cost differs by two orders of magnitude and their peak memory by 2.4×. No method leads everywhere: the ordering inverts with reference size, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but which fits a given job. We show that a low, flat inference cost enables multi-stage annotation on a laptop — a shipped ~800-type reference with calibrated abstention, hand-off to a user's own focused reference (cross-study liver 0.23/0.58 → 0.72/0.86, exact/ontology), resolution below the cell-type label, and cluster-level novelty screening — and that a pretrained pan-human annotator can be distilled into such a reference with no GPU and no labeled data. We release the reimplementation (actinn-jax), the harness, and the pre-trained references.
+---
+
+*Independent Researcher, Detroit, MI, USA*  ·  *Correspondence: driver.ian@gmail.com*
+
+# Key Points
+
+- Among leading annotation methods, accuracy differences are small (top four within 0.008)
+  while inference cost differs by ~130× and peak memory by 2.4×; cost, not accuracy, is what
+  distinguishes them in practice.
+- Rankings are not stable: a prototype VAE moves from worst to best as the reference grows
+  from 3k to 49k cells, and a tuned linear pipeline that fits 7× faster than a gene-space MLP
+  on one panel costs 2.7× more on another with a narrower feature budget.
+- Inference time is flat in reference size and cardinality for a cached gene-space MLP
+  (0.08–0.33 s from 1k to 24k reference cells), which is what makes chaining several
+  annotation stages practical on a laptop.
+- A pretrained pan-human annotator can be distilled into a fast reference using only raw
+  counts — no GPU, no labels — reaching comparable concordance at ~9× the throughput.
+- Zero-shot foundation-model labels remain the weakest option in both our benchmark and the
+  external one; their value is in learned structure, not in their label heads.
+
+# Introduction
+
+Annotating cells by mapping to a labeled reference is run constantly and rarely reported as a
+cost. Existing comparisons [Abdelaal 2019, Fu 2024] emphasize accuracy; the axis that decides
+what runs on a laptop — wall-clock and memory without a GPU — is usually absent. Foundation
+models [Kalfon 2025] raise accuracy in some settings but need accelerators, and their
+zero-shot label predictions underperform small models trained on curated references.
+
+We therefore ask a practical question: for a given annotation job on commodity hardware,
+which method should be run, and what does the surrounding workflow look like? Several methods
+now annotate quickly, accurately, and with a usable signal on unknown cells, so the shortage
+is not another leaderboard but guidance on fit for purpose.
+
+Because a benchmark written by a method's own author has a known failure mode, the comparison
+was constrained by construction: every method runs on **every** dataset through one harness on
+identical splits; the panel was chosen to include the baselines most likely to beat a small
+MLP, and each of them does beat it somewhere; our own classical tier is left untuned while the
+linear baseline is tuned; and the external validation is somebody else's benchmark.
+
+# Materials and methods
+
+**actinn-jax.** A dependency-light JAX reimplementation of ACTINN [Ma & Pellegrini 2020] — a
+4-layer network (100/50/25 hidden units, ReLU, softmax, Adam) — replacing TensorFlow-1.x
+graph/session code that no longer installs on current toolchains. Preprocessing is
+sparse-aware; a fitted reference is cached and reused across queries; prediction is chunked
+for atlas-scale inputs. Accuracy matches the original within repeat noise.
+
+**Panel and datasets.** Thirteen methods (Supplementary Table S1) across six datasets
+(Supplementary Table S2): lung within-dataset and cross-dataset, liver within-dataset and
+cross-**study**, an 86-type blood+gut set, and PBMC — 8 to 86 cell types, spanning three
+generalization regimes.
+
+**Metrics.** Accuracy, macro-F1, and **ontology-aware concordance**, which credits a call that
+is the same node, an ancestor or a descendant of the truth in the Cell Ontology. The last is
+required because vocabularies disagree about granularity: on our cross-dataset lung split
+reference and query share only 20 of 46 type names, so exact accuracy (~0.35 for every method)
+measures vocabulary mismatch rather than transfer. Concordance is reported only where both
+sides carry ontology ids.
+
+**Execution.** Each method runs in its own environment as a separate process, because the
+dependency sets are mutually unsatisfiable; one driver builds each split once from a fixed
+seed and hands the identical pair to every method. Three repeats. Hardware: Apple Silicon,
+CPU for classical/linear/correlation tiers, Apple MPS for deep and foundation tiers.
+External validation runs on AWS `r7i.8xlarge` through Open Problems' own Nextflow pipeline.
+Because wall-clock on a shared machine depends on co-scheduled load, external cost is
+reported as a ratio to a method present in every run. Environments are pinned and the Cell
+Ontology release is recorded (Supplementary Note S3).
+
+**Workflow components.** A broad reference built from the CELLxGENE Census [CZI Census 2025];
+a coarse→fine hierarchy obtained either from foundation-model embeddings or from Cell Ontology
+lineage; confidence-threshold abstention calibrated per reference by withholding 10% of cell
+types; masking-based refinement to a query's own supported classes or to a tissue; and a
+cluster-level novelty screen. Protocols in Supplementary Notes S5–S9.
+
+# Results
+
+## Accuracy is clustered; cost is not
+
+The top of the accuracy table is a four-way cluster spanning **0.008**, led by a tuned linear
+pipeline rather than by a deep model (Table 1). Those same four methods differ by **~130× in
+inference time** (0.34 s to 89 s) and **2.4× in peak memory**. actinn-jax holds the best
+ontology-aware concordance (0.811), a margin inside repeat noise and best read as a tie.
+
+| method | acc | macro-F1 | ontology | fit (s) | predict (s) | peak MB |
+|---|---:|---:|---:|---:|---:|---:|
+| **linear-anova-pca** | **0.839** | 0.699 | 0.808 | **3.0** | **0.34** | 4294 |
+| scANVI | 0.833 | 0.697 | 0.809 | 0.0* | 89.2 | 2099 |
+| scArches | 0.832 | **0.699** | 0.805 | 54.7 | 21.4 | 1819 |
+| **actinn-jax** | 0.831 | 0.683 | **0.811** | 21.9 | **0.67** | 2399 |
+| CellTypist | 0.823 | 0.691 | 0.805 | 60.7 | **0.66** | 1569 |
+| SVM | 0.810 | 0.680 | 0.797 | 66.5 | **0.07** | 1415 |
+| ProtoCloud | 0.790 | 0.649 | 0.778 | 176.3 | 2.14 | 1893 |
+| SingleR | 0.770 | 0.652 | 0.750 | 0.3 | 62.1 | 3541 |
+| kNN | 0.770 | 0.622 | 0.769 | 0.4 | **0.15** | 1483 |
+| scTOP | 0.739 | 0.619 | 0.703 | 1.1 | 1.07 | 1928 |
+| scmap-cluster | 0.646 | 0.550 | 0.771 | 0.4 | 13.1 | 8073 |
+
+**Table 1.** Accuracy and cost, means over the benchmark panel; bold marks the best value in
+a column. *scANVI does most of its work in one train+predict pass, attributed to predict.
+Per-dataset scores: Supplementary Table S3.
+
+No method leads everywhere. The linear pipeline and ProtoCloud each take two datasets,
+actinn-jax and scArches one apiece; actinn-jax leads the cross-study split, the regime closest
+to real reference mapping. The spread across leading methods on any one dataset is 1–4 points.
+
+## Rankings invert with reference size and with feature budget
+
+Scaling the reference from 3k to 49k cells reverses the order: **ProtoCloud moves from worst
+(0.722) to best (0.976)**, clear of actinn-jax (0.936) and the linear pipeline (0.939), at 19×
+the CPU fit cost (Supplementary Note S3). Conclusions from subsampled references do not
+transfer to atlas scale in either direction.
+
+External validation inverts a different axis. On Open Problems — datasets, metrics and ranking
+not ours — all eleven methods were run through one execution of its pipeline (Table 2). The
+tuned linear pipeline places third on accuracy and costs **2.7× more** than actinn-jax, having
+fit **7× faster** on our own panel. Open Problems supplies every method 1,000 highly variable
+genes, and an ANOVA→PCA→logistic pipeline pays for the decomposition on every query where a
+gene-space MLP amortizes it into a single fit. Neither a cost ranking nor an accuracy ranking
+survives a change of feature budget.
+
+| method | acc | macro-F1 | cost | peak RSS |
+|---|---:|---:|---:|---:|
+| mlp | 0.843 | 0.662 | 1.98× | 19.9 GB |
+| **actinn-jax** | 0.836 | 0.663 | 1.00× | 21.0 GB |
+| **linear-anova-pca** | 0.828 | 0.647 | 2.67× | 20.1 GB |
+| **SVM (SGD)** | 0.816 | 0.652 | 6.07× | 20.1 GB |
+| logistic_regression | 0.813 | **0.689** | **0.18×** | 20.0 GB |
+| **CellTypist** | 0.810 | 0.643 | 7.62× | 20.1 GB |
+| knn | 0.793 | 0.648 | **0.07×** | 19.5 GB |
+| xgboost | 0.791 | 0.614 | 5.48× | 80.7 GB |
+| cellmapper_linear | 0.776 | 0.553 | 0.35× | 31.5 GB |
+| naive_bayes | 0.738 | 0.613 | 0.19× | 19.5 GB |
+| **scTOP** | 0.581 | 0.462 | **0.16×** | 20.4 GB |
+
+**Table 2.** External validation on Open Problems `label_projection`, ordered by accuracy.
+Bold marks components we contributed to that benchmark. *cost* is per-dataset wall-clock
+relative to actinn-jax on the same instance. scTOP's mean reflects two collapses inside four
+ordinary results, traced to the fixed feature budget (Supplementary Note S8).
+
+## Inference cost is flat in reference size
+
+Training time grows with reference size and cardinality for every trained method. Prediction
+does not: for a cached reference model it stays **0.08–0.33 s whether the reference holds 1k
+or 24k cells, and 5 or 86 types** (Figure 1). With train-once/map-many caching the fit is paid
+once and only the flat prediction cost recurs — the regime that matters when one reference
+serves many queries. Peak memory is likewise bounded rather than divergent: the
+linear/actinn-jax ratio holds at ~2–3× (6.1 vs 13.2 GB at 49k cells) rather than widening.
+
+![scaling](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_scaling.png)
+
+**Figure 1.** Fit and prediction time against reference size and label cardinality. Fit grows
+for every trained method; prediction stays flat and sub-second across the whole range.
+
+## A flat cost profile makes multi-stage annotation practical
+
+Because each stage is a cached model with sub-second, memory-bounded inference, several can be
+chained on a laptop (Figure 2). A shipped ~800-type census reference gives any query a
+first-pass annotation with calibrated abstention; a small focused reference then re-annotates
+at full resolution. On withheld cross-study liver cells the broad pass scores **0.23 exact /
+0.58 ontology** and the focused reference reaches **0.72 / 0.86** on the same cells.
+
+The two passes hand off; they do not combine. Substituting a stronger broad model lifts the
+broad call but changes nothing downstream, and using it to narrow the focused pass's classes
+makes the result **worse** (0.731 → 0.708), because a wrong mask discards the correct class
+outright. Once the focused reference covers the tissue, the broad model's value is routing,
+not resolution.
+
+![workflow](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_workflow_umap.png)
+
+**Figure 2.** Broad and focused passes on a withheld liver study (3,396 cells), same
+embedding throughout. *Left:* the census reference spreads 137 of its 798 labels over the
+query (concordance 0.34) — its job is to establish tissue and route. *Middle:* a 36-type liver
+reference re-annotates the same cells at 0.73. *Right:* the study's own labels.
+
+## A pretrained annotator can be distilled without a GPU or labels
+
+Building the broad pass from the census requires a foundation model on a GPU to discover its
+hierarchy. A pretrained pan-human annotator [Sarkar et al. 2026] already publishes one, so
+labelling a corpus with it and training on those labels transfers both vocabulary and
+structure — using **only raw counts**. On withheld cross-study liver cells the distilled model
+reaches **0.406** concordance against 0.338 for the census-built reference and 0.380 for the
+teacher, at roughly **9× the teacher's throughput**, in under ten minutes of CPU
+(Supplementary Note S6). Replacing the embedding-derived hierarchy with one derived from Cell
+Ontology lineage removes the GPU from the build entirely and outperforms it (0.616 vs 0.547
+flat; a same-sized random grouping scores 0.539), which extends the route to a second organism
+(Supplementary Note S10).
+
+## Abstention is tunable; zero-shot labels are not competitive
+
+Withholding 9 of 36 cell types entirely, a confidence threshold trades coverage against
+accuracy smoothly: accuracy on kept cells rises 0.885 → 0.969 as coverage falls 1.00 → 0.66
+and out-of-distribution flagging climbs 0.00 → 0.73. A comparator with saturated probabilities
+offers essentially one operating point instead of a curve (Supplementary Note S9). Separately,
+a foundation model run zero-shot scored **0.201** ontology concordance against 0.894 for a
+reference-trained model on the same data, taking ~280× longer — reproduced independently on
+Open Problems, where zero-shot entries sit at the bottom of the leaderboard.
+
+# Discussion
+
+Across two independent benchmarks the same pattern holds: methods separated by less than a
+percentage point of accuracy are separated by two orders of magnitude in cost, and neither
+ordering is stable across reference size or feature budget. Reporting accuracy alone therefore
+under-determines the choice of method, and reporting it from a single reference size can
+invert the recommendation.
+
+Two consequences follow. First, benchmark design should treat reference size and input budget
+as axes rather than as fixed settings; our own results reverse along both. Second, once
+several methods are accurate and cheap, the productive contribution is not a further ranking
+but a characterization of fit — which is why we report accuracy-per-second and
+accuracy-per-byte, and demonstrate what a low flat cost profile enables rather than arguing
+from the accuracy column.
+
+We are explicit about what is not ours. A prototype VAE provides uncertainty, attribution and
+a retraining-based refinement path, and becomes the most accurate method at atlas scale. A
+purpose-built pan-human annotator is better resourced than our census-built reference and we
+make no claim to improve on its annotations; we distill it. What remains distinct is the
+hand-off no fixed typology performs — re-annotation into a user's own label set, resolution
+below a typology's leaves, and screening for what none of them claims — at a cost that keeps
+every stage on the machine already on the desk.
+
+The main limitations are that the cross-method comparison is human-only and single
+hardware-family; that our classical tier is untuned while the linear baseline is tuned, which
+biases against our own method; and that the distilled reference inherits a vocabulary but not
+its teacher's calibrated abstention. Full limitations: Supplementary Note S1.
+
+# References {-}
+
+1. 10x Genomics. 3k PBMCs from a healthy donor, Cell Ranger 1.1.0 (2016). Distributed with scanpy as `pbmc3k`. [10xgenomics.com/datasets/3-k-pbm-cs-from-a-healthy-donor-1-standard-1-1-0](https://www.10xgenomics.com/datasets/3-k-pbm-cs-from-a-healthy-donor-1-standard-1-1-0).
+2. Abdelaal T, et al. A comparison of automatic cell identification methods for single-cell RNA sequencing data. *Genome Biology* 20:194 (2019). [doi:10.1186/s13059-019-1795-z](https://doi.org/10.1186/s13059-019-1795-z).
+3. Alegbe T, Harris BT, Fachal L, et al. Cell-type-resolved genetic variation shapes inflammatory bowel disease risk (IBDverse). *Nature* (2026). [doi:10.1038/s41586-026-10627-z](https://doi.org/10.1038/s41586-026-10627-z).
+4. Aran D, et al. Reference-based analysis of lung single-cell sequencing reveals a transitional profibrotic macrophage (SingleR). *Nature Immunology* 20:163-172 (2019). [doi:10.1038/s41590-018-0276-y](https://doi.org/10.1038/s41590-018-0276-y).
+5. Bradbury J, et al. JAX: composable transformations of Python+NumPy programs (2018). [github.com/jax-ml/jax](https://github.com/jax-ml/jax).
+6. CZI Cell Science Program. CZ CELLxGENE Discover Census, LTS release 2025-11-08. [chanzuckerberg.github.io/cellxgene-census](https://chanzuckerberg.github.io/cellxgene-census/).
+7. Chen T, Guestrin C. XGBoost: a scalable tree boosting system. *KDD* 785-794 (2016). [doi:10.1145/2939672.2939785](https://doi.org/10.1145/2939672.2939785).
+8. Domínguez Conde C, et al. Cross-tissue immune cell analysis reveals tissue-specific features in humans (CellTypist). *Science* 376:eabl5197 (2022). [doi:10.1126/science.abl5197](https://doi.org/10.1126/science.abl5197).
+9. Edgar RD, Portman JR, Hu H, et al. HLiCA: an integrated cell atlas of the healthy human liver. *bioRxiv* (2026). [doi:10.64898/2026.06.30.735539](https://doi.org/10.64898/2026.06.30.735539).
+10. Fu Q, Dong C, Liu Y, et al. A comparison of scRNA-seq annotation methods based on experimentally labeled immune cell subtype dataset. *Briefings in Bioinformatics* 25(5):bbae392 (2024). [doi:10.1093/bib/bbae392](https://doi.org/10.1093/bib/bbae392).
+11. Guo K, Ding J. ProtoCloud: a prototypical self-explaining model for single-cell analysis. *Cell Genomics* 6(6):101217 (2026). [doi:10.1016/j.xgen.2026.101217](https://doi.org/10.1016/j.xgen.2026.101217).
+12. Kalfon J, Samaran J, Peyré G, Cantini L. scPRINT: pre-training on 50 million cells allows robust gene network predictions. *Nature Communications* 16:3607 (2025). [doi:10.1038/s41467-025-58699-1](https://doi.org/10.1038/s41467-025-58699-1).
+13. Kiselev VY, Yiu A, Hemberg M. scmap: projection of single-cell RNA-seq data across data sets. *Nature Methods* 15:359-362 (2018). [doi:10.1038/nmeth.4644](https://doi.org/10.1038/nmeth.4644).
+14. Lin Z, et al. Evolutionary-scale prediction of atomic-level protein structure with a language model (ESM-2). *Science* 379:1123-1130 (2023). [doi:10.1126/science.ade2574](https://doi.org/10.1126/science.ade2574).
+15. Lotfollahi M, et al. Mapping single-cell data to reference atlases by transfer learning (scArches). *Nature Biotechnology* 40:121-130 (2022). [doi:10.1038/s41587-021-01001-7](https://doi.org/10.1038/s41587-021-01001-7).
+16. Ma F, Pellegrini M. ACTINN: automated identification of cell types in single cell RNA sequencing. *Bioinformatics* 36(2):533-538 (2020). [doi:10.1093/bioinformatics/btz592](https://doi.org/10.1093/bioinformatics/btz592).
+17. Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis (2024). [openproblems.bio](https://openproblems.bio).
+18. Pedregosa F, et al. Scikit-learn: machine learning in Python. *JMLR* 12:2825-2830 (2011). [jmlr.org/papers/v12/pedregosa11a.html](https://www.jmlr.org/papers/v12/pedregosa11a.html).
+19. Rosen Y, et al. Universal cell embedding provides a foundation model for cell biology (UCE). *Nature* (2026). [doi:10.1038/s41586-026-10689-z](https://doi.org/10.1038/s41586-026-10689-z).
+20. Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026). [doi:10.64898/2026.07.16.738997](https://doi.org/10.64898/2026.07.16.738997).
+21. Sikkema L, et al. An integrated cell atlas of the lung in health and disease (HLCA). *Nature Medicine* 29:1563-1577 (2023). [doi:10.1038/s41591-023-02327-2](https://doi.org/10.1038/s41591-023-02327-2).
+22. Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. *bioRxiv* (2026). [doi:10.64898/2026.02.11.705358](https://doi.org/10.64898/2026.02.11.705358).
+23. Travaglini KJ, Nabhan AN, Penland L, et al. A molecular cell atlas of the human lung from single-cell RNA sequencing. *Nature* 587(7835):619-625 (2020). [doi:10.1038/s41586-020-2922-4](https://doi.org/10.1038/s41586-020-2922-4).
+24. Xu C, et al. Probabilistic harmonization and annotation of single-cell transcriptomics data with deep generative models (scANVI). *Molecular Systems Biology* 17:e9620 (2021). [doi:10.15252/msb.20209620](https://doi.org/10.15252/msb.20209620).
+25. Yampolskaya M, Herriges MJ, Ikonomou L, Kotton DN, Mehta P. scTOP: physics-inspired order parameters for cellular identification and visualization. *Development* 150(21):dev201873 (2023). [doi:10.1242/dev.201873](https://doi.org/10.1242/dev.201873).
+26. Munroe R. Standards. *xkcd* 927. [xkcd.com/927](https://xkcd.com/927/).
+
+[10x Genomics 2016]: https://www.10xgenomics.com/datasets/3-k-pbm-cs-from-a-healthy-donor-1-standard-1-1-0
+[Abdelaal 2019]: https://doi.org/10.1186/s13059-019-1795-z
+[Alegbe 2026]: https://doi.org/10.1038/s41586-026-10627-z
+[Aran 2019]: https://doi.org/10.1038/s41590-018-0276-y
+[Bradbury 2018]: https://github.com/jax-ml/jax
+[CZI Census 2025]: https://chanzuckerberg.github.io/cellxgene-census/
+[Chen & Guestrin 2016]: https://doi.org/10.1145/2939672.2939785
+[Domínguez Conde 2022]: https://doi.org/10.1126/science.abl5197
+[Edgar 2026]: https://doi.org/10.64898/2026.06.30.735539
+[Fu 2024]: https://doi.org/10.1093/bib/bbae392
+[Guo & Ding 2026]: https://doi.org/10.1016/j.xgen.2026.101217
+[Kalfon 2025]: https://doi.org/10.1038/s41467-025-58699-1
+[Kiselev 2018]: https://doi.org/10.1038/nmeth.4644
+[Lin 2023]: https://doi.org/10.1126/science.ade2574
+[Lotfollahi 2022]: https://doi.org/10.1038/s41587-021-01001-7
+[Ma & Pellegrini 2020]: https://doi.org/10.1093/bioinformatics/btz592
+[Open Problems 2024]: https://openproblems.bio
+[Pedregosa 2011]: https://www.jmlr.org/papers/v12/pedregosa11a.html
+[Rosen 2026]: https://doi.org/10.1038/s41586-026-10689-z
+[Sarkar et al. 2026]: https://doi.org/10.64898/2026.07.16.738997
+[Sikkema 2023]: https://doi.org/10.1038/s41591-023-02327-2
+[Souza & Mehta 2026]: https://doi.org/10.64898/2026.02.11.705358
+[Travaglini 2020]: https://doi.org/10.1038/s41586-020-2922-4
+[Xu 2021]: https://doi.org/10.15252/msb.20209620
+[Yampolskaya 2023]: https://doi.org/10.1242/dev.201873
+[xkcd 927]: https://xkcd.com/927/
