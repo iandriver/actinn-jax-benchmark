@@ -555,19 +555,18 @@ matches how annotation is actually done: get a broad call fast, then sharpen it 
 matters. Because every stage is a cached `ReferenceModel` with sub-second, memory-bounded
 inference (§3.1, §3.3), the whole workflow runs on a laptop.
 
-![the broad pass and the focused pass on one query](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_workflow_umap.png)
+![the broad pass and the focused pass on one query](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_workflow_umap_ondata.png)
 
-**Figure 3.** The two passes on the withheld HLiCA liver study (3,396 cells), same UMAP
-throughout. *Left:* the shipped census reference spreads 137 of its 798 labels over the
-query with little correspondence to cluster structure — ontology concordance **0.34**. Its
-job is to establish that this is liver and route accordingly, not to name subtypes.
-*Middle:* a 36-type liver reference trained on the six non-withheld studies re-annotates the
-same cells at **0.73**, and its labels now track the clusters. *Right:* the study's own
-labels, on the shared palette, for comparison with the middle panel. Both models are
-leakage-free with respect to this query: the focused reference is trained only on the other
-six studies (the *shipped* liver reference includes this study and would score 0.94 here,
-which is why it is not the model plotted). Abstention is switched off in all panels so the
-numbers measure labelling rather than coverage; §3.5 covers abstain separately.
+**Figure 3.** The workflow on a withheld HLiCA liver study (3,396 cells), same embedding
+throughout. *Left:* the shipped census reference spreads 137 of its 798 labels over the query
+(concordance **0.34**) — it is not trying to name subtypes. *Centre:* those calls resolved to
+tissue through the reference's per-class tissue map; **76%** of tissue-specific calls say
+liver against 4% for the next candidate, which is the decision that selects the next
+reference. *Right of centre:* the 36-type liver reference re-annotates the same cells at
+**0.73**, now tracking the clusters. *Right:* the study's own labels on the shared palette.
+Both models are leakage-free for this query: the focused reference is trained only on the six
+non-withheld studies. Abstention is off in all panels, so the numbers measure labelling
+rather than coverage; §3.5 covers abstain separately.
 
 **The broad pass — census-scale.** A shipped ~800-type human reference built from the
 CELLxGENE census gives any query a first-pass annotation across the whole body, with a
@@ -1085,6 +1084,15 @@ condition of that licence and travels inside each shipped model's build record.
 - **S13** — Pan-human Azimuth as broad pass and teacher
 - **S14** — Two-stage model flow
 - **S15** — Two-stage hierarchy experiments
+
+**Supplementary figures.** In the [benchmark repository][repo]:
+
+- **Figure S1** — Confusion matrices for the broad and focused passes, with
+  ontology-equivalent errors outlined
+- **Figure S2** — Abstain trade-off: accuracy against coverage, and novel-cell detection
+  against threshold
+- **Figure S3** — Per-class recall across eleven methods on three splits, ordered by how much
+  the methods disagree
 
 
 

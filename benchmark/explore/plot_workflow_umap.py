@@ -102,6 +102,49 @@ def short_names(labels, limit=24):
     return out
 
 
+def tissue_vote(labels, class_to_tissue, top=6):
+    """Which tissue the broad pass implies, which is the step that picks the next reference.
+
+    Classes the census marks pan-tissue ('*') carry no location information and are dropped;
+    a class listed in several tissues splits its vote evenly rather than counting once per
+    tissue, which would let a promiscuous label outvote a specific one.
+    """
+    import collections
+    votes, pan, unmapped = collections.Counter(), 0, 0
+    for l in labels:
+        ts = class_to_tissue.get(l)
+        if not ts:
+            unmapped += 1
+        elif "*" in ts:
+            pan += 1
+        else:
+            for t in ts:
+                votes[t] += 1.0 / len(ts)
+    total = sum(votes.values()) or 1.0
+    ranked = [(t, v / total) for t, v in votes.most_common(top)]
+    return ranked, pan / max(1, len(labels)), unmapped
+
+
+def route_panel(ax, ranked, pan_frac):
+    names = [t for t, _ in ranked][::-1]
+    fracs = [f for _, f in ranked][::-1]
+    colors = ["#0072B2" if f == max(fracs) else "#c9c9c9" for f in fracs]
+    ax.barh(range(len(names)), fracs, color=colors, height=0.68)
+    ax.set_yticks(range(len(names)))
+    ax.set_yticklabels(names, fontsize=7.5)
+    ax.set_xlim(0, 1)
+    ax.set_xticks([0, 0.5, 1.0])
+    ax.set_xticklabels(["0", "50%", "100%"], fontsize=7)
+    ax.set_title("which tissue?", fontsize=10, pad=6)
+    top_t, top_f = ranked[0]
+    ax.text(0.5, -0.13, f"→ load the {top_t} reference\n({top_f:.0%} of tissue-specific calls;"
+                        f" {pan_frac:.0%} pan-tissue, not counted)",
+            transform=ax.transAxes, ha="center", fontsize=8, color="#0072B2")
+    for sp in ("top", "right", "left"):
+        ax.spines[sp].set_visible(False)
+    ax.tick_params(length=0)
+
+
 def anchor(xy, mask, bins=14):
     """Where to write a label: the centre of its densest patch, not its median. A cell type
     split across two lobes of the embedding has its median in the empty space between them,
@@ -266,6 +309,7 @@ def main():
     for tag in ("broad", "focused"):
         if tag == "broad":
             model, name = aj.bundled_reference(a.broad), a.broad
+            broad_model = model
         else:
             model, name = focused_model()
         kw = {"min_prob": a.min_prob} if a.min_prob else {}
@@ -314,11 +358,20 @@ def main():
     pal_broad = {l: PALETTE12[i % len(PALETTE12)] for i, l in enumerate(broad_named)}
     pal_broad.update({"unknown": GREY, OTHER: GREY})
 
+    raw_broad = calls["broad"].copy()      # tissue vote needs the uncollapsed labels
     truth = collapse(truth, shared_named)
     calls["focused"] = collapse(calls["focused"], shared_named)
     calls["broad"] = collapse(calls["broad"], broad_named)
 
-    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.8 if a.style == "ondata" else 5.4))
+    # Four columns, not three: the middle one is the routing decision, which is the step
+    # that connects the two passes and was the only part of the workflow the figure never
+    # actually showed.
+    ranked, pan_frac, _ = tissue_vote(raw_broad,
+                                      dict(getattr(broad_model, "class_to_tissue", {}) or {}))
+    fig, axes = plt.subplots(1, 4, figsize=(16.5, 4.8 if a.style == "ondata" else 5.4),
+                             gridspec_kw={"width_ratios": [1, 0.52, 1, 1], "wspace": 0.16})
+    route_panel(axes[1], ranked, pan_frac)
+    axes = [axes[0], axes[2], axes[3]]
     ob, ab, nb = scores["broad"]
     of, af, nf = scores["focused"]
     ab_txt = f" · {ab:.0%} abstained (grey)" if a.min_prob else ""
@@ -333,8 +386,8 @@ def main():
           f"ontology concordance {of:.2f}{af_txt}", style=a.style, n_show=a.top)
     panel(axes[2], xy, truth, "study's own labels", pal_shared,
           f"{n_truth} types, {a.top} shown", style=a.style, n_show=a.top)
-    fig.suptitle("One query, two passes: the broad pass routes, the focused pass resolves",
-                 fontsize=12.5, y=0.99)
+    fig.suptitle("Broad pass identifies the tissue · that picks the reference · "
+                 "the focused reference gives the granular labels", fontsize=12.5, y=0.99)
     fig.tight_layout(rect=(0, 0, 1, 0.96))
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     fig.savefig(a.out, dpi=200, bbox_inches="tight")

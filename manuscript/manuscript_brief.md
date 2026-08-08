@@ -109,6 +109,10 @@ Because wall-clock on a shared machine depends on co-scheduled load, external co
 reported as a ratio to a method present in every run. Environments are pinned and the Cell
 Ontology release is recorded (Supplementary Note S3).
 
+**Supplementary figures.** Confusion matrices with ontology-equivalent errors outlined
+(Figure S1), the abstain trade-off (S2), and per-class recall across all eleven methods (S3)
+are in the benchmark repository.
+
 **Workflow components.** A broad reference built from the CELLxGENE Census [\[CZI Census 2025\]](https://chanzuckerberg.github.io/cellxgene-census/);
 a coarse→fine hierarchy obtained either from foundation-model embeddings or from Cell Ontology
 lineage; confidence-threshold abstention calibrated per reference by withholding 10% of cell
@@ -208,12 +212,13 @@ makes the result **worse** (0.731 → 0.708), because a wrong mask discards the 
 outright. Once the focused reference covers the tissue, the broad model's value is routing,
 not resolution.
 
-![workflow](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_workflow_umap.png)
+![workflow](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_workflow_umap_ondata.png)
 
-**Figure 2.** Broad and focused passes on a withheld liver study (3,396 cells), same
-embedding throughout. *Left:* the census reference spreads 137 of its 798 labels over the
-query (concordance 0.34) — its job is to establish tissue and route. *Middle:* a 36-type liver
-reference re-annotates the same cells at 0.73. *Right:* the study's own labels.
+**Figure 2.** The workflow on a withheld liver study (3,396 cells), same embedding
+throughout. The census reference spreads 137 of its 798 labels over the query (concordance
+0.34); resolving those calls to tissue gives **76% liver** against 4% for the next candidate,
+which selects the reference to load; the 36-type liver reference then re-annotates the same
+cells at **0.73**, tracking the clusters. Rightmost panel is the study's own labels.
 
 ## A pretrained annotator can be distilled without a GPU or labels
 
