@@ -181,6 +181,32 @@ def declash(pos, min_dx, min_dy, iters=400):
     return p
 
 
+def cluster_labels(labels, clusters, min_cells=15):
+    """The dominant label of every cluster, ordered by cluster size.
+
+    Choosing what to colour by overall abundance leaves small clusters grey and nameless,
+    and several of them are the point -- a distinct blob that the broad pass and the focused
+    pass name differently is exactly what the figure is for. Selecting one label per cluster
+    instead guarantees every visible group is coloured and named, and bounds the palette by
+    the number of clusters rather than the number of types.
+    """
+    import collections
+    out, seen = [], set()
+    order = [c for c, _ in collections.Counter(clusters).most_common()]
+    for c in order:
+        m = clusters == c
+        if m.sum() < min_cells:
+            continue
+        counts = collections.Counter(labels[m])
+        counts.pop("unknown", None)
+        if not counts:
+            continue
+        best = counts.most_common(1)[0][0]
+        if best not in seen:
+            seen.add(best); out.append(best)
+    return out
+
+
 def top_labels(labels, n=12):
     """The n most abundant labels, most-frequent first. Everything else is folded into a
     single grey class: past a dozen categories a qualitative palette stops being readable,
@@ -209,7 +235,8 @@ def concordance(true_cl, pred_cl, anc):
     return ok / n if n else float("nan")
 
 
-def panel(ax, xy, labels, title, palette, subtitle=None, style="legend", n_show=12):
+def panel(ax, xy, labels, title, palette, subtitle=None, style="legend", n_show=12,
+          clusters=None, raw_labels=None):
     """Draw one UMAP. `style` is 'legend' (key below the panel) or 'ondata' (names written
     on the clusters). Grey classes are drawn first so coloured cells sit on top of them."""
     order = [l for l, _ in sorted(
@@ -228,19 +255,43 @@ def panel(ax, xy, labels, title, palette, subtitle=None, style="legend", n_show=
     for sp in ax.spines.values():
         sp.set_visible(False)
 
-    if style == "ondata":
+    if style == "ondata" and clusters is not None:
+        drawn = []
+        import collections
+        src = raw_labels if raw_labels is not None else labels
+        for c, n in collections.Counter(clusters).most_common():
+            m = clusters == c
+            if n < 15:
+                continue
+            counts = collections.Counter(src[m])
+            for drop in ("unknown", OTHER):
+                counts.pop(drop, None)
+            if not counts:
+                continue
+            drawn.append((counts.most_common(1)[0][0], anchor(xy, m), int(n)))
+        # One text per distinct name, at its largest cluster. Several neighbouring clusters
+        # sharing a dominant label is a real property of the broad pass -- it gives one
+        # coarse name to groups the focused pass separates -- but printing "EC pericentral
+        # sinusoid" five times is clutter, and the colour already shows the extent.
+        best = {}
+        for lab, pos, n in drawn:
+            if lab not in best or n > best[lab][1]:
+                best[lab] = (pos, n)
+        drawn = [(lab, pos) for lab, (pos, _) in best.items()]
+    elif style == "ondata":
         drawn = [(lab, anchor(xy, labels == lab)) for lab in named
                  if int((labels == lab).sum()) >= 12]
+    if style == "ondata":
         if drawn:
             xr = float(xy[:, 0].max() - xy[:, 0].min())
             yr = float(xy[:, 1].max() - xy[:, 1].min())
-            pos = declash([p for _, p in drawn], min_dx=0.34 * xr, min_dy=0.052 * yr)
+            pos = declash([p for _, p in drawn], min_dx=0.26 * xr, min_dy=0.040 * yr)
             names = short_names([lab for lab, _ in drawn], limit=26)
             for (lab, (x0, y0)), (x, y) in zip(drawn, pos):
                 short = names[lab]
                 if abs(y - y0) > 0.012 * yr:      # show where a nudged label belongs
                     ax.plot([x0, x], [y0, y], lw=0.6, color="#555", zorder=3, alpha=0.8)
-                ax.text(x, y, short, fontsize=7.0, ha="center", va="center", zorder=4,
+                ax.text(x, y, short, fontsize=6.4, ha="center", va="center", zorder=4,
                         color="#111", fontweight="semibold",
                         path_effects=[pe.withStroke(linewidth=2.8, foreground="white")])
         return
@@ -281,7 +332,10 @@ def main():
     ap.add_argument("--style", choices=("legend", "ondata"), default="legend",
                     help="legend below each panel, or names written on the clusters")
     ap.add_argument("--top", type=int, default=12,
-                    help="colour only the N most abundant labels per panel; rest go grey")
+                    help="with --select abundance, colour only the N most abundant labels")
+    ap.add_argument("--select", choices=("cluster", "abundance"), default="cluster",
+                    help="colour/label one type per cluster (default) or the N most abundant")
+    ap.add_argument("--leiden-res", type=float, default=1.0)
     a = ap.parse_args()
 
     anc = metrics.load_cl_ancestors(a.obo)
@@ -342,23 +396,37 @@ def main():
     sc.tl.pca(e, n_comps=50)
     sc.pp.neighbors(e, n_neighbors=15)
     sc.tl.umap(e)
+    sc.tl.leiden(e, resolution=a.leiden_res, key_added="cl", flavor="igraph",
+                 n_iterations=2, directed=False)
+    clusters = e.obs["cl"].to_numpy().astype(str)
     xy = e.obsm["X_umap"]
+    print(f"{len(set(clusters))} clusters at resolution {a.leiden_res}", flush=True)
 
     # Only the most abundant labels get a colour. The focused pass and the truth share the
     # study's vocabulary, so their top set is taken from the union ranked by truth abundance
     # -- that keeps a type the same colour in both panels, which is the comparison the figure
     # is for. The broad panel answers in the census vocabulary and is ranked on its own.
-    truth_top = top_labels(truth, a.top)
-    focused_extra = [l for l in top_labels(calls["focused"], a.top) if l not in truth_top]
-    shared_named = truth_top + focused_extra[:max(0, a.top - len(truth_top))]
+    if a.select == "cluster":
+        truth_top = cluster_labels(truth, clusters)
+        focused_extra = [l for l in cluster_labels(calls["focused"], clusters)
+                         if l not in truth_top]
+        shared_named = truth_top + focused_extra
+    else:
+        truth_top = top_labels(truth, a.top)
+        focused_extra = [l for l in top_labels(calls["focused"], a.top) if l not in truth_top]
+        shared_named = truth_top + focused_extra[:max(0, a.top - len(truth_top))]
     pal_shared = {l: PALETTE12[i % len(PALETTE12)] for i, l in enumerate(shared_named)}
     pal_shared.update({"unknown": GREY, OTHER: GREY})
 
-    broad_named = top_labels(calls["broad"], a.top)
+    broad_named = (cluster_labels(calls["broad"], clusters) if a.select == "cluster"
+                   else top_labels(calls["broad"], a.top))
     pal_broad = {l: PALETTE12[i % len(PALETTE12)] for i, l in enumerate(broad_named)}
     pal_broad.update({"unknown": GREY, OTHER: GREY})
 
-    raw_broad = calls["broad"].copy()      # tissue vote needs the uncollapsed labels
+    # Keep the uncollapsed arrays: the tissue vote and the per-cluster names both need the
+    # real labels, not the ones with the tail folded into "other".
+    raw = {"broad": calls["broad"].copy(), "focused": calls["focused"].copy(),
+           "truth": truth.copy()}
     truth = collapse(truth, shared_named)
     calls["focused"] = collapse(calls["focused"], shared_named)
     calls["broad"] = collapse(calls["broad"], broad_named)
@@ -366,7 +434,7 @@ def main():
     # Four columns, not three: the middle one is the routing decision, which is the step
     # that connects the two passes and was the only part of the workflow the figure never
     # actually showed.
-    ranked, pan_frac, _ = tissue_vote(raw_broad,
+    ranked, pan_frac, _ = tissue_vote(raw["broad"],
                                       dict(getattr(broad_model, "class_to_tissue", {}) or {}))
     fig, axes = plt.subplots(1, 4, figsize=(16.5, 4.8 if a.style == "ondata" else 5.4),
                              gridspec_kw={"width_ratios": [1, 0.52, 1, 1], "wspace": 0.16})
@@ -379,13 +447,16 @@ def main():
     panel(axes[0], xy, calls["broad"],
           f"broad pass — census reference ({nb} types)",
           pal_broad,
-          f"ontology concordance {ob:.2f}{ab_txt}", style=a.style, n_show=a.top)
+          f"ontology concordance {ob:.2f}{ab_txt}", style=a.style, n_show=len(broad_named),
+          clusters=clusters, raw_labels=raw["broad"])
     panel(axes[1], xy, calls["focused"],
           f"focused pass — liver reference ({nf} types)",
           pal_shared,
-          f"ontology concordance {of:.2f}{af_txt}", style=a.style, n_show=a.top)
+          f"ontology concordance {of:.2f}{af_txt}", style=a.style, n_show=len(shared_named),
+          clusters=clusters, raw_labels=raw["focused"])
     panel(axes[2], xy, truth, "study's own labels", pal_shared,
-          f"{n_truth} types, {a.top} shown", style=a.style, n_show=a.top)
+          f"{n_truth} types, {len(set(truth)) - 1} shown", style=a.style,
+          n_show=len(shared_named), clusters=clusters, raw_labels=raw["truth"])
     fig.suptitle("Broad pass identifies the tissue · that picks the reference · "
                  "the focused reference gives the granular labels", fontsize=12.5, y=0.99)
     fig.tight_layout(rect=(0, 0, 1, 0.96))
