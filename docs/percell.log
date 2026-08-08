@@ -1,0 +1,81 @@
+/Users/iandriver/Downloads/actinn-jax/.venv/lib/python3.12/site-packages/scanpy/_utils/__init__.py:27: FutureWarning: `__version__` is deprecated, use `importlib.metadata.version('anndata')` instead.
+  from anndata import __version__ as anndata_version
+/Users/iandriver/Downloads/actinn-jax/.venv/lib/python3.12/site-packages/scanpy/__init__.py:36: FutureWarning: `__version__` is deprecated, use `importlib.metadata.version('anndata')` instead.
+  if Version(anndata.__version__) >= Version("0.11.0rc2"):
+/Users/iandriver/Downloads/actinn-jax/.venv/lib/python3.12/site-packages/scanpy/readwrite.py:15: FutureWarning: `__version__` is deprecated, use `importlib.metadata.version('anndata')` instead.
+  if Version(anndata.__version__) >= Version("0.11.0rc2"):
+
+=== dataset: liver_intra (intra) ===
+  run actinn-jax (rep 0)
+  run linear-anova-pca (rep 0)
+  run svm (rep 0)
+  run knn (rep 0)
+  run celltypist (rep 0)
+  run singler (rep 0)
+  run scmap-cluster (rep 0)
+  run sctop (rep 0)
+  run protocloud (rep 0)
+  run scanvi (rep 0)
+  run scarches (rep 0)
+
+=== dataset: lung_intra (intra) ===
+  run actinn-jax (rep 0)
+  run linear-anova-pca (rep 0)
+  run svm (rep 0)
+  run knn (rep 0)
+  run celltypist (rep 0)
+  run singler (rep 0)
+  run scmap-cluster (rep 0)
+  run sctop (rep 0)
+  run protocloud (rep 0)
+  run scanvi (rep 0)
+  run scarches (rep 0)
+
+=== dataset: blood_gut_intra (intra) ===
+  run actinn-jax (rep 0)
+  run linear-anova-pca (rep 0)
+  run svm (rep 0)
+  run knn (rep 0)
+  run celltypist (rep 0)
+  run singler (rep 0)
+  run scmap-cluster (rep 0)
+  run sctop (rep 0)
+  run protocloud (rep 0)
+  run scanvi (rep 0)
+  run scarches (rep 0)
+
+wrote 33 rows to results/percell/results.csv
+        dataset           method  accuracy  macro_f1  ontology_concordance      fit_s  predict_s  peak_mem_mb
+    liver_intra       actinn-jax  0.801802  0.797595              0.846096   7.494045   0.160922  1599.258624
+    liver_intra linear-anova-pca  0.804054  0.804391              0.850601   1.642376   0.109138  2562.932736
+    liver_intra              svm  0.747748  0.750620              0.807057  33.853770   0.033935  1001.848832
+    liver_intra              knn  0.662162  0.654778              0.740240   0.277457   0.070910  1059.717120
+    liver_intra       celltypist  0.786036  0.789476              0.835586  24.362757   0.512366  1150.091264
+    liver_intra          singler  0.704955  0.701723              0.773273   0.209298  10.126273  2738.421760
+    liver_intra    scmap-cluster  0.557808  0.564862              0.769024   0.182748   5.840568  6479.069184
+    liver_intra            sctop  0.649399  0.644035              0.705706   1.031520   0.785493  1351.712768
+    liver_intra       protocloud  0.694637  0.689072              0.737889  73.608074   0.606730  1541.619712
+    liver_intra           scanvi  0.787538  0.784772              0.831832   0.007046  36.692288  1659.256832
+    liver_intra         scarches  0.792042  0.791201              0.838589  27.374697   7.140275  1544.880128
+     lung_intra       actinn-jax  0.893838  0.901167              0.917223  11.851328   0.206774  2107.670528
+     lung_intra linear-anova-pca  0.898293  0.904287              0.921678   3.286421   0.251122  5231.149056
+     lung_intra              svm  0.893096  0.900645              0.923163  29.007945   0.049876  1500.594176
+     lung_intra              knn  0.894952  0.891066              0.932071   0.407693   0.124777  1629.634560
+     lung_intra       celltypist  0.892353  0.896000              0.920193  43.333612   0.444718  1659.994112
+     lung_intra          singler  0.876021  0.877876              0.917966   0.228324  23.273346  3528.458240
+     lung_intra    scmap-cluster  0.843356  0.832319              0.908817   0.254441   7.531362  8734.359552
+     lung_intra            sctop  0.827765  0.829830              0.876021   1.113649   0.933175  1594.998784
+     lung_intra       protocloud  0.931663  0.931879              0.946241 154.793748   1.031685  1953.038336
+     lung_intra           scanvi  0.905345  0.909850              0.927617   0.007626  65.603447  1865.023488
+     lung_intra         scarches  0.902747  0.909516              0.924647  50.067525  13.630437  1558.872064
+blood_gut_intra       actinn-jax  0.860320  0.860373                   NaN  13.801523   0.267576  2698.690560
+blood_gut_intra linear-anova-pca  0.902458  0.902942                   NaN   3.505877   0.279545  5451.972608
+blood_gut_intra              svm  0.858369  0.861092                   NaN  61.610458   0.060744  1701.937152
+blood_gut_intra              knn  0.775263  0.773127                   NaN   0.459605   0.121364  1855.897600
+blood_gut_intra       celltypist  0.869294  0.870821                   NaN  77.643177   0.592744  1800.257536
+blood_gut_intra          singler  0.850566  0.849152                   NaN   0.353600  34.779421  5110.775808
+blood_gut_intra    scmap-cluster  0.722591  0.725167                   NaN   0.390200  10.699095 11801.853952
+blood_gut_intra            sctop  0.794772  0.788811                   NaN   1.292487   1.160555  2070.937600
+blood_gut_intra       protocloud  0.840716  0.838651                   NaN 159.435332   1.058500  1990.164480
+blood_gut_intra           scanvi  0.888022  0.888418                   NaN   0.008188  59.295049  2352.545792
+blood_gut_intra         scarches  0.879438  0.880317                   NaN  38.633953   9.335466  1989.115904

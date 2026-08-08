@@ -1,0 +1,48 @@
+# Per-cell predictions for the class-level figures.
+#
+# The paper matrix records summary metrics only, so any question about *which* classes a
+# method fails on needed the whole thing re-run. This config keeps the predictions
+# (save_predictions), and covers the three within-dataset splits where the truth vocabulary
+# matches the reference's -- the regime where a per-class recall heatmap means something.
+# lung_cross is deliberately absent: reference and query share 20 of 46 names there, so
+# per-class recall would measure the vocabulary mismatch (§3.1) rather than the method.
+#
+# One repeat: per-class recall over 36-86 classes is a qualitative comparison, and the
+# accuracy numbers it aggregates to are already in the paper at repeats=3.
+label: cell_type
+repeats: 1
+output: results/percell
+ontology_obo: /tmp/cl-basic.obo
+save_predictions: true
+
+datasets:
+  - name: liver_intra          # 36 types
+    type: intra
+    path: /Volumes/IanSSD/hlica/liver_intra.h5ad
+    test_frac: 0.25
+  - name: lung_intra           # 46 types
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 300
+    test_frac: 0.25
+  - name: blood_gut_intra      # 86 types, the high-cardinality stress case
+    type: intra
+    path: /Volumes/IanSSD/hlica/blood_gut_intra.h5ad
+    test_frac: 0.25
+
+methods:
+  - name: actinn-jax
+  - name: linear-anova-pca
+  - name: svm
+  - name: knn
+  - name: celltypist
+  - name: singler
+  - name: scmap-cluster
+  - name: sctop
+    python: .venv-protocloud/bin/python
+  - name: protocloud
+    python: .venv-protocloud/bin/python
+  - name: scanvi
+    python: .venv-scvi/bin/python
+  - name: scarches
+    python: .venv-scvi/bin/python

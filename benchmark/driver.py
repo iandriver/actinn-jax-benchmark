@@ -91,6 +91,14 @@ def run(config_path):
         anc = metrics.load_cl_ancestors(_expand(cfg["ontology_obo"]))
 
     results_csv = os.path.join(out_dir, "results.csv")
+    # Per-cell predictions were written to a temp dir and thrown away with it, so only
+    # summary metrics survived a run. Anything asking *which* cells or *which classes* a
+    # method got wrong -- a confusion matrix, a per-class recall heatmap -- then needs the
+    # whole matrix re-run. Keeping them costs a few MB per dataset.
+    save_preds = bool(cfg.get("save_predictions"))
+    preds_dir = os.path.join(out_dir, "predictions")
+    if save_preds:
+        os.makedirs(preds_dir, exist_ok=True)
     rows = []
 
     def flush_results():
@@ -156,6 +164,15 @@ def run(config_path):
                             truth, preds["pred_label"].to_numpy(),
                             unassigned=preds["unassigned"].to_numpy() if "unassigned" in preds else None,
                             ontology=anc, truth_cl=truth_cl, pred_cl=pred_cl)
+                    if save_preds:
+                        keep = preds.copy()
+                        keep.insert(0, "truth", truth)
+                        if truth_cl is not None:
+                            keep.insert(1, "truth_cl", truth_cl)
+                        if pred_cl is not None:
+                            keep["pred_cl_mapped"] = pred_cl
+                        keep.to_parquet(os.path.join(
+                            preds_dir, f"{ds['name']}__{name}__rep{rep}.parquet"))
                     rows.append({"dataset": ds["name"], "repeat": rep, **meta, **acc})
         flush_results()  # persist after each dataset
 
