@@ -22,14 +22,14 @@ annotation on a laptop — a shipped ~800-type reference with calibrated abstent
 to a user's own focused reference (cross-study liver 0.23/0.58 → 0.72/0.86, exact/ontology),
 resolution below the cell-type label, and cluster-level novelty screening. We further show
 that **Pan-human Azimuth**, a concurrent purpose-built pan-human annotator, can be distilled
-into such a reference from raw counts alone — no GPU, no labeled input — reaching higher
-concordance than the teacher at 6–9× its throughput. We release the reimplementation (actinn-jax), the harness, and the
+into such a reference from raw counts alone — no GPU, no labeled input — matching the
+teacher's concordance at 6–9× its throughput. We release the reimplementation (actinn-jax), the harness, and the
 pre-trained references.
 
 ## Key Points
 
 - Among leading annotation methods, accuracy differences are small (top four within 0.008)
- while inference cost differs by ~130× and peak memory by 2.4×; cost, not accuracy, is what
+ while inference cost differs by ~260× and peak memory by 2.4×; cost, not accuracy, is what
  distinguishes them in practice.
 - Rankings are not stable: a prototype VAE moves from worst to best as the reference grows
  from 3k to 49k cells, and a tuned linear pipeline that fits 7× faster than a gene-space MLP
@@ -38,8 +38,8 @@ pre-trained references.
  (0.08–0.33 s from 1k to 24k reference cells), which is what makes chaining several
  annotation stages practical on a laptop.
 - A pretrained pan-human annotator can be distilled into a fast reference using only raw
- counts — no GPU, no labels — reaching higher concordance than either the teacher or a
- census-built reference, at 6–9× the teacher's throughput.
+ counts — no GPU, no labels — matching the teacher's concordance and beating a census-built
+ reference, at 6–9× the teacher's throughput.
 - Zero-shot foundation-model labels remain the weakest option in both our benchmark and the
  external one; their value is in learned structure, not in their label heads.
 
@@ -118,7 +118,7 @@ repository.
 ### Accuracy is clustered; cost is not
 
 The top of the accuracy table is a four-way cluster spanning **0.008**, led by a tuned linear
-pipeline rather than by a deep model (Table 1). Those same four methods differ by **~130× in
+pipeline rather than by a deep model (Table 1). Those same four methods differ by **~260× in
 inference time** (0.34 s to 89 s) and **2.4× in peak memory**. actinn-jax holds the best
 ontology-aware concordance (0.811), a margin inside repeat noise and best read as a tie.
 
@@ -218,9 +218,9 @@ cells at **0.73**, tracking the clusters. Rightmost panel is the study's own lab
 
 Building the broad pass from the census requires a foundation model on a GPU to discover its
 hierarchy. A pretrained pan-human annotator [Sarkar et al. 2026] already publishes one, so
-labelling a corpus with it and training on those labels transfers both vocabulary and
+labeling a corpus with it and training on those labels transfers both vocabulary and
 structure — using **only raw counts**. On withheld cross-study liver cells the distilled model
-**beats both the teacher and the census-built reference**, at several times the teacher's
+**matches the teacher and beats the census-built reference**, at several times the teacher's
 throughput, in under ten minutes of CPU (Table 3).
 
 | broad-pass model | classes | ontology | cells/s |
@@ -232,9 +232,13 @@ throughput, in under ten minutes of CPU (Table 3).
 **Table 3.** Broad-pass entry points on 3,396 withheld cross-study liver cells. The distilled
 student needs only raw human counts to build — no GPU, no labeled input — and inherits the
 teacher's vocabulary and hierarchy. It does not inherit the teacher's calibrated abstention,
-which remains a limitation. Replacing the embedding-derived hierarchy with one derived from Cell
-Ontology lineage removes the GPU from the build entirely and outperforms it (0.616 vs 0.547
-flat; a same-sized random grouping scores 0.539), which extends the route to a second organism.
+which remains a limitation. The 0.406/0.380 ordering is one query, and both actinn-jax models
+draw on a census sample that may include these studies while Azimuth does not, so read the
+student as level with its teacher rather than ahead of it. Deriving the hierarchy from Cell Ontology lineage instead of a foundation-model embedding
+removes the GPU from the build entirely, and beats both no hierarchy (0.616 vs 0.547) and a
+same-sized random grouping (0.539). That route also extends to a second organism: a pan-mouse
+reference of 453 types across 85 tissues reaches 0.638 ontology concordance on two withheld
+datasets after 17 s of CPU.
 
 ### Abstention is tunable; zero-shot labels are not competitive
 
