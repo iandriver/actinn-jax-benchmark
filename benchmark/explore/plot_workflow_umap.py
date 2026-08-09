@@ -13,7 +13,8 @@ The palettes deliberately differ between the broad panel and the other two: the 
 reference answers in the census vocabulary, the focused one in the study's. That mismatch is
 the reason the hand-off exists, so hiding it would misrepresent the figure.
 
-    .venv/bin/python benchmark/explore/plot_workflow_umap.py [--out docs/figures/fig_workflow_umap.png]
+    .venv/bin/python benchmark/explore/plot_workflow_umap.py            # what the papers use
+    .venv/bin/python benchmark/explore/plot_workflow_umap.py --style legend
 """
 
 import argparse
@@ -328,9 +329,10 @@ def main():
     # paper. Abstain has its own section; this figure is about what the two passes label.
     ap.add_argument("--min-prob", type=float, default=None)
     ap.add_argument("--obo", default="/tmp/cl-basic.obo")
-    ap.add_argument("--out", default="docs/figures/fig_workflow_umap.png")
-    ap.add_argument("--style", choices=("legend", "ondata"), default="legend",
-                    help="legend below each panel, or names written on the clusters")
+    ap.add_argument("--out", default="docs/figures/fig_workflow_umap_ondata.png")
+    ap.add_argument("--style", choices=("ondata", "legend"), default="ondata",
+                    help="names written on the clusters (default), or a legend below each "
+                         "panel; the papers use ondata")
     ap.add_argument("--top", type=int, default=12,
                     help="with --select abundance, colour only the N most abundant labels")
     ap.add_argument("--select", choices=("cluster", "abundance"), default="cluster",
