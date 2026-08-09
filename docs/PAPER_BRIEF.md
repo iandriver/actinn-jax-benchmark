@@ -29,19 +29,19 @@ pre-trained references.
 ## Key Points
 
 - Among leading annotation methods, accuracy differences are small (top four within 0.008)
-  while inference cost differs by ~130× and peak memory by 2.4×; cost, not accuracy, is what
-  distinguishes them in practice.
+ while inference cost differs by ~130× and peak memory by 2.4×; cost, not accuracy, is what
+ distinguishes them in practice.
 - Rankings are not stable: a prototype VAE moves from worst to best as the reference grows
-  from 3k to 49k cells, and a tuned linear pipeline that fits 7× faster than a gene-space MLP
-  on one panel costs 2.7× more on another with a narrower feature budget.
+ from 3k to 49k cells, and a tuned linear pipeline that fits 7× faster than a gene-space MLP
+ on one panel costs 2.7× more on another with a narrower feature budget.
 - Inference time is flat in reference size and cardinality for a cached gene-space MLP
-  (0.08–0.33 s from 1k to 24k reference cells), which is what makes chaining several
-  annotation stages practical on a laptop.
+ (0.08–0.33 s from 1k to 24k reference cells), which is what makes chaining several
+ annotation stages practical on a laptop.
 - A pretrained pan-human annotator can be distilled into a fast reference using only raw
-  counts — no GPU, no labels — reaching higher concordance than either the teacher or a
-  census-built reference, at 6–9× the teacher's throughput.
+ counts — no GPU, no labels — reaching higher concordance than either the teacher or a
+ census-built reference, at 6–9× the teacher's throughput.
 - Zero-shot foundation-model labels remain the weakest option in both our benchmark and the
-  external one; their value is in learned structure, not in their label heads.
+ external one; their value is in learned structure, not in their label heads.
 
 ## Introduction
 
@@ -100,17 +100,18 @@ CPU for classical/linear/correlation tiers, Apple MPS for deep and foundation ti
 External validation runs on AWS `r7i.8xlarge` through Open Problems' own Nextflow pipeline.
 Because wall-clock on a shared machine depends on co-scheduled load, external cost is
 reported as a ratio to a method present in every run. Environments are pinned and the Cell
-Ontology release is recorded (Supplementary Note S3).
+Ontology release is recorded.
 
-**Supplementary figures.** Confusion matrices with ontology-equivalent errors outlined
-(Figure S1), the abstain trade-off (S2), and per-class recall across all eleven methods (S3)
-are in the benchmark repository.
+**Supplementary material** (separate document) contains Figures S1–S5 — confusion matrices
+with ontology-equivalent errors outlined, the abstain trade-off, and per-class recall for
+eleven methods on three splits — and Tables S1–S3.
 
 **Workflow components.** A broad reference built from the CELLxGENE Census [CZI Census 2025];
 a coarse→fine hierarchy obtained either from foundation-model embeddings or from Cell Ontology
 lineage; confidence-threshold abstention calibrated per reference by withholding 10% of cell
 types; masking-based refinement to a query's own supported classes or to a tissue; and a
-cluster-level novelty screen. Protocols in Supplementary Notes S5–S9.
+cluster-level novelty screen. Protocols for each are documented in the benchmark
+repository.
 
 ## Results
 
@@ -147,7 +148,7 @@ to real reference mapping. The spread across leading methods on any one dataset 
 
 Scaling the reference from 3k to 49k cells reverses the order: **ProtoCloud moves from worst
 (0.722) to best (0.976)**, clear of actinn-jax (0.936) and the linear pipeline (0.939), at 19×
-the CPU fit cost (Supplementary Note S3). Conclusions from subsampled references do not
+the CPU fit cost. Conclusions from subsampled references do not
 transfer to atlas scale in either direction.
 
 External validation inverts a different axis. On Open Problems — datasets, metrics and ranking
@@ -175,7 +176,7 @@ survives a change of feature budget.
 **Table 2.** External validation on Open Problems `label_projection`, ordered by accuracy.
 Bold marks components we contributed to that benchmark. *cost* is per-dataset wall-clock
 relative to actinn-jax on the same instance. scTOP's mean reflects two collapses inside four
-ordinary results, traced to the fixed feature budget (Supplementary Note S8).
+ordinary results, traced to the fixed feature budget.
 
 ### Inference cost is flat in reference size
 
@@ -231,17 +232,16 @@ throughput, in under ten minutes of CPU (Table 3).
 **Table 3.** Broad-pass entry points on 3,396 withheld cross-study liver cells. The distilled
 student needs only raw human counts to build — no GPU, no labeled input — and inherits the
 teacher's vocabulary and hierarchy. It does not inherit the teacher's calibrated abstention,
-which remains a limitation (Supplementary Note S6). Replacing the embedding-derived hierarchy with one derived from Cell
+which remains a limitation. Replacing the embedding-derived hierarchy with one derived from Cell
 Ontology lineage removes the GPU from the build entirely and outperforms it (0.616 vs 0.547
-flat; a same-sized random grouping scores 0.539), which extends the route to a second organism
-(Supplementary Note S10).
+flat; a same-sized random grouping scores 0.539), which extends the route to a second organism.
 
 ### Abstention is tunable; zero-shot labels are not competitive
 
 Withholding 9 of 36 cell types entirely, a confidence threshold trades coverage against
 accuracy smoothly: accuracy on kept cells rises 0.885 → 0.969 as coverage falls 1.00 → 0.66
 and out-of-distribution flagging climbs 0.00 → 0.73. A comparator with saturated probabilities
-offers essentially one operating point instead of a curve (Supplementary Note S9). Separately,
+offers essentially one operating point instead of a curve. Separately,
 a foundation model run zero-shot scored **0.201** ontology concordance against 0.894 for a
 reference-trained model on the same data, taking ~280× longer — reproduced independently on
 Open Problems, where zero-shot entries sit at the bottom of the leaderboard.
@@ -272,4 +272,4 @@ every stage on the machine already on the desk.
 The main limitations are that the cross-method comparison is human-only and single
 hardware-family; that our classical tier is untuned while the linear baseline is tuned, which
 biases against our own method; and that the distilled reference inherits a vocabulary but not
-its teacher's calibrated abstention. Full limitations: Supplementary Note S1.
+its teacher's calibrated abstention. Full limitations are in the extended report.

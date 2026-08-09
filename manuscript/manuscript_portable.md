@@ -11,7 +11,7 @@ abstract: |
 # Introduction
 
 Annotating cell types by mapping to a labeled reference is one of the most frequently run
-operations in single-cell RNA-seq. The method landscape is large (S4),
+operations in single-cell RNA-seq. The method landscape is large,
 but published comparisons ([\[Abdelaal 2019\]](https://doi.org/10.1186/s13059-019-1795-z), [\[Fu 2024\]](https://doi.org/10.1093/bib/bbae392)) emphasize accuracy and rarely
 report the axis that decides what a working scientist actually runs on their own machine:
 **wall-clock time and memory on commodity hardware**, without a GPU. Foundation models
@@ -136,7 +136,6 @@ engineering win is the point, not an accuracy comparison.
 | scPRINT | [\[Kalfon 2025\]](https://doi.org/10.1038/s41467-025-58699-1) | foundation | pretrained transformer, zero-shot | — | PyTorch |
 | **Pan-human Azimuth** | [\[Sarkar et al. 2026\]](https://doi.org/10.64898/2026.07.16.738997) | pretrained | 8-level hierarchical NN, fixed 382-leaf typology | trained `Unassigned` | TensorFlow |
 
-
 **Table 1.** The benchmarked methods: model family (*tier*), the engine each one actually runs,
 whether it can decline to call a cell (*rejection*), and the runtime stack it was run on;
 each has its own pinned environment (§2.5). Bold marks the methods added to this panel here.
@@ -181,7 +180,6 @@ API and older harmony versions do not compile on the current toolchain.
 | liver_cross | [\[Edgar 2026\]](https://doi.org/10.64898/2026.06.30.735539) | cross-**study** | liver (HLiCA) | 34 | Ensembl | train 6 studies → test withheld study |
 | blood_gut_intra | [\[Alegbe 2026\]](https://doi.org/10.1038/s41586-026-10627-z) | within-dataset | blood + gut (IBDverse) | 86 | Ensembl | high cardinality; no CL ids |
 | pbmc | [\[10x Genomics 2016\]](https://www.10xgenomics.com/datasets/3-k-pbm-cs-from-a-healthy-donor-1-standard-1-1-0) | within-dataset | PBMC (pbmc3k) | 8 | symbols | small-n; scPRINT skips (symbols) |
-
 
 **Table 2.** The six benchmark datasets. *split* separates within-dataset holdouts from
 cross-dataset and cross-study transfer; *genes* records whether the matrix is keyed by Ensembl
@@ -294,8 +292,8 @@ query, so "held out" means held-out *datasets* and not merely held-out cells.
 ## Distilling a pretrained annotator
 
 A broad reference can also be built without labels and without a GPU, by taking both the label
-vocabulary and the hierarchy from an existing pretrained annotator
-(S6). Keras/TensorFlow and JAX cannot share a process,
+vocabulary and the hierarchy from an existing pretrained annotator.
+Keras/TensorFlow and JAX cannot share a process,
 so this runs in two stages.
 
 **Teacher pass.** Pan-human Azimuth labels a corpus of raw counts through its low-level API
@@ -348,7 +346,7 @@ Four mechanisms operate on a trained reference at inference time, all label-free
 
 **Within-type state.** The same machinery resolves structure below a cell-type label: a
 hepatocyte zonation model trained on portal→central zone labels, scored by within-one-zone
-agreement across donors and datasets (S7).
+agreement across donors and datasets.
 
 ## Scaling protocol
 
@@ -356,12 +354,11 @@ The reference is subsampled to five sizes up to **49k cells** with the query hel
 that accuracy, fit time, predict time and peak memory are functions of reference size alone.
 Reported per method. The sweep exists to find where one method overtakes another as the
 reference grows, which no single reference size can show
-(S3).
 
 ## External validation protocol
 
 **Open Problems `label_projection`** [\[Open Problems 2024\]](https://openproblems.bio)
-(S8) supplies the
+ supplies the
 datasets, metrics and ranking — none chosen by us. actinn-jax is packaged as a viash 0.9.7
 component declaring the normalization it expects, and run through the project's own Nextflow
 workflow. We additionally built components for four
@@ -448,7 +445,6 @@ query both carry CL ids, with actinn-jax on the same splits for reference:
 | Pan-human Azimuth (pretrained) | 0.700 | 0.521 | 0.408 | 2.2–3.4 |
 | scPRINT (zero-shot) | 0.201 | — | — | 62.3 |
 
-
 **Table 4.** Pretrained annotators, scored by ontology concordance only, on the three datasets
 where reference and query both carry Cell Ontology ids — with reference-trained actinn-jax on
 the same splits for scale. Not a like-for-like comparison; see the text below.
@@ -479,7 +475,6 @@ low-cardinality problems. Per dataset (accuracy):
 | liver_cross (cross-study) | **0.686 exact / 0.731 ontology** | actinn-jax |
 | blood_gut (86 types) | 0.860 | linear-anova-pca 0.902 |
 | pbmc (8 types) | 0.913 | scArches 0.931 |
-
 
 **Table 5.** Per-dataset accuracy: actinn-jax against whichever method leads that dataset.
 † on lung_cross the exact-match score is a vocabulary artifact, so ontology concordance is the
@@ -580,7 +575,7 @@ already has one — Pan-human Azimuth publishes an 8-level typology with every n
 a Cell Ontology term — so labelling a corpus with it and training actinn-jax on those labels
 transfers both the vocabulary and the structure. That build needs **no GPU and no
 labeled input**, only raw human counts: under ten minutes of CPU on 85k cells drawn from
-three atlases plus a census-wide sample (S6). On
+three atlases plus a census-wide sample. On
 3,396 withheld cross-study liver cells:
 
 | broad-pass model | classes | ontology | cells/s |
@@ -588,7 +583,6 @@ three atlases plus a census-wide sample (S6). On
 | census-built (`broad_human_v1`) | 798 | 0.338 | 2,962 |
 | Pan-human Azimuth | 382 | 0.380 | 1,076–1,563 |
 | **distilled (`panhuman_distill_v1`)** | 324 | **0.406** | **8,937–10,021** |
-
 
 **Table 6.** Three broad-pass entry points on 3,396 withheld cross-study liver cells: the
 census-built reference, the Pan-human Azimuth teacher, and the model distilled from that
@@ -629,7 +623,6 @@ numbers in the [benchmark repository][repo]):
 | flat, no hierarchy | 0.547 |
 | random grouping, same group sizes | 0.539 |
 
-
 **Table 7.** Coarse-hierarchy ablation, ordered by accuracy. Ontology concordance on the
 held-out lung atlas for a Cell Ontology lineage hierarchy, no hierarchy at all, and a random
 grouping with the same group sizes as the ontology one.
@@ -652,7 +645,6 @@ datasets were excluded from the reference entirely and used as the test set — 
 | all cells | 0.638 | 100% | 9,712 |
 | confidence ≥ 0.5 | **0.718** | 71% | |
 
-
 **Table 8.** `broad_mouse_v1` on 12,646 held-out mouse cells (137 truth types, 41 tissues, none
 of it in the reference), with and without abstain.
 
@@ -664,7 +656,7 @@ being comparable to them. Two limits apply. The ablation above was run
 on **human** and applied to mouse; CL is species-neutral by construction, but nothing here
 shows it groups mouse types as well. And mouse census is shallow in *datasets* — 51 in total,
 one embryo atlas holding 11.4M of 18.4M cells — so tissue breadth is good while lab and
-protocol breadth is far below human's 487 datasets (S10).
+protocol breadth is far below human's 487 datasets.
 
 **The focused pass — tissue-specific.** For the tissue the broad pass identifies, a small
 focused reference re-annotates at full resolution. The gain is large and it is the crux of
@@ -685,7 +677,7 @@ of cells, and the 14% it misses cost more than the 86% it gets right can gain, s
 mask discards the correct class outright. A **perfect** coarse call would add only **+2.8
 points** (0.759). Once the focused pass covers the tissue, there is almost no accuracy left for a broad
 model to contribute; its value is choosing which focused reference to load and covering cells
-none of them claims (S13).
+none of them claims.
 
 **Supporting mechanisms.** (i) A **foundation-model-guided coarse→fine hierarchy**
 (S14, S15): a foundation model discovers
@@ -693,7 +685,7 @@ a coarse→fine structure *offline*, the fast CPU model uses it at inference —
 classifier on 3/4 datasets, matches an expert hierarchy, beats a random-grouping control,
 and never depends on the foundation model at prediction time. (ii) **Within-cell-type
 resolution**: the same machinery resolves hepatocyte zonation (portal→central) at ~0.99
-within-one-zone, generalizing across donors and datasets (S7) — a
+within-one-zone, generalizing across donors and datasets — a
 third stage below the cell-type label. Together these make actinn-jax a *pipeline* (broad →
 tissue → subtype/state), not just a classifier, at classical-method speed throughout.
 
@@ -708,7 +700,6 @@ cells are genuinely out-of-distribution), and sweeping a confidence threshold:
 | 0.5 | 0.919 / 0.93 / 0.30 | 0.936 / 0.68 / 0.68 |
 | 0.7 | 0.946 / 0.84 / 0.52 | 0.936 / 0.68 / 0.68 |
 | 0.9 | 0.969 / 0.66 / 0.73 | 0.937 / 0.68 / 0.68 |
-
 
 **Table 9.** Confidence-threshold sweep with 9 of 36 cell types held out of the liver reference,
 so 1,350 query cells are genuinely out-of-distribution. Each cell reads accuracy on kept cells /
@@ -734,7 +725,7 @@ absent from its label set, and it declines them rather than guessing. Its pretra
 requires CL ids, so it cannot emit labels outside that set; this is an inherent property of
 a zero-shot label head, not a defect, but it means the foundation model's raw predictions
 are not a drop-in annotator. This is exactly why our two-stage workflow
-(S14) uses scPRINT's **embeddings** — its learned structure — to
+ uses scPRINT's **embeddings** — its learned structure — to
 shape a small trained model, never its zero-shot labels: the foundation model is valuable,
 its raw label predictions are not.
 
@@ -743,7 +734,7 @@ its raw label predictions are not.
 Our in-house benchmark is neutral but self-run. For an **independent** check, we ran
 actinn-jax through the community-standard [Open Problems](https://openproblems.bio/benchmarks/label_projection)
 label-projection task — their 6 datasets, splits, and metrics — and slotted it into their
-published v2.0.0 leaderboard (S8).
+published v2.0.0 leaderboard.
 
 **Placement.** On a benchmark we did not design and cannot tune, **actinn-jax places 3rd of
 17 on mean accuracy (0.837), 1st among all methods that complete every dataset**, beats its
@@ -892,15 +883,15 @@ Azimuth** effort reaches the same conclusion from a far larger curated corpus: a
 than scGPT and SCimilarity, whose labels they find fragmented and mis-transferred. Their
 stated theme — that training-data quality and organization matter as much as architecture or
 scale — and their finding that accuracy **saturates past ~5M training cells**
-(S13) are independent support, from a group with
+ are independent support, from a group with
 no stake in our conclusion, for both halves of our reading.
 
 *When extra expressivity pays.* Two lines of evidence bear on this. First, **ProtoCloud** —
 a prototype-based, self-explaining VAE with built-in uncertainty and gene-level attribution,
 a strictly richer model than ours — does not sit a fixed distance above or below us. Where it
 lands depends on how much reference data it is given: below the top cluster on the subsampled
-matrix, ahead on lung, and the strongest method of all at atlas scale (§3.1, §5), at ~9× actinn-jax's CPU fit time (146 vs 16 s mean)
-(S2). The richer model pays off where it has the data to
+matrix, ahead on lung, and the strongest method of all at atlas scale (§3.1, §5), at ~9× actinn-jax's CPU fit time (146 vs 16 s mean).
+The richer model pays off where it has the data to
 support it, and not before — which is an argument for matching model capacity to reference
 size, not for preferring small models everywhere. Second, and more broadly,
 Souza & Mehta [\[Souza & Mehta 2026\]](https://doi.org/10.64898/2026.02.11.705358) report that
@@ -933,7 +924,7 @@ the **multi-stage workflow** rather than a single label — broad→refined hand
 refinement, calibrated abstain, novel-cell-type screening.
 
 For the **broad pass specifically, prefer a purpose-built pan-human model**: **Pan-human
-Azimuth** (S13) ships a pretrained hierarchical
+Azimuth** ships a pretrained hierarchical
 classifier over a harmonized organism-wide typology (8 levels, 382 leaf types, trained on
 9.7M curated cells), with abstention learned rather than thresholded and an **expected
 calibration error (ECE)** of 0.0044 — meaning its stated confidence sits within half a
@@ -1011,7 +1002,7 @@ scientist can run, inspect, and run again.
  actinn-jax.** Souza & Mehta's pipeline (normalize → ANOVA → standardize → PCA(220) →
  logistic regression) leads the matrix on accuracy (0.839 vs 0.831) and macro-F1 (0.699 vs
  0.683) while fitting 7× faster on this panel's hardware (§2.5), with its largest margin
- on the 86-type blood+gut set (+4.2 pt) (S1).
+ on the 86-type blood+gut set (+4.2 pt).
  Wall-clock ratios between a JAX model and a scikit-learn pipeline shift with the CPU and
  the threading available, so read them as this machine's, not as constants. The §3.1
  margins over the
@@ -1020,7 +1011,7 @@ scientist can run, inspect, and run again.
  still to fit but competitive only at small, low cardinality — best pbmc macro-F1 (0.837),
  degrading to 0.649 on liver.
 - **actinn-jax's memory advantage is bounded, and the linear pipeline scales further than a
- naive extrapolation implies** (S3). Extrapolating the
+ naive extrapolation implies**. Extrapolating the
  linear pipeline's small-reference footprint overstates its atlas-scale peak by ~2.4× — the
  measured figure is **13.2 GB** at 49k reference cells — because its feature-selection step
  caps the dense matrix at 20,000 genes rather than the full gene set. The linear/actinn-jax
@@ -1067,32 +1058,12 @@ reference derives from **Pan-human Azimuth** (Sarkar, Li, Molla, … Satija, bio
 `panhumanpy` (MIT) and [Zenodo](https://doi.org/10.5281/zenodo.20401417). Attribution is a
 condition of that licence and travels inside each shipped model's build record.
 
-**Supplementary notes.** Extended results and protocols, in the [benchmark repository][repo]:
+**Additional documentation.** The [benchmark repository][repo] carries detailed notes for each result — tuned linear pipeline and sctop baselines; protocloud comparison; scaling and memory to atlas size; survey of cell-type annotation methods; rebuilding the broad reference; distilling pan-human azimuth; and 9 more.
 
-- **S1** — Tuned linear pipeline and scTOP baselines
-- **S2** — ProtoCloud comparison
-- **S3** — Scaling and memory to atlas size
-- **S4** — Survey of cell-type annotation methods
-- **S5** — Rebuilding the broad reference
-- **S6** — Distilling Pan-human Azimuth
-- **S7** — Hepatocyte zonation
-- **S8** — Open Problems label projection
-- **S9** — Refinement and abstention
-- **S10** — Pan-mouse reference
-- **S11** — HLiCA liver reference
-- **S12** — HLiCA edge cases
-- **S13** — Pan-human Azimuth as broad pass and teacher
-- **S14** — Two-stage model flow
-- **S15** — Two-stage hierarchy experiments
-
-**Supplementary figures.** In the [benchmark repository][repo]:
-
-- **Figure S1** — Confusion matrices for the broad and focused passes, with
-  ontology-equivalent errors outlined
-- **Figure S2** — Abstain trade-off: accuracy against coverage, and novel-cell detection
-  against threshold
-- **Figure S3** — Per-class recall across eleven methods on three splits, ordered by how much
-  the methods disagree
+**Supplementary material** (separate document) contains Figures S1–S5 — confusion matrices
+with ontology-equivalent errors outlined, the abstain trade-off, and per-class recall across
+eleven methods on three splits — and Tables S1–S3, the method and dataset descriptions and
+per-dataset accuracy.
 
 
 

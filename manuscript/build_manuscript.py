@@ -41,8 +41,10 @@ FIGDIR = ROOT / "docs" / "figures"
 # Two manuscripts share this pipeline: the full report and a condensed, journal-length
 # version. `python build_manuscript.py brief` builds the second.
 VARIANT = (sys.argv[1] if len(sys.argv) > 1 else "full").lower()
-SOURCE = {"full": "PAPER.md", "brief": "PAPER_BRIEF.md"}[VARIANT]
-STEM = {"full": "manuscript", "brief": "manuscript_brief"}[VARIANT]
+SOURCE = {"full": "PAPER.md", "brief": "PAPER_BRIEF.md",
+          "supp": "SUPPLEMENTARY.md"}[VARIANT]
+STEM = {"full": "manuscript", "brief": "manuscript_brief",
+        "supp": "manuscript_supp"}[VARIANT]
 src = (ROOT / "docs" / SOURCE).read_text()
 
 # ---- author block (confirmed 2026-08-01; not a placeholder) ----
@@ -51,6 +53,8 @@ TITLE = ("Annotating single-cell data on a laptop: a 13-method benchmark and pra
 if VARIANT == "brief":
     TITLE = ("Accuracy is not the binding constraint in single-cell annotation: "
              "a 13-method benchmark of cost, scaling and workflow")
+if VARIANT == "supp":
+    TITLE = "Supplementary material"
 # "Independent Researcher" is the standard bioRxiv affiliation for unaffiliated authors,
 # and is the intended value here -- this work is not submitted under an institution.
 AUTHORS = "Ian Driver$^{\\ast}$"
@@ -79,10 +83,13 @@ body = "\n".join(out)
 # "$ before a digit isn't math" rule that would mangle e.g. 8->86 or x195.
 
 # 2. extract Abstract -> yaml
-nxt = "## 1. Introduction" if VARIANT == "full" else "## Key Points"
-m = re.search(r"## Abstract\n(.*?)\n" + re.escape(nxt), body, re.S)
-abstract = re.sub(r"\s+", " ", m.group(1)).strip()
-body = body[m.end()-len(nxt):]                 # body starts at the next heading
+if VARIANT == "supp":
+    abstract = ""
+else:
+    nxt = "## 1. Introduction" if VARIANT == "full" else "## Key Points"
+    m = re.search(r"## Abstract\n(.*?)\n" + re.escape(nxt), body, re.S)
+    abstract = re.sub(r"\s+", " ", m.group(1)).strip()
+    body = body[m.end()-len(nxt):]             # body starts at the next heading
 
 # 3. handle internal .md/.png links (NOT image embeds, hence (?<!!)). If the
 # link text is itself a filename (a self-referential pointer), drop it;
@@ -185,7 +192,8 @@ def _references():
     return "\n".join(out) + "\n\n" + defs + "\n"
 
 
-REFS = _references()
+CITE_URLS: dict[str, str] = {}          # filled by _references(); empty is valid
+REFS = "" if VARIANT == "supp" else _references()
 
 # 5b. Citations rendered inconsistently: a shortcut link like [Kalfon 2025] resolves and
 # markdown eats its brackets ("Foundation models Kalfon 2025 raise accuracy"), while an
