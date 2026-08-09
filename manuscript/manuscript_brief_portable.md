@@ -11,7 +11,7 @@ abstract: |
 # Key Points
 
 - Among leading annotation methods, accuracy differences are small (top four within 0.008)
- while inference cost differs by ~260× and peak memory by 2.4×; cost, not accuracy, is what
+ while predict time differs by ~260× and peak memory by 2.4×; cost, not accuracy, is what
  distinguishes them in practice.
 - Rankings are not stable: a prototype VAE moves from worst to best as the reference grows
  from 3k to 49k cells, and a tuned linear pipeline that fits 7× faster than a gene-space MLP
@@ -71,7 +71,7 @@ generalization regimes.
 **Metrics.** Accuracy, macro-F1, and **ontology-aware concordance**, which credits a call that
 is the same node, an ancestor or a descendant of the truth in the Cell Ontology. The last is
 required because vocabularies disagree about granularity: on our cross-dataset lung split
-reference and query share only 20 of 46 type names, so exact accuracy (~0.35 for every method)
+reference and query share only 20 of 46 type names, so exact-match accuracy (~0.35 for every method)
 measures vocabulary mismatch rather than transfer. Concordance is reported only where both
 sides carry ontology ids.
 
@@ -101,10 +101,10 @@ repository.
 
 The top of the accuracy table is a four-way cluster spanning **0.008**, led by a tuned linear
 pipeline rather than by a deep model (Table 1). Those same four methods differ by **~260× in
-inference time** (0.34 s to 89 s) and **2.4× in peak memory**. actinn-jax holds the best
+predict time** (0.34 s to 89 s) and **2.4× in peak memory**. actinn-jax holds the best
 ontology-aware concordance (0.811), a margin inside repeat noise and best read as a tie.
 
-| method | acc | macro-F1 | ontology | fit (s) | predict (s) | peak MB |
+| method | acc | macro-F1 | ontology | fit (s) | predict (s) | peak mem (MB) |
 |---|---:|---:|---:|---:|---:|---:|
 | **linear-anova-pca** | **0.839** | 0.699 | 0.808 | **3.0** | **0.34** | 4294 |
 | scANVI | 0.833 | 0.697 | 0.809 | 0.0* | 89.2 | 2099 |
@@ -141,7 +141,7 @@ genes, and an ANOVA→PCA→logistic pipeline pays for the decomposition on ever
 gene-space MLP amortizes it into a single fit. Neither a cost ranking nor an accuracy ranking
 survives a change of feature budget.
 
-| method | acc | macro-F1 | cost | peak RSS |
+| method | acc | macro-F1 | cost | peak mem |
 |---|---:|---:|---:|---:|
 | mlp | 0.843 | 0.662 | 1.98× | 19.9 GB |
 | **actinn-jax** | 0.836 | 0.663 | 1.00× | 21.0 GB |
