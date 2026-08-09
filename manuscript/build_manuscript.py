@@ -48,11 +48,11 @@ STEM = {"full": "manuscript", "brief": "manuscript_brief",
 src = (ROOT / "docs" / SOURCE).read_text()
 
 # ---- author block (confirmed 2026-08-01; not a placeholder) ----
-TITLE = ("Annotating single-cell data on a laptop: a 13-method benchmark and practical "
-         "low-memory workflows, with actinn-jax")
+TITLE = ("Annotating single-cell data on a laptop: a benchmark of annotation methods and "
+         "practical low-memory workflows, with actinn-jax")
 if VARIANT == "brief":
     TITLE = ("Accuracy is not the binding constraint in single-cell annotation: "
-             "a 13-method benchmark of cost, scaling and workflow")
+             "a benchmark of cost, scaling and workflow")
 if VARIANT == "supp":
     TITLE = "Supplementary material"
 # "Independent Researcher" is the standard bioRxiv affiliation for unaffiliated authors,

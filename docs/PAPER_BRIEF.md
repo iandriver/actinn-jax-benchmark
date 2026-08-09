@@ -1,4 +1,4 @@
-# Accuracy is not the binding constraint in single-cell annotation: a 13-method benchmark of cost, scaling and workflow
+# Accuracy is not the binding constraint in single-cell annotation: a benchmark of cost, scaling and workflow
 
 *Condensed version. The full report, with all protocols and per-dataset results, is
 [PAPER.md](PAPER.md).*

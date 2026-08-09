@@ -1,6 +1,6 @@
 ---
 title: |
-  Annotating single-cell data on a laptop: a 13-method benchmark and practical low-memory workflows, with actinn-jax
+  Annotating single-cell data on a laptop: a benchmark of annotation methods and practical low-memory workflows, with actinn-jax
 author:
   - Ian Driver$^{\ast}$
 date: ""
@@ -630,8 +630,28 @@ that model's trained abstention: its confidence separates right from wrong poorl
 cells it calls with probability at least 0.5 moves concordance only 0.406 → 0.427), so the calibrated broad-pass abstain
 of §3.5 belongs to the census-built reference until this one is recalibrated.
 
-**A second organism, and a hierarchy that needs no GPU.** Neither route above
-transfers to mouse: Pan-human Azimuth is human-only, so there is no teacher to distill, and
+**The focused pass — tissue-specific.** For the tissue the broad pass identifies, a small
+focused reference re-annotates at full resolution. Holding out a whole HLiCA
+study (56,545 cells, a different research center's protocol), the broad census model scores
+exact-match **0.23** / ontology **0.58**, while a focused **38-type HLiCA liver** reference on
+the *same cells* reaches **0.72 / 0.86**. Refinement is where fine-grained accuracy comes
+from; the broad model's job is to route to it, not to be right about subtypes itself.
+
+**The broad pass hands the query to the focused pass; the two do not combine.** The natural
+assumption is that a better broad call should also make the focused call better. It does not.
+On the leakage-free cross-study
+liver split, substituting the stronger **Pan-human Azimuth** for the broad pass lifts it
+(ontology 0.380 vs 0.338 for our own broad model) but changes nothing downstream. Using that
+broad call to *narrow* the focused pass's classes — the zero-retrain masking actinn-jax ships — makes
+the result **worse**, 0.731 → 0.708: the broad call matches the true lineage on 85.8%
+of cells, and the 14% it misses cost more than the 86% it gets right can gain, since a wrong
+mask discards the correct class outright. A **perfect** broad call would add only **+2.8
+points** (0.759). Once the focused pass covers the tissue, there is almost no accuracy left for a broad
+model to contribute; its value is choosing which focused reference to load, and catching cells
+that fall outside every focused reference's scope.
+
+**A second organism, and a hierarchy that needs no GPU.** Neither of the two broad-pass build
+routes transfers to mouse: Pan-human Azimuth is human-only, so there is no teacher to distill, and
 the census route wants scPRINT on a GPU with mouse support we have not tested. But the census
 already labels every cell with a Cell Ontology term, and CL encodes the relation the embedding
 clustering is recovering — which cell types are kinds of the same thing. Describing each type
@@ -684,27 +704,6 @@ on **human** and applied to mouse; CL is species-neutral by construction, but no
 shows it groups mouse types as well. And mouse census is shallow in *datasets* — 51 in total,
 one embryo atlas holding 11.4M of 18.4M cells — so tissue breadth is good while lab and
 protocol breadth is far below human's 487 datasets.
-
-**The focused pass — tissue-specific.** Returning to the human workflow: for the tissue the
-broad pass identifies, a small
-focused reference re-annotates at full resolution. Holding out a whole HLiCA
-study (56,545 cells, a different research center's protocol), the broad census model scores
-exact-match **0.23** / ontology **0.58**, while a focused **38-type HLiCA liver** reference on
-the *same cells* reaches **0.72 / 0.86**. Refinement is where fine-grained accuracy comes
-from; the broad model's job is to route to it, not to be right about subtypes itself.
-
-**The broad pass hands the query to the focused pass; the two do not combine.** The natural
-assumption is that a better broad call should also make the focused call better. It does not.
-On the leakage-free cross-study
-liver split, substituting the stronger **Pan-human Azimuth** for the broad pass lifts it
-(ontology 0.380 vs 0.338 for our own broad model) but changes nothing downstream. Using that
-broad call to *narrow* the focused pass's classes — the zero-retrain masking actinn-jax ships — makes
-the result **worse**, 0.731 → 0.708: the broad call matches the true lineage on 85.8%
-of cells, and the 14% it misses cost more than the 86% it gets right can gain, since a wrong
-mask discards the correct class outright. A **perfect** broad call would add only **+2.8
-points** (0.759). Once the focused pass covers the tissue, there is almost no accuracy left for a broad
-model to contribute; its value is choosing which focused reference to load, and catching cells
-that fall outside every focused reference's scope.
 
 **Supporting mechanisms.** (i) A **foundation-model-guided coarse→fine hierarchy**: a foundation model discovers
 a coarse→fine structure *offline*, the fast CPU model uses it at inference — beats a flat
