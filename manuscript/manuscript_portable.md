@@ -370,7 +370,7 @@ more than the leaderboard's own set.
 (§3.7) run on AWS `r7i.8xlarge` instances (32 vCPU, 247 GB) through OP's own Nextflow
 pipeline, two tasks at a time.
 
-**Accuracy** in Table 10 comes from a single AWS run covering all eleven methods, so every
+**Accuracy** in Table 9 comes from a single AWS run covering all eleven methods, so every
 score is one harness, one machine, one invocation.
 
 **Cost** is reported as a ratio to actinn-jax rather than in seconds, because wall-clock on a
@@ -625,37 +625,43 @@ points** (0.759). Once the focused pass covers the tissue, there is almost no ac
 model to contribute; its value is choosing which focused reference to load, and catching cells
 that fall outside every focused reference's scope.
 
-**A second organism, and a hierarchy that needs no GPU.** Neither of the two broad-pass build
-routes transfers to mouse: Pan-human Azimuth is human-only, so there is no teacher to distill, and
-the census route wants scPRINT on a GPU with mouse support we have not tested. But the census
-already labels every cell with a Cell Ontology term, and CL encodes the relation the embedding
+**Can a broad reference be built for an organism with no pretrained annotator?** For mouse,
+neither human route carries over intact, but for different reasons. Distillation needs a
+teacher, and Pan-human Azimuth is human-only — there is no mouse model to distill. The census
+route does apply to mouse, but its one expensive step does not travel cheaply: the coarse
+groups are found by Ward-clustering scPRINT embeddings of per-type expression centroids, which
+wants a GPU, and scPRINT's mouse support is untested here.
+
+That clustering step is the only one that has to be replaced (Figure 4A). The census already
+labels every cell with a Cell Ontology term, and CL encodes the relation the embedding
 clustering is recovering — which cell types are kinds of the same thing. Describing each type
-by the CL terms it descends from and clustering *those* (same Ward linkage, ontology indicator
-vectors in place of embeddings) gives a hierarchy that is free, deterministic and
-species-independent.
+by the CL terms it descends from and clustering *those*, with the same Ward linkage, gives a
+hierarchy that is free, deterministic and species-independent.
 
-That substitution needs a control, since any grouping might help. Built from one human corpus
-(51,346 cells / 867 types) and scored on the held-out lung atlas
-(per-run
-numbers in the [benchmark repository][repo]):
+![building a coarse hierarchy without a GPU](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_ontology_hierarchy.png)
 
-| coarse hierarchy | ontology |
-|---|---:|
-| **Cell Ontology lineage** | **0.616** |
-| flat, no hierarchy | 0.547 |
-| random grouping, same group sizes | 0.539 |
+**Figure 4.** Replacing the one step of the reference build that needs a GPU. *A:* both routes
+to the coarse groups; only the middle step differs. *B:* the 21 coarse groups of
+`broad_mouse_v1`, each named by the Cell Ontology term its members share, with a percentage
+where that term covers most but not all of the group; the gray bar is the single group whose
+members share no term below the generic ones. *C:* the ontology grouping against no hierarchy
+and against a random grouping with the same group sizes, scored by ontology concordance on the
+held-out human lung atlas.
 
-**Table 7.** Coarse-hierarchy ablation, ordered by accuracy. Ontology concordance on the
-held-out lung atlas for a Cell Ontology lineage hierarchy, no hierarchy at all, and a random
-grouping with the same group sizes as the ontology one.
+**The groups it produces are lineages.** Twenty of the 21 mouse groups resolve to one CL
+lineage each — lymphocytes, neurons, epithelium, endothelium, mononuclear phagocytes, kidney
+tubule — and the twenty-first is a catch-all of 48 types whose census labels (`cell`,
+`blood cell`) are too vague to place anywhere (Figure 4B).
 
-Random grouping scores no better than no grouping at all (0.539 against 0.547), which rules
-out the simplest explanation for the gain: that splitting 867 types into 29 smaller problems
-makes each fine classifier's job easier, something any split would do. What matters is *which*
-types share a group. Each group has its own fine classifier and the coarse call decides which
-one ever sees the cell, so a group pays off only if the coarse classifier can recognize it
-*and* the right answer is inside it. Lineage groups manage both; groups of the same sizes
-drawn at random manage neither.
+**The grouping is doing the work, not the splitting.** Any partition gives each fine
+classifier a smaller problem, so the substitution needs a control. Built from one human corpus
+(51,346 cells / 867 types) and scored on the held-out lung atlas, a random grouping with the
+same group sizes scores **0.539** — no better than the **0.547** of no hierarchy at all —
+while the ontology grouping reaches **0.616** (Figure 4C). What matters is *which* types share
+a group. Each group has its own fine classifier and the coarse call decides which one ever
+sees the cell, so a group pays off only if the coarse classifier can recognize the group *and*
+the right answer is inside it. Lineage groups manage both; same-sized random groups manage
+neither.
 
 On that basis, `broad_mouse_v1`: 27,026 cells → **453 cell types across 85 tissues**,
 305 CL terms collapsed to 21 coarse groups, **17 seconds of CPU** to train, 38 MB. Two mouse
@@ -667,14 +673,15 @@ datasets were excluded from the reference entirely and used as the test set — 
 | all cells | 0.638 | 100% | 9,712 |
 | confidence ≥ 0.5 | **0.718** | 71% | |
 
-**Table 8.** `broad_mouse_v1` on 12,646 held-out mouse cells (137 truth types, 41 tissues, none
+**Table 7.** `broad_mouse_v1` on 12,646 held-out mouse cells (137 truth types, 41 tissues, none
 of it in the reference), with and without abstain.
 
-Its abstain calibration is also better behaved than the human census model's — 0.88 accuracy
-at 82% coverage, against 0.80 at 46% — because mouse census carries fewer near-duplicate
-subtypes than human's ~800-way vocabulary. Read across organisms with care: these are
-different queries, so the two sets of numbers fall in a similar range but are not a
-head-to-head comparison. Two limits apply. The ablation above was run
+Its abstain calibration is also better behaved than the human census model's: at the same
+`p ≥ 0.5` threshold it still answers for **71%** of cells (Table 7), against **38%** for
+`broad_human_v1` on its own held-out atlas, because mouse census carries fewer near-duplicate
+subtypes than human's ~800-way vocabulary. Coverage at a fixed threshold is the part that
+compares across the two — the accuracies come from different queries and should not be read
+head-to-head. Two limits apply. The ablation above was run
 on **human** and applied to mouse; CL is species-neutral by construction, but nothing here
 shows it groups mouse types as well. And mouse census is shallow in *datasets* — 51 in total,
 one embryo atlas holding 11.4M of 18.4M cells — so tissue breadth is good while lab and
@@ -701,7 +708,7 @@ cells are genuinely out-of-distribution), and sweeping a confidence threshold:
 | 0.7 | 0.946 / 0.84 / 0.52 | 0.936 / 0.68 / 0.68 |
 | 0.9 | 0.969 / 0.66 / 0.73 | 0.937 / 0.68 / 0.68 |
 
-**Table 9.** Confidence-threshold sweep with 9 of 36 cell types held out of the liver reference,
+**Table 8.** Confidence-threshold sweep with 9 of 36 cell types held out of the liver reference,
 so 1,350 query cells are genuinely out-of-distribution. Each cell reads accuracy on kept cells /
 fraction of cells kept / fraction of held-out-type cells flagged.
 
@@ -762,7 +769,7 @@ Means over the six datasets, every method through the same pipeline on one insta
 | naive_bayes | 0.738 | 0.613 | 0.19× | 19.5 GB |
 | **scTOP** | 0.581 | 0.462 | **0.16×** | 20.4 GB |
 
-**Table 10.** All eleven methods on the six Open Problems datasets, ordered by accuracy. Bold
+**Table 9.** All eleven methods on the six Open Problems datasets, ordered by accuracy. Bold
 marks the five components we contributed. *cost* is per-dataset wall-clock relative to
 actinn-jax (§2.10), for which 1.00× is roughly two minutes.
 
@@ -806,10 +813,10 @@ Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and
 in minutes — the gap to the top method was largely a gene-budget artifact, not the VAE. But
 more genes is **not** a universal win: it *regresses* tabula_sapiens by ~10 pt (its
 284-cell test batch across 160 fine types overfits reference-specific genes) and saturates
-hypomap (Figure 4). The budget is
+hypomap (Figure 5). The budget is
 **selectable without test labels**: held-out *reference* cross-validation rises for the
 datasets that benefit and is the one signal that *drops* for tabula_sapiens, and a trivial
-query-cells-per-class check independently flags it (Figure 5) —
+query-cells-per-class check independently flags it (Figure 6) —
 so the budget can be set deterministically per dataset. (iii) *Negative control* — a
 CPU-only, UCE-style protein-embedding featurization (expression-weighted mean of ESM2 gene
 embeddings) does **not** help and hurts the hardest case: the pooling discards the per-gene
@@ -818,13 +825,13 @@ in its GPU transformer, not a portable averaging trick.
 
 ![gene budget curve](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/gene_budget_curve.png)
 
-**Figure 4.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
+**Figure 5.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
 Problems datasets. More genes help most datasets but regress the fine-grained,
 domain-shifted tabula_sapiens.
 
 ![gene budget signals](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/gene_budget_signals.png)
 
-**Figure 5.** Label-free signals for setting the gene budget without test labels. Held-out
+**Figure 6.** Label-free signals for setting the gene budget without test labels. Held-out
 reference cross-validation and query-cells-per-class both single out tabula_sapiens, the one
 dataset where more genes hurt.
 
@@ -976,7 +983,7 @@ scientist can run, inspect, and run again.
  Measured `%cpu` on the OP harness spans 49% to 2338% across methods — some are
  single-threaded, some saturate 23 cores — so the same method timed at two concurrency
  settings differs by up to 12×, and any wall-clock ranking taken at high concurrency
- silently ranks threading and scheduler contention alongside algorithm. Table 10 therefore
+ silently ranks threading and scheduler contention alongside algorithm. Table 9 therefore
  reports cost as a ratio within a run, anchored by a method common to both (§2.10) — the
  anchor itself moved 165 s → 87 s between them, which is the size of the effect.
 - Subsampled references (to keep the matrix tractable); the scaling section characterizes
