@@ -73,7 +73,8 @@ annotator than our own — they are reported in those terms.
 **On adding another method to a crowded field.** We are not concluding that the new method
 wins. On accuracy it sits inside a four-way cluster it does not lead; the panel was assembled
 to include the baselines most likely to beat it, and they do. What earns it a place is
-narrower: the original ACTINN no longer installs or runs on current toolchains, and the
+narrower: the original ACTINN no longer installs or runs on current Python and ML
+environments, and the
 reimplementation's flat, sub-second, memory-bounded inference over a cached reference is what
 makes the multi-stage workflow of §3.4 practical on a laptop. A field already full of working
 methods ([xkcd 927]) is a good reason to be specific about what a new entry is *for* — here,
@@ -139,11 +140,9 @@ the original's TensorFlow-1.x graph/session code. Key engineering:
  (§3.7). Off by default; when on, the scaler is saved alongside the model and travels with
  it, and models saved without it still load.
 
-The reimplementation reproduces the original's accuracy to within repeat noise and, unlike the
-TensorFlow-1.x original, **installs on current Python/ML environments** — the original's
-graph/session code no longer
-runs on a modern stack without pinning a years-old TensorFlow. Because the two are the same
-model at equal accuracy, we do not carry the original as a separate benchmark row; the
+The reimplementation reproduces the original's accuracy to within repeat noise and, unlike
+the TensorFlow-1.x original, **installs on current Python and ML environments**. Because the
+two are the same model at equal accuracy, we do not carry the original as a separate benchmark row; the
 engineering win is the point, not an accuracy comparison.
 
 ### 2.2 Benchmarked methods
@@ -195,8 +194,8 @@ three datasets where reference and query both carry Cell Ontology ids. They appe
 §3.6 (foundation-model zero-shot) and §3.4 (Azimuth as broad pass, and as distillation
 teacher).
 
-**scPred** is excluded outright: unmaintained; it requires harmony's removed `HarmonyMatrix`
-API and older harmony versions do not compile on the current toolchain.
+**scPred** is not included: it is unmaintained, and no longer installs against current
+releases of the harmony dependency it builds on.
 
 ### 2.3 Datasets
 

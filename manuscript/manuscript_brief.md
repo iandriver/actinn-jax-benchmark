@@ -84,7 +84,7 @@ linear baseline is tuned; and the external validation uses a benchmark designed 
 
 **actinn-jax.** A dependency-light JAX reimplementation of ACTINN [\[Ma & Pellegrini 2020\]](https://doi.org/10.1093/bioinformatics/btz592) — a
 4-layer network (100/50/25 hidden units, ReLU, softmax, Adam) — replacing TensorFlow-1.x
-graph/session code that no longer installs on current toolchains. Preprocessing is
+graph/session code that no longer installs on current Python and ML environments. Preprocessing is
 sparse-aware; a fitted reference is cached and reused across queries; prediction is chunked
 for atlas-scale inputs. Accuracy matches the original within repeat noise.
 
