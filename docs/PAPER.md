@@ -63,8 +63,8 @@ methods outside that matrix are named with reasons (§2.2). The panel was chosen
 the baselines most likely to beat a small MLP — a carefully tuned linear pipeline, scTOP,
 ProtoCloud — and each of them does beat it somewhere; our own classical tier is left untuned
 while the linear baseline is tuned, which is the unfavorable direction (§5). Metrics are
-fixed across all methods and reported in full. And the **external validation is somebody
-else's**: Open Problems `label_projection` (§3.7) sets the datasets, the metrics and
+fixed across all methods and reported in full. And the **external validation is not ours to
+design**: Open Problems `label_projection` (§3.7) sets the datasets, the metrics and
 the ranking, and we did not choose any of them. Where results contradict our own earlier
 claims or our method's interests — ProtoCloud overtaking actinn-jax at atlas scale, a memory
 advantage that stays a fixed factor instead of growing with the data, a better-resourced broad
@@ -211,7 +211,8 @@ API and older harmony versions do not compile on the current toolchain.
 
 **Table 2.** The six benchmark datasets. *split* separates within-dataset holdouts from
 cross-dataset and cross-study transfer; *genes* records whether the matrix is keyed by Ensembl
-ids or by gene symbols, which decides who can read it.
+ids or by gene symbols, since a method or reference built on one convention cannot read
+the other without remapping.
 
 The blood+gut set is a subsample of **IBDverse** (Wellcome Sanger Institute; blood, terminal
 ileum and rectum from 421 individuals), included here because 86 fine-grained labels make it
@@ -231,8 +232,8 @@ held).
 **Ontology-aware concordance** credits a call that is the same node, an ancestor, or a
 descendant of the truth in the Cell Ontology. It exists because cell-type vocabularies
 disagree about granularity more than about biology: `periportal region hepatocyte` against
-`Hepatocyte` is a right-lineage-wrong-depth call. Exact match scores it as a total failure; a
-working scientist would accept it. It is the **only** metric that compares methods with
+`Hepatocyte` is a right-lineage-wrong-depth call. Exact match scores it as a total failure,
+though the lineage is correct and only the depth is wrong. It is the **only** metric that compares methods with
 different label vocabularies (§2.2), and it is reported only where both reference and query
 carry CL ids — so not on `blood_gut_intra`, and not on the symbol-keyed `pbmc`.
 
@@ -630,8 +631,8 @@ rather than coverage; §3.5 covers abstain separately.
 **The broad pass — census-scale.** A shipped ~800-type human reference built from the
 CELLxGENE census gives any query a first-pass annotation across the whole body, with a
 **calibrated abstain threshold** so out-of-reference cells are flagged rather than
-force-labeled (§3.5). This is the
-"what am I looking at" pass — broad coverage, deliberately not fine-grained.
+force-labeled (§3.5). This is the orientation
+pass — broad coverage, deliberately not fine-grained.
 
 **The broad pass can be built from a model instead of from labels.** The census route above needs a
 foundation model on a GPU to discover its hierarchy. A pretrained pan-human annotator
@@ -1014,7 +1015,7 @@ produces a broad-pass model of comparable accuracy at six to nine times its thro
 without a GPU and without labeled data (§3.4). A curated pan-human model is the right thing
 to start from; a small fast model is the right thing to iterate with.
 
-The part of any fixed typology that cannot be performed is the **hand-off**: it cannot
+What no fixed typology can do is the **hand-off**: it cannot
 re-annotate into a user's own focused label set (the HLiCA liver reference, cross-study
 0.23/0.58 → 0.72/0.86) or resolve states below a leaf (hepatocyte zonation). ProtoCloud
 likewise provides uncertainty, gene attribution and a refinement path (fine-tuning a

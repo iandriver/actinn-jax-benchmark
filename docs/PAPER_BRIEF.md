@@ -71,7 +71,7 @@ Because a benchmark written by a method's own author has a known failure mode, t
 was constrained by construction: every method runs on **every** dataset through one harness on
 identical splits; the panel was chosen to include the baselines most likely to beat a small
 MLP, and each of them does beat it somewhere; our own classical tier is left untuned while the
-linear baseline is tuned; and the external validation is somebody else's benchmark.
+linear baseline is tuned; and the external validation uses a benchmark designed by others.
 
 ## Materials and methods
 
