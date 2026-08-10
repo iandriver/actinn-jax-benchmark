@@ -20,10 +20,12 @@ the main text as Supplementary Figure S1–S4 and Supplementary Table S1–S3.*
 cross-study liver query. Each cell is the fraction of a true type receiving that label;
 outlined cells are off-diagonal calls that are an ancestor or descendant of the truth in the
 Cell Ontology, i.e. error under exact match and credit under ontology-aware concordance. The
-broad pass scores 0.12 exact on the shown cells and recovers +0.22 through the ontology —
-its mistakes are the right lineage at the wrong depth (hepatocyte → midzonal or
-centrilobular hepatocyte; NK cell → hepatic pit cell, the Cell Ontology term for a liver NK
-cell). The focused pass is 0.63 exact, +0.05.
+scores below each panel are means over the twelve truth types drawn, not over the whole
+query, so they run lower than the query-wide figures quoted in the main text. The broad pass
+scores 0.12 exact and recovers +0.22 through the ontology — its mistakes are the right lineage
+at the wrong depth (hepatocyte → midzonal or centrilobular hepatocyte; NK cell → hepatic pit
+cell, the Cell Ontology term for a liver NK cell). The focused pass scores 0.63 exact, +0.05:
+it is already right most of the time, so the ontology has little left to recover.
 
 ![per-class recall, blood and gut](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_perclass_blood_gut_intra.png)
 
@@ -36,13 +38,15 @@ slightly higher than the ten largest (0.865 vs 0.827).
 
 ![per-class recall, lung](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_perclass_lung_intra.png)
 
-**Figure S3.** Per-class recall on the 46-type lung split. Mean pairwise Spearman 0.65;
-median best-minus-worst 0.16.
+**Figure S3.** Per-class recall on the 46-type lung split, drawn as in Figure S2. Methods
+agree more here than on blood+gut: mean pairwise Spearman 0.65, median best-minus-worst 0.16.
 
 ![per-class recall, liver](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_perclass_liver_intra.png)
 
-**Figure S4.** Per-class recall on the 36-type liver split. Mean pairwise Spearman 0.66;
-median best-minus-worst 0.43 — the widest disagreement of the three splits.
+**Figure S4.** Per-class recall on the 36-type liver split, drawn as in Figure S2. Mean
+pairwise Spearman is 0.66, but the median best-minus-worst gap is 0.43 — the widest
+disagreement of the three splits, and a reminder that a high rank correlation between methods
+still leaves large per-class differences.
 
 # Supplementary tables
 
@@ -63,7 +67,11 @@ median best-minus-worst 0.43 — the widest disagreement of the three splits.
 | **Pan-human Azimuth** | [Sarkar et al. 2026] | pretrained | 8-level hierarchical NN, fixed 382-leaf typology | trained `Unassigned` | TensorFlow |
 
 **Table S1.** The benchmarked methods: model family (*tier*), the engine each one runs, whether
-it can decline to call a cell (*rejection*), and the runtime stack it was run on.
+it can decline to call a cell (*rejection*), and the runtime stack it was run on. Bold marks
+the methods added to this panel here.
+
+† `linear-anova-pca` has no method paper: it is a baseline assembled here from scikit-learn
+components, tuned deliberately to be the strongest simple competitor we could build.
 
 | dataset | source | split | tissue | #types | genes | notes |
 |-------------|----------|-------|-----------|------|-------|-----------|
