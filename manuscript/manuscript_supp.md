@@ -35,7 +35,7 @@ header-includes:
 
 
 *Supplement to "Annotating single-cell data on a laptop". Figures and tables referenced from
-the main text as Supplementary Figure S1–S5 and Supplementary Table S1–S3.*
+the main text as Supplementary Figure S1–S4 and Supplementary Table S1–S3.*
 
 # Supplementary figures
 
@@ -50,18 +50,9 @@ its mistakes are the right lineage at the wrong depth (hepatocyte → midzonal o
 centrilobular hepatocyte; NK cell → hepatic pit cell, the Cell Ontology term for a liver NK
 cell). The focused pass is 0.63 exact, +0.05.
 
-![abstain trade-off](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_abstain.png)
-
-**Figure S2.** Abstention with 9 of 36 liver cell types withheld from the reference, so 1,350
-query cells are genuinely out of distribution. *Left:* accuracy on kept cells against
-coverage. *Right:* the fraction of held-out-type cells flagged as the threshold rises.
-actinn-jax traces a usable curve on both axes; CellTypist's probabilities are saturated, so
-thresholds from 0.3 to 0.9 land on a single operating point and its novel-cell detection is
-flat from 0.3 onward.
-
 ![per-class recall, blood and gut](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_perclass_blood_gut_intra.png)
 
-**Figure S3.** Per-class recall for eleven methods on the 86-type blood+gut split, ordered by
+**Figure S2.** Per-class recall for eleven methods on the 86-type blood+gut split, ordered by
 how much the methods disagree (best minus worst recall, right-hand strip). The best and worst
 method differ by a median of 0.30 recall per class and up to 0.73; mean pairwise Spearman
 between methods' per-class recall is 0.58. Class size is not the explanation — the test split
@@ -70,12 +61,12 @@ slightly higher than the ten largest (0.865 vs 0.827).
 
 ![per-class recall, lung](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_perclass_lung_intra.png)
 
-**Figure S4.** Per-class recall on the 46-type lung split. Mean pairwise Spearman 0.65;
+**Figure S3.** Per-class recall on the 46-type lung split. Mean pairwise Spearman 0.65;
 median best-minus-worst 0.16.
 
 ![per-class recall, liver](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_perclass_liver_intra.png)
 
-**Figure S5.** Per-class recall on the 36-type liver split. Mean pairwise Spearman 0.66;
+**Figure S4.** Per-class recall on the 36-type liver split. Mean pairwise Spearman 0.66;
 median best-minus-worst 0.43 — the widest disagreement of the three splits.
 
 # Supplementary tables

@@ -102,9 +102,9 @@ Because wall-clock on a shared machine depends on co-scheduled load, external co
 reported as a ratio to a method present in every run. Environments are pinned and the Cell
 Ontology release is recorded.
 
-**Supplementary material** (separate document) contains Figures S1–S5 — confusion matrices
-with ontology-equivalent errors outlined, the abstain trade-off, and per-class recall for
-eleven methods on three splits — and Tables S1–S3.
+**Supplementary material** (separate document) contains Figures S1–S4 — confusion matrices
+with ontology-equivalent errors outlined, and per-class recall for eleven methods on three
+splits — and Tables S1–S3.
 
 **Workflow components.** A broad reference built from the CELLxGENE Census [CZI Census 2025];
 a coarse→fine hierarchy obtained either from foundation-model embeddings or from Cell Ontology

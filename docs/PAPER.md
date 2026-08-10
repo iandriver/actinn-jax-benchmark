@@ -798,8 +798,16 @@ rises 0.885→0.969 as coverage falls 1.00→0.66 and OOD-flagging climbs 0.00�
 can dial the precision/coverage/novel-cell-detection trade-off. CellTypist's probabilities
 are **saturated** (near 0 or 1): the threshold jumps to 68% OOD-flagged at 0.5 and then does
 not move across 0.5–0.9, giving essentially one operating point rather than a tunable curve.
+The difference is in the shape rather than in any single row (Figure 6).
 scmap-cluster offers a single native "unassigned" decision (no sweep). A tunable threshold is
 what makes the abstain step usable as a routing decision in the workflow of §3.4.
+![the abstain trade-off](figures/fig_abstain.png)
+
+**Figure 6.** What abstention buys, and whether it finds the novel cells. *Left:* accuracy on
+kept cells against the fraction kept. *Right:* the share of held-out-type cells flagged as the
+threshold rises. actinn-jax traces a usable curve on both axes; CellTypist's probabilities are
+saturated, so thresholds from 0.3 to 0.9 land on one operating point.
+
 
 ### 3.6 Foundation-model zero-shot (scPRINT)
 
@@ -894,10 +902,10 @@ Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and
 in minutes — the gap to the top method was largely a gene-budget artifact, not the VAE. But
 more genes is **not** a universal win: it *regresses* tabula_sapiens by ~10 pt (its
 284-cell test batch across 160 fine types overfits reference-specific genes) and saturates
-hypomap (Figure 6). The budget is
+hypomap (Figure 7). The budget is
 **selectable without test labels**: held-out *reference* cross-validation rises for the
 datasets that benefit and is the one signal that *drops* for tabula_sapiens, and a trivial
-query-cells-per-class check independently flags it (Figure 7) —
+query-cells-per-class check independently flags it (Figure 8) —
 so the budget can be set deterministically per dataset. (iii) *Negative control* — a
 CPU-only, UCE-style protein-embedding featurization (expression-weighted mean of ESM2 gene
 embeddings) does **not** help and hurts the hardest case: the pooling discards the per-gene
@@ -906,13 +914,13 @@ in its GPU transformer, not a portable averaging trick.
 
 ![gene budget curve](figures/gene_budget_curve.png)
 
-**Figure 6.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
+**Figure 7.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
 Problems datasets. More genes help most datasets but regress the fine-grained,
 domain-shifted tabula_sapiens.
 
 ![gene budget signals](figures/gene_budget_signals.png)
 
-**Figure 7.** Label-free signals for setting the gene budget without test labels. Held-out
+**Figure 8.** Label-free signals for setting the gene budget without test labels. Held-out
 reference cross-validation and query-cells-per-class both single out tabula_sapiens, the one
 dataset where more genes hurt.
 
@@ -1149,10 +1157,9 @@ condition of that licence and travels inside each shipped model's build record.
 
 **Additional documentation.** The [benchmark repository][repo] carries detailed notes for each result — tuned linear pipeline and sctop baselines; protocloud comparison; scaling and memory to atlas size; survey of cell-type annotation methods; rebuilding the broad reference; distilling pan-human azimuth; and 9 more.
 
-**Supplementary material** (separate document) contains Figures S1–S5 — confusion matrices
-with ontology-equivalent errors outlined, the abstain trade-off, and per-class recall across
-eleven methods on three splits — and Tables S1–S3, the method and dataset descriptions and
-per-dataset accuracy.
+**Supplementary material** (separate document) contains Figures S1–S4 — confusion matrices
+with ontology-equivalent errors outlined, and per-class recall across eleven methods on three
+splits — and Tables S1–S3, the method and dataset descriptions and per-dataset accuracy.
 
 [repo]: https://github.com/iandriver/actinn-jax-benchmark
 [Abdelaal 2019]: https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1795-z
