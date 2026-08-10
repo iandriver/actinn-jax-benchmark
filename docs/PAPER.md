@@ -24,9 +24,10 @@ regularized-linear (CellTypist), a carefully-tuned linear pipeline, parameter-fr
 projection (scTOP), marker/correlation (SingleR, scmap),
 deep probabilistic (scANVI, scArches), an interpretable prototype VAE (ProtoCloud), a
 pretrained pan-human annotator (Pan-human Azimuth), and a foundation model (scPRINT) — across **six** datasets (within-dataset, cross-dataset and
-cross-study; 8 to 86 cell types) plus a five-point **scaling sweep to 49k reference cells**,
-measuring accuracy, macro-F1, ontology-aware concordance, fit and predict time, and
-peak memory on commodity Apple-Silicon hardware.
+cross-study; 8 to 86 cell types), measuring accuracy, macro-F1, ontology-aware concordance,
+fit and predict time, and peak memory on commodity Apple-Silicon hardware. Because a ranking
+measured on a subsampled reference need not hold at full size, we repeat the comparison across
+reference sizes on two atlases, from 3k cells up to atlas scale.
 
 **Accuracy differences among the leading methods are small; their cost differences are not.**
 The top of the accuracy table is a four-way cluster spanning 0.008 (0.831–0.839), led by a
@@ -118,8 +119,9 @@ exists. Where a better-resourced model already exists, the productive move is to
 1. A modern, dependency-light (no TensorFlow) JAX reimplementation of ACTINN with sparse
  preprocessing, chunked atlas-scale prediction, and a cached reference model.
 2. A neutral **13-method × 6-dataset** benchmark of accuracy, speed, and memory on Apple
- Silicon, with a rejection/abstain analysis and a **five-point scaling sweep to 49k
- reference cells**. The panel deliberately includes the baselines most likely to beat a
+ Silicon, with a rejection/abstain analysis and a **sweep across reference sizes up to
+ full atlas scale**, which is what shows that the ranking is a function of how much
+ reference data each method is given. The panel deliberately includes the baselines most likely to beat a
  small MLP — a tuned linear pipeline, scTOP, and ProtoCloud — and the results are reported
  as measured (§3.1, §5). The sweep is also what sets actinn-jax's minibatch policy: at
  ACTINN's fixed batch of 128, a 47k-cell reference costs ~24k tiny update steps, so
@@ -409,10 +411,21 @@ agreement across donors and datasets.
 
 ### 2.9 Scaling protocol
 
-The reference is subsampled to five sizes up to **49k cells** with the query held fixed, so
-that accuracy, fit time, predict time and peak memory are functions of reference size alone.
-Reported per method. The sweep exists to find where one method overtakes another as the
-reference grows, which no single reference size can show
+A benchmark run at one reference size measures that size, not the method. Since a reference
+can be anything from a few thousand cells to a whole atlas, we subsample the reference and hold
+the query fixed, so accuracy, fit time, predict time and peak memory become functions of
+reference size alone.
+
+Each sweep answers a different question. **Cost against size and
+cardinality** (§3.3, Figure 2) covers six reference sizes to 24k cells and separately varies
+the number of cell types, and asks whether inference cost grows with either — the property the
+multi-stage workflow depends on. **Accuracy and memory to atlas scale** covers five sizes
+to 49k cells on lung and four to 47k on the HLiCA liver atlas (§3.3, Figure 3), and asks
+whether the ranking at laptop size survives at atlas size. Sizes are set by capping cells per
+type, which is why they are not round numbers. The lung sweep's top point is the whole atlas
+once the query is held out; the liver atlas is far larger (525k cells), so its sweep stops at
+a matching reference size rather than at its own ceiling, which is what lets the two be read
+against each other.
 
 ### 2.10 External validation protocol
 

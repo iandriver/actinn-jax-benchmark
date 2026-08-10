@@ -14,8 +14,9 @@ datasets** (8–86 cell types; within-dataset, cross-dataset and cross-study spl
 commodity hardware, and validated externally on Open Problems `label_projection`, whose
 datasets, metrics and ranking we did not choose. Accuracy among the leading methods is
 tightly clustered — the top four span 0.008 — while their inference cost differs by two
-orders of magnitude and their peak memory by 2.4×. No method leads everywhere: the ordering
-inverts with reference size, and cost rankings invert with the input feature budget. Because
+orders of magnitude and their peak memory by 2.4×. No method leads everywhere: the accuracy
+ordering inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert
+with the input feature budget. Because
 several methods are now both accurate and cheap, the useful question is not which is best but
 which fits a given job. We show that a low, flat inference cost enables multi-stage
 annotation on a laptop — a shipped ~800-type reference with calibrated abstention, hand-off
