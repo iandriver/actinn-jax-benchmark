@@ -600,9 +600,31 @@ The other axis is the one that matters for the workflows: **predict time stays f
 sub-second across the entire range — 0.08–0.33 s whether the reference has 1k or 24k cells,
 or 5 or 86 types.** Inference cost does not grow with reference size or cardinality, and with the
 train-once/map-many cache the fit cost is paid once and the flat predict cost is all that
-recurs — the regime that matters when a reference is reused across many queries. (The
-scaling script's memory column is process-cumulative and not a clean per-size measurement;
-per-method peak memory is reported from the isolated-subprocess matrix in §3.1.)
+recurs — the regime that matters when a reference is reused across many queries. (This sweep's own
+memory column is process-cumulative and not a clean per-size measurement; the atlas sweep
+below and the matrix of §3.1 both run each method in its own process, and are what the
+memory numbers come from.)
+
+**At atlas scale the ordering changes.** The sweep above stops at 24k cells. Carrying four
+methods to full atlas size — 49k reference cells on lung, 47k on the HLiCA liver atlas —
+reverses the accuracy ranking (Figure 3A, B). ProtoCloud goes from the weakest method at 3k
+cells (0.722 lung, 0.581 liver) to the strongest at full scale (**0.976** and **0.905**),
+clear of the linear pipeline (0.939, 0.863) and actinn-jax (0.936, 0.824), at 19× actinn-jax's
+CPU fit cost. scTOP gains nothing from scale on lung (0.819 → 0.846) and loses ground on liver
+(0.657 → 0.583). Peak memory grows for every method, but the spread stays **bounded at ~2×**
+rather than widening (Figure 3C): the linear pipeline is heaviest throughout — 13.2 GB against
+actinn-jax's 6.1 GB at 49k lung cells, a 2.15× ratio — and scTOP crosses over from lightest to
+heaviest as its rank processing densifies (9.3 vs 6.5 GB at 47k liver cells). Conclusions drawn
+from subsampled references do not transfer to atlas scale, in either direction.
+
+![accuracy and memory against reference size on two atlases](figures/fig_atlas_scaling.png)
+
+**Figure 3.** Accuracy and peak memory against reference size, four methods carried to full
+atlas scale on two datasets. *A:* lung, 3k → 49k reference cells. *B:* the HLiCA liver atlas,
+2.7k → 47k, an independent replication of the same reversal. *C:* peak memory over both
+sweeps. Fit time is not plotted: the 47k liver point was measured under CPU contention, so a
+cost axis there would report scheduling rather than scaling.
+
 
 ### 3.4 The broad→focused annotation workflow
 
@@ -613,7 +635,7 @@ inference (§3.1, §3.3), the whole workflow runs on a laptop.
 
 ![the broad pass and the focused pass on one query](figures/fig_workflow_umap_ondata.png)
 
-**Figure 3.** The workflow on a withheld HLiCA liver study (3,396 cells), same embedding
+**Figure 4.** The workflow on a withheld HLiCA liver study (3,396 cells), same embedding
 throughout. *Left:* the shipped census reference spreads 137 of its 798 labels over the query
 (concordance **0.34**) — it is not trying to name subtypes. *Centre:* those calls resolved to
 tissue through the reference's per-class tissue map; **76%** of tissue-specific calls say
@@ -691,7 +713,7 @@ route does apply to mouse, but its one expensive step does not travel cheaply: t
 groups are found by Ward-clustering scPRINT embeddings of per-type expression centroids, which
 wants a GPU, and scPRINT's mouse support is untested here.
 
-That clustering step is the only one that has to be replaced (Figure 4A). The census already
+That clustering step is the only one that has to be replaced (Figure 5A). The census already
 labels every cell with a Cell Ontology term, and CL encodes the relation the embedding
 clustering is recovering — which cell types are kinds of the same thing. Describing each type
 by the CL terms it descends from and clustering *those*, with the same Ward linkage, gives a
@@ -699,7 +721,7 @@ hierarchy that is free, deterministic and species-independent.
 
 ![building a coarse hierarchy without a GPU](figures/fig_ontology_hierarchy.png)
 
-**Figure 4.** Replacing the one step of the reference build that needs a GPU. *A:* both routes
+**Figure 5.** Replacing the one step of the reference build that needs a GPU. *A:* both routes
 to the coarse groups; only the middle step differs. *B:* the 21 coarse groups of
 `broad_mouse_v1`, each named by the Cell Ontology term its members share, with a percentage
 where that term covers most but not all of the group; the gray bar is the single group whose
@@ -710,13 +732,13 @@ held-out human lung atlas.
 **The groups it produces are lineages.** Twenty of the 21 mouse groups resolve to one CL
 lineage each — lymphocytes, neurons, epithelium, endothelium, mononuclear phagocytes, kidney
 tubule — and the twenty-first is a catch-all of 48 types whose census labels (`cell`,
-`blood cell`) are too vague to place anywhere (Figure 4B).
+`blood cell`) are too vague to place anywhere (Figure 5B).
 
 **The grouping is doing the work, not the splitting.** Any partition gives each fine
 classifier a smaller problem, so the substitution needs a control. Built from one human corpus
 (51,346 cells / 867 types) and scored on the held-out lung atlas, a random grouping with the
 same group sizes scores **0.539** — no better than the **0.547** of no hierarchy at all —
-while the ontology grouping reaches **0.616** (Figure 4C). What matters is *which* types share
+while the ontology grouping reaches **0.616** (Figure 5C). What matters is *which* types share
 a group. Each group has its own fine classifier and the coarse call decides which one ever
 sees the cell, so a group pays off only if the coarse classifier can recognize the group *and*
 the right answer is inside it. Lineage groups manage both; same-sized random groups manage
@@ -872,10 +894,10 @@ Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and
 in minutes — the gap to the top method was largely a gene-budget artifact, not the VAE. But
 more genes is **not** a universal win: it *regresses* tabula_sapiens by ~10 pt (its
 284-cell test batch across 160 fine types overfits reference-specific genes) and saturates
-hypomap (Figure 5). The budget is
+hypomap (Figure 6). The budget is
 **selectable without test labels**: held-out *reference* cross-validation rises for the
 datasets that benefit and is the one signal that *drops* for tabula_sapiens, and a trivial
-query-cells-per-class check independently flags it (Figure 6) —
+query-cells-per-class check independently flags it (Figure 7) —
 so the budget can be set deterministically per dataset. (iii) *Negative control* — a
 CPU-only, UCE-style protein-embedding featurization (expression-weighted mean of ESM2 gene
 embeddings) does **not** help and hurts the hardest case: the pooling discards the per-gene
@@ -884,13 +906,13 @@ in its GPU transformer, not a portable averaging trick.
 
 ![gene budget curve](figures/gene_budget_curve.png)
 
-**Figure 5.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
+**Figure 6.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
 Problems datasets. More genes help most datasets but regress the fine-grained,
 domain-shifted tabula_sapiens.
 
 ![gene budget signals](figures/gene_budget_signals.png)
 
-**Figure 6.** Label-free signals for setting the gene budget without test labels. Held-out
+**Figure 7.** Label-free signals for setting the gene budget without test labels. Held-out
 reference cross-validation and query-cells-per-class both single out tabula_sapiens, the one
 dataset where more genes hurt.
 
@@ -1089,14 +1111,11 @@ scientist can run, inspect, and run again.
  **bounded at ~2–3×** (2.15× at full scale) rather than widening with data, so there is no
  scaling cliff and no regime tested where the linear pipeline stops being usable. Memory
  in this setting should be measured, not extrapolated.
-- **At atlas scale the ordering changes and the deep model leads.** Scaling the lung reference
- 3k → 49k cells, **ProtoCloud goes from worst (0.722) to best (0.976)**, clear of actinn-jax
- (0.936) and the linear pipeline (0.939), at 19× the CPU fit cost; scTOP gains nothing from
- scale (0.819 → 0.846) and loses its memory edge (1.22× actinn-jax at 49k). This replicates
- on the HLiCA liver atlas (36 types, 525k cells, sweep to 47k ref): same bounded ~2× memory
- band, same ProtoCloud reversal (0.581 → 0.905), same scTOP stagnation (0.657 → 0.583), with
- scTOP crossing over to heavier than actinn-jax (1.41×). Conclusions drawn from subsampled
- references do not transfer to atlas scale, in either direction.
+- **The main matrix uses subsampled references, and its ranking does not survive atlas scale.**
+ Carried to 49k lung and 47k liver reference cells, ProtoCloud moves from the weakest method
+ to the strongest and scTOP crosses from the lightest to heavier than actinn-jax (§3.3,
+ Figure 3). The accuracy ordering of Table 3 describes laptop-sized references, which is the
+ regime this paper is about, but it should not be read as a ranking at atlas scale.
 - **Annotation only.** Cross-species transfer and disease-state prediction — the tasks where
  Souza & Mehta find the largest foundation-model deficits, and where a fast method would be
  most attractive — are outside this benchmark's scope (human, within/cross-dataset
