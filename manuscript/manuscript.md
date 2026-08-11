@@ -589,8 +589,8 @@ methods to full atlas size — 49k reference cells on lung, 47k on the HLiCA liv
 reverses the accuracy ranking (Figure 3A, B). ProtoCloud goes from the weakest method at 3k
 cells (0.722 lung, 0.581 liver) to the strongest at full scale (**0.976** and **0.905**),
 clear of the linear pipeline (0.939, 0.863) and actinn-jax (0.936, 0.824), at 19× actinn-jax's
-CPU fit cost. scTOP gains nothing from scale on lung (0.819 → 0.846) and loses ground on liver
-(0.657 → 0.583). Peak memory grows for every method, but the spread stays **bounded at ~2×**
+CPU fit cost. scTOP gains little from scale on lung (0.819 → 0.846, barely outside its
+interval) and loses ground on liver (0.657 → 0.583). Peak memory grows for every method, but the spread stays **bounded at ~2×**
 rather than widening (Figure 3C): the linear pipeline is heaviest throughout — 13.2 GB against
 actinn-jax's 6.1 GB at 49k lung cells, a 2.15× ratio — and scTOP crosses over from lightest to
 heaviest as its rank processing densifies (9.3 vs 6.5 GB at 47k liver cells). Conclusions drawn
@@ -601,8 +601,11 @@ from subsampled references do not transfer to atlas scale, in either direction.
 **Figure 3.** Accuracy and peak memory against reference size, four methods carried to full
 atlas scale on two datasets. *A:* lung, 3k → 49k reference cells. *B:* the HLiCA liver atlas,
 2.7k → 47k, an independent replication of the same reversal. *C:* peak memory over both
-sweeps. Fit time is not plotted: the 47k liver point was measured under CPU contention, so a
-cost axis there would report scheduling rather than scaling.
+sweeps. Error bars on *A* and *B* are 95% binomial intervals on the query, which grows with
+the reference (1,035 to 16,398 cells on lung), so they narrow from left to right; each point
+is a single run, so they cover sampling of the query and not run-to-run variation. Peak memory
+is not a proportion and carries none. Fit time is not plotted: the 47k liver point was measured
+under CPU contention, so a cost axis there would report scheduling rather than scaling.
 
 
 ## The broad→focused annotation workflow

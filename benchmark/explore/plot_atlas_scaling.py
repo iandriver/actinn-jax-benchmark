@@ -29,6 +29,7 @@ warnings.filterwarnings("ignore")
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 STYLE = {
@@ -40,14 +41,26 @@ STYLE = {
 ORDER = ["protocloud", "linear-anova-pca", "actinn-jax", "sctop"]
 
 
-def curve(ax, d, value, scale=1.0):
+def curve(ax, d, value, scale=1.0, binomial=False):
+    """One line per method.
+
+    ``binomial`` adds 95% intervals for a proportion measured on the query. They cover
+    sampling of the query cells only -- each point is a single run, so run-to-run variation
+    is not in them, and they are a floor on the uncertainty rather than all of it. Peak
+    memory is not a proportion and gets none.
+    """
     for m in ORDER:
         g = d[d.method == m].sort_values("n_ref")
         if g.empty:
             continue
         st = STYLE[m]
-        ax.plot(g["n_ref"] / 1000, g[value] * scale, lw=1.9, markersize=5.2,
-                markeredgecolor="white", markeredgewidth=0.7, **st)
+        y = g[value] * scale
+        err = None
+        if binomial:
+            err = 1.96 * np.sqrt(g[value] * (1 - g[value]) / g["n_query"])
+        ax.errorbar(g["n_ref"] / 1000, y, yerr=err, lw=1.9, markersize=5.2,
+                    markeredgecolor="white", markeredgewidth=0.7,
+                    capsize=2.5, elinewidth=0.9, **st)
     ax.set_xscale("log")
     ax.set_xticks([3, 8, 20, 50])
     ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
@@ -70,7 +83,7 @@ def mark_reversal(ax, d):
                 textcoords="offset points", xytext=(9, 3), fontsize=7,
                 color=STYLE["protocloud"]["color"], va="bottom")
     ax.annotate(f"best\n{hi.accuracy:.3f}", (hi.n_ref / 1000, hi.accuracy),
-                textcoords="offset points", xytext=(-6, -20), fontsize=7,
+                textcoords="offset points", xytext=(-6, -22), fontsize=7,
                 color=STYLE["protocloud"]["color"], ha="right", va="bottom")
 
 
@@ -89,13 +102,13 @@ def main():
 
     fig, axes = plt.subplots(1, 3, figsize=(13.4, 4.15))
 
-    curve(axes[0], lung, "accuracy")
+    curve(axes[0], lung, "accuracy", binomial=True)
     mark_reversal(axes[0], lung)
     axes[0].set_title("A  Lung atlas: the ranking inverts with scale", fontsize=10,
                       loc="left", pad=7)
     axes[0].set_ylabel("accuracy", fontsize=8.8)
 
-    curve(axes[1], liver, "accuracy")
+    curve(axes[1], liver, "accuracy", binomial=True)
     mark_reversal(axes[1], liver)
     axes[1].set_title("B  HLiCA liver atlas: the same reversal", fontsize=10,
                       loc="left", pad=7)
