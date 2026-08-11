@@ -704,9 +704,11 @@ hierarchy that is free, deterministic and species-independent.
 to the coarse groups; only the middle step differs. *B:* the 21 coarse groups of
 `broad_mouse_v1`, each named by the Cell Ontology term its members share, with a percentage
 where that term covers most but not all of the group; the gray bar is the single group whose
-members share no term below the generic ones. *C:* the ontology grouping against no hierarchy
-and against a random grouping with the same group sizes, scored by ontology concordance on the
-held-out human lung atlas.
+members share no term below the generic ones. *C:* the ontology grouping against no hierarchy and
+against a random grouping with the same group sizes, scored by ontology concordance on the
+held-out human lung atlas. Bars start at zero and error bars are 95% binomial intervals on the
+2,161 scored cells; the gain over no hierarchy clears that interval and the gap between the two
+controls does not.
 
 **The groups it produces are lineages.** Twenty of the 21 mouse groups resolve to one CL
 lineage each — lymphocytes, neurons, epithelium, endothelium, mononuclear phagocytes, kidney
@@ -715,9 +717,11 @@ tubule — and the twenty-first is a catch-all of 48 types whose census labels (
 
 **The grouping is doing the work, not the splitting.** Any partition gives each fine
 classifier a smaller problem, so the substitution needs a control. Built from one human corpus
-(51,346 cells / 867 types) and scored on the held-out lung atlas, a random grouping with the
-same group sizes scores **0.539** — no better than the **0.547** of no hierarchy at all —
-while the ontology grouping reaches **0.616** (Figure 5C). What matters is *which* types share
+(51,346 cells / 867 types) and scored on the held-out lung atlas, the ontology grouping reaches
+**0.616** against **0.547** for no hierarchy at all — a gain of **0.069**, or 13% relative,
+which on 2,161 scored cells sits outside the 95% interval of ±0.029. A random grouping with the
+same group sizes scores **0.539**, which is 0.008 from the no-hierarchy control and inside that
+interval (Figure 5C). What matters is *which* types share
 a group. Each group has its own fine classifier and the coarse call decides which one ever
 sees the cell, so a group pays off only if the coarse classifier can recognize the group *and*
 the right answer is inside it. Lineage groups manage both; same-sized random groups manage

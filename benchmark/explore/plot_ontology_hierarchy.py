@@ -22,6 +22,7 @@ Three panels, because the claim has three parts a table cannot carry:
 import argparse
 import collections
 import json
+import math
 import os
 import sys
 import warnings
@@ -169,30 +170,49 @@ def panel_b(ax, groups):
 
 
 def panel_c(ax, abl):
-    """Ontology vs flat vs random, same group sizes."""
+    """Ontology vs flat vs random, same group sizes.
+
+    Bars start at zero and carry 95% binomial intervals. An axis cropped to the top of the
+    range would make 0.616 against 0.547 look like a rout, and 0.069 is not a rout -- but
+    nor is it noise, and a reader given three bare bars has no way to tell which. The
+    interval settles it: the gain to the ontology grouping clears it, the gap between the
+    two controls does not.
+    """
     order = ["ontology", "flat", "random"]
     pretty = {"ontology": "Cell Ontology\nlineage", "flat": "no hierarchy",
               "random": "random grouping,\nsame group sizes"}
+    n = int(abl["n_scored"].iloc[0])
     vals = [float(abl.loc[abl.hierarchy == h, "ontology"].iloc[0]) for h in order]
-    cols = [CPU, MUTE, MUTE]
-    ax.bar(range(3), vals, color=cols, width=0.62)
-    for i, v in enumerate(vals):
-        ax.text(i, v + 0.006, f"{v:.3f}", ha="center", fontsize=8, color=INK,
+    err = [1.96 * math.sqrt(v * (1 - v) / n) for v in vals]
+
+    ax.bar(range(3), vals, color=[CPU, MUTE, MUTE], width=0.60,
+           yerr=err, capsize=3.5, error_kw=dict(ecolor=INK, lw=1.0))
+    for i, (v, e) in enumerate(zip(vals, err)):
+        ax.text(i, v + e + 0.012, f"{v:.3f}", ha="center", fontsize=8, color=INK,
                 fontweight="bold" if i == 0 else "normal")
     ax.set_xticks(range(3))
     ax.set_xticklabels([pretty[h] for h in order], fontsize=7.4)
     ax.set_ylabel("ontology concordance", fontsize=8.5)
-    ax.set_ylim(0.50, max(vals) + 0.035)
+    ax.set_ylim(0, 0.90)
     ax.tick_params(labelsize=7.5)
     for s in ("top", "right"):
         ax.spines[s].set_visible(False)
-    # the control is the whole point: random == flat, so it is not the splitting that helps
-    # legs on the outer bar edges, not the centers, so they miss the value labels
-    bracket = max(vals[1], vals[2]) + 0.016
-    ax.plot([0.72, 0.72, 2.28, 2.28], [vals[1] + 0.004, bracket, bracket, vals[2] + 0.004],
+
+    # the gain, stated: without it the reader cannot tell 0.069 from a rounding difference
+    d = vals[0] - vals[1]
+    de = 1.96 * math.sqrt(vals[0] * (1 - vals[0]) / n + vals[1] * (1 - vals[1]) / n)
+    top = max(v + e for v, e in zip(vals, err))
+    ax.plot([0, 0, 1, 1], [top + 0.05, top + 0.09, top + 0.09, top + 0.05], color=INK, lw=0.9)
+    ax.text(0.5, top + 0.10, f"+{d:.3f}  (95% CI ±{de:.3f})", ha="center", va="bottom",
+            fontsize=7.2, color=INK)
+    # and the control, which is the point of including it at all
+    ax.plot([1, 1, 2, 2], [top + 0.005, top + 0.028, top + 0.028, top + 0.005],
             color=MUTE, lw=0.9)
-    ax.text(1.5, bracket + 0.003, "splitting alone buys nothing", ha="center",
-            va="bottom", fontsize=6.9, color=MUTE)
+    ax.text(1.5, top + 0.032, "+0.008 — inside the interval", ha="center", va="bottom",
+            fontsize=6.9, color=MUTE)
+    # below the tick labels: bars now start at zero, so the inside of the axes is occupied
+    ax.set_xlabel(f"n = {n:,} scored cells, 867 classes", fontsize=7.2, color=MUTE,
+                  labelpad=6)
     ax.set_title("C  It is which types share a group,\n     not that the problem was split",
                  fontsize=10, loc="left", pad=6)
 
