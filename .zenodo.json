@@ -1,0 +1,35 @@
+{
+  "title": "actinn-jax-benchmark: harness, configurations and results for \"Annotating single-cell data on a laptop\"",
+  "description": "<p>Benchmark harness, per-method adapters, run configurations, environment lockfiles, result tables and figure scripts for the preprint <em>Annotating single-cell data on a laptop: a benchmark of annotation methods and practical low-memory workflows, with actinn-jax</em>.</p><p>This archive is the code and the derived result tables. The pre-trained references it builds on are deposited separately at doi:10.5281/zenodo.21688150, and the six benchmark datasets are third-party and cited in the paper rather than redeposited here.</p>",
+  "upload_type": "software",
+  "license": "MIT",
+  "access_right": "open",
+  "creators": [
+    {
+      "name": "Driver, Ian",
+      "affiliation": "Independent Researcher, Detroit, MI, USA"
+    }
+  ],
+  "keywords": [
+    "single-cell RNA-seq",
+    "cell type annotation",
+    "reference mapping",
+    "benchmark",
+    "Cell Ontology",
+    "JAX"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.5281/zenodo.21688150",
+      "relation": "references",
+      "resource_type": "dataset",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "https://github.com/iandriver/actinn-jax",
+      "relation": "requires",
+      "resource_type": "software",
+      "scheme": "url"
+    }
+  ]
+}

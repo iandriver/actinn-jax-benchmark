@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this software or its results, please cite the preprint below."
+title: "actinn-jax-benchmark"
+abstract: >-
+  Benchmark harness, per-method adapters, run configurations, environment
+  lockfiles, result tables and figure scripts for a thirteen-method comparison
+  of single-cell cell-type annotation methods on commodity hardware.
+type: software
+license: MIT
+repository-code: "https://github.com/iandriver/actinn-jax-benchmark"
+authors:
+  - family-names: Driver
+    given-names: Ian
+    affiliation: "Independent Researcher, Detroit, MI, USA"
+keywords:
+  - single-cell RNA-seq
+  - cell type annotation
+  - reference mapping
+  - benchmark
+  - Cell Ontology
+  - JAX
