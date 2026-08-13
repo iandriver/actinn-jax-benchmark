@@ -1,6 +1,6 @@
 ---
 title: |
-  Accuracy is not the binding constraint in single-cell annotation: a benchmark of cost, scaling and workflow
+  A benchmark of cell-type annotation methods for single-cell data: cost, not accuracy, distinguishes them
 author:
   - Ian Driver$^{\ast}$
 date: ""
