@@ -62,9 +62,12 @@ class ScANVI(AnnotationMethod):
         sca = scvi.model.SCANVI.from_scvi_model(m, unlabeled_category=UNKNOWN)
         sca.train(max_epochs=self.scanvi_epochs, accelerator=acc,
                   enable_progress_bar=False)
-        pred = np.asarray(sca.predict())
+        soft = sca.predict(soft=True)
+        pred = np.asarray(soft.idxmax(axis=1))
+        conf = soft.to_numpy().max(axis=1).astype(np.float32)
         qmask = (comb.obs["_split"] == "query").to_numpy()
-        return Predictions(cell_ids=list(query.obs_names), labels=pred[qmask])
+        return Predictions(cell_ids=list(query.obs_names), labels=pred[qmask],
+                           probabilities=conf[qmask])
 
 
 @register
@@ -118,4 +121,7 @@ class ScArches(AnnotationMethod):
         qm = scvi.model.SCANVI.load_query_data(qa, self._model)
         qm.train(max_epochs=self.query_epochs, accelerator=_accelerator(),
                  enable_progress_bar=False, plan_kwargs={"weight_decay": 0.0})
-        return Predictions(cell_ids=list(query.obs_names), labels=np.asarray(qm.predict()))
+        soft = qm.predict(soft=True)
+        return Predictions(cell_ids=list(query.obs_names),
+                           labels=np.asarray(soft.idxmax(axis=1)),
+                           probabilities=soft.to_numpy().max(axis=1).astype(np.float32))

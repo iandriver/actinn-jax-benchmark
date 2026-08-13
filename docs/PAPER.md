@@ -770,15 +770,16 @@ tissue → subtype/state), not just a classifier, at classical-method speed thro
 
 Holding out 9 of 36 cell types entirely from the HLiCA liver reference (so 1,350 query
 cells are genuinely out-of-distribution), we sweep a confidence threshold over every method
-that returns a per-cell confidence. Six do. SVM, SingleR and scPRINT return none and cannot be
-swept at all; scmap-cluster has a single native "unassigned" decision rather than a threshold;
-and scANVI and scArches expose class probabilities in principle, but the adapters used here
-return hard labels only, so they are absent for an implementation reason rather than a
-methodological one.
+that returns a per-cell confidence. Eight do; for scANVI and scArches the confidence is the
+maximum class posterior from the model's soft prediction. SVM, SingleR and scPRINT return no
+per-cell confidence and cannot be swept, and scmap-cluster has a single native "unassigned"
+decision rather than a threshold.
 
 | method | p≥0.5: acc / cov / OOD | p≥0.7 | p≥0.9 |
 |---|---|---|---|
 | **actinn-jax** | 0.919 / 0.93 / 0.30 | 0.946 / 0.84 / 0.52 | 0.969 / 0.66 / 0.73 |
+| scArches | 0.902 / 0.94 / 0.20 | 0.941 / 0.82 / 0.44 | 0.983 / 0.61 / 0.71 |
+| scANVI | 0.893 / 0.96 / 0.13 | 0.929 / 0.88 / 0.34 | 0.965 / 0.74 / 0.60 |
 | linear-anova-pca | 0.894 / 0.99 / 0.07 | 0.916 / 0.93 / 0.25 | 0.941 / 0.85 / 0.46 |
 | kNN | 0.830 / 0.86 / 0.28 | 0.921 / 0.61 / 0.63 | 0.988 / 0.36 / 0.83 |
 | CellTypist | 0.936 / 0.68 / 0.68 | 0.936 / 0.68 / 0.68 | 0.937 / 0.68 / 0.68 |
@@ -790,23 +791,27 @@ reference, so 1,350 query cells are out-of-distribution. Each cell reads accurac
 cells / fraction of cells kept / fraction of held-out-type cells flagged. The full five-point
 sweep is in Figure 6 and in the result tables.
 
-**A usable abstain needs the threshold to move both quantities, and only three of the six do.**
-actinn-jax, the linear pipeline and kNN each trade coverage for accuracy smoothly across the
+**Five of the eight give a threshold that does something; three do not.** actinn-jax,
+scArches, scANVI, the linear pipeline and kNN all trade coverage for accuracy across the
 range. The other three fail in different ways: CellTypist's probabilities are saturated near 0
 or 1, so every threshold from 0.3 to 0.9 lands on one operating point; scTOP's projection score
 is not a calibrated probability and discards all but 6% of the query by p≥0.5; ProtoCloud's
 ambiguity flag barely moves until 0.9.
 
-Among the three that work, the trade-offs differ. kNN buys accuracy by dumping coverage —
-0.988 on the 36% of cells it keeps. actinn-jax and the linear pipeline sit at comparable
-coverage, and actinn-jax flags more of the genuinely novel cells at every threshold (0.73
-against 0.46 at p≥0.9), which is what the abstain step is for in the workflow of §3.4: a
-threshold that separates novel cells from confident ones is a routing decision, and one that
-merely lowers coverage is not.
+Among the five that work, abstain quality does not separate them the way cost does.
+actinn-jax and scArches are effectively tied — at p≥0.9, 0.969 accuracy on 66% of cells with
+73% of novel cells flagged against 0.983 on 61% with 71% flagged — and scANVI is close behind.
+kNN reaches the highest novelty detection (83%) by keeping only 36% of the query, which is a
+different operating regime rather than a better one, and the linear pipeline is the weakest
+here, flagging 46% of novel cells at the threshold where actinn-jax flags 73%. The distinction
+worth drawing is therefore not that actinn-jax abstains better than the deep methods but that
+it abstains as well for 0.67 s of predict time against scArches's 21.4 s and scANVI's 89.2 s
+(Table 3) — the same accuracy-at-a-fraction-of-the-cost pattern §3.1 reports, applied to the
+mechanism the workflow of §3.4 routes on.
 
 ![the abstain trade-off](figures/fig_abstain.png)
 
-**Figure 6.** What abstention buys, and whether it finds the novel cells, for the six methods
+**Figure 6.** What abstention buys, and whether it finds the novel cells, for the eight methods
 that return a per-cell confidence. *Left:* accuracy on kept cells against the fraction kept.
 *Right:* the share of held-out-type cells flagged as the threshold rises. A usable mechanism
 moves along both axes; CellTypist's saturated probabilities collapse four thresholds onto one

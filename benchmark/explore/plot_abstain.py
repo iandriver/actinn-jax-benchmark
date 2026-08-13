@@ -25,16 +25,20 @@ import pandas as pd
 
 # Okabe-Ito, so the six curves stay separable in grayscale and to colorblind readers
 STYLE = {
-    "actinn-jax":       dict(color="#0072B2", marker="o", lw=2.1, zorder=6),
+    "actinn-jax":       dict(color="#0072B2", marker="o", lw=2.2, zorder=8),
+    "scarches":         dict(color="#A6761D", marker="*", lw=1.8, zorder=7),
+    "scanvi":           dict(color="#6A3D9A", marker="X", lw=1.8, zorder=6),
     "linear-anova-pca": dict(color="#009E73", marker="s", lw=1.8, zorder=5),
     "knn":              dict(color="#56B4E9", marker="v", lw=1.8, zorder=4),
     "celltypist":       dict(color="#D55E00", marker="D", lw=1.8, zorder=3),
     "protocloud":       dict(color="#E69F00", marker="P", lw=1.8, zorder=2),
     "sctop":            dict(color="#CC79A7", marker="^", lw=1.8, zorder=1),
 }
-PRETTY = {"linear-anova-pca": "linear pipeline", "knn": "kNN",
-          "celltypist": "CellTypist", "protocloud": "ProtoCloud", "sctop": "scTOP"}
-ORDER = ["actinn-jax", "linear-anova-pca", "knn", "celltypist", "protocloud", "sctop"]
+PRETTY = {"linear-anova-pca": "linear pipeline", "knn": "kNN", "scanvi": "scANVI",
+          "scarches": "scArches", "celltypist": "CellTypist",
+          "protocloud": "ProtoCloud", "sctop": "scTOP"}
+ORDER = ["actinn-jax", "scarches", "scanvi", "linear-anova-pca", "knn",
+         "celltypist", "protocloud", "sctop"]
 
 
 def main():
@@ -98,9 +102,9 @@ def main():
     fig.suptitle("Abstention is only useful if the threshold does something: "
                  "9 of 36 liver cell types withheld", fontsize=11.5, y=1.0)
     h, l = ax1.get_legend_handles_labels()
-    fig.legend(h, l, frameon=False, fontsize=8.2, ncol=6, loc="lower center",
-               bbox_to_anchor=(0.5, -0.045))
-    fig.tight_layout(rect=(0, 0.02, 1, 0.95))
+    fig.legend(h, l, frameon=False, fontsize=8.0, ncol=4, loc="lower center",
+               bbox_to_anchor=(0.5, -0.10))
+    fig.tight_layout(rect=(0, 0.05, 1, 0.95))
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     fig.savefig(a.out, dpi=200, bbox_inches="tight")
     print(f"wrote {a.out}")
