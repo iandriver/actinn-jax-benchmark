@@ -34,7 +34,7 @@ header-includes:
 \begin{center}\small Independent Researcher, Detroit, MI, USA \\ $^{\ast}$ Correspondence: driver.ian@gmail.com\end{center}
 
 
-*Supplement to "Annotating single-cell data on a laptop". Figures and tables referenced from
+*Supplement to "A benchmark of cell-type annotation methods for single-cell data". Figures and tables referenced from
 the main text as Supplementary Figure S1–S4 and Supplementary Table S1–S3.*
 
 # Supplementary figures

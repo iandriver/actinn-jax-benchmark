@@ -1,6 +1,6 @@
 ---
 title: |
-  Annotating single-cell data on a laptop: a benchmark of annotation methods and practical low-memory workflows, with actinn-jax
+  A benchmark of cell-type annotation methods for single-cell data: cost, not accuracy, distinguishes them
 author:
   - Ian Driver$^{\ast}$
 date: ""
