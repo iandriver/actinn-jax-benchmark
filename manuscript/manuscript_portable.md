@@ -1091,10 +1091,10 @@ scientist can run, inspect, and run again.
 Two repositories hold everything needed to reproduce this work. The
 [**benchmark repository**][repo] carries the harness, the per-method adapters, the run
 configurations that produce every number reported here, the environment lockfiles, the
-result tables including the unified eleven-method matrix, and the figure scripts. The state
-that produced this manuscript is tagged
-[**v1.0.0**](https://github.com/iandriver/actinn-jax-benchmark/releases/tag/v1.0.0), which is
-the version to cite for reproduction; the default branch may move on. The
+result tables including the unified eleven-method matrix, and the figure scripts. It is
+archived at [doi:10.5281/zenodo.21911372](https://doi.org/10.5281/zenodo.21911372) (MIT; a
+concept DOI that resolves to the most recent release), which is what to cite for reproduction
+rather than the default branch, since the branch may move on. The
 [**actinn-jax package**](https://github.com/iandriver/actinn-jax) is on PyPI
 (`pip install actinn-jax`). Rebuilding the shipped broad reference is a single documented
 command; the distilled broad-pass reference, the pan-mouse reference and the Cell-Ontology

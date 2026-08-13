@@ -1,0 +1,51 @@
+ZENODO MANUAL UPLOAD — field-by-field
+Upload file: manuscript/submission/actinn-jax-benchmark-v1.0.0.tar.gz  (47 MB)
+New upload at: https://zenodo.org/uploads/new
+
+--------------------------------------------------------------------------
+Resource type
+    Software
+
+Title
+    actinn-jax-benchmark: harness, configurations and results for "Annotating
+    single-cell data on a laptop"
+
+Creators
+    Driver, Ian  —  Independent Researcher, Detroit, MI, USA
+
+Version
+    v1.0.0
+
+License
+    MIT
+
+Description
+    Benchmark harness, per-method adapters, run configurations, environment
+    lockfiles, result tables and figure scripts for the preprint "Annotating
+    single-cell data on a laptop: a benchmark of annotation methods and
+    practical low-memory workflows, with actinn-jax".
+
+    This archive is the source tree at release v1.0.0, commit 15c9cae, which is
+    the state that produced every number and figure in that manuscript.
+
+    The archive is code and derived result tables. The pre-trained references it
+    builds on are deposited separately at doi:10.5281/zenodo.21688150. The six
+    benchmark datasets are third-party (HLiCA, HLCA, Krasnow, IBDverse, pbmc3k
+    and the CELLxGENE Census) and are cited in the paper rather than redeposited.
+
+Keywords
+    single-cell RNA-seq; cell type annotation; reference mapping; benchmark;
+    Cell Ontology; JAX
+
+Related works
+    References  —  DOI  —  10.5281/zenodo.21688150
+        (the pre-trained references this code builds and evaluates)
+    Is supplement to  —  URL  —  https://github.com/iandriver/actinn-jax-benchmark
+    Requires  —  URL  —  https://github.com/iandriver/actinn-jax
+--------------------------------------------------------------------------
+
+Integrity, if you want to record it:
+    sha256  89c27ffc2397f9f04b1fdc0b63c87e3702345db3880748f66b65f07458a79545
+
+After publishing, send me the DOI and I will put it in Data & code availability
+next to the references DOI, and rebuild.
