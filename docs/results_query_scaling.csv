@@ -1,0 +1,9 @@
+method,n_query,predict_s,cells_per_s,peak_gb,fit_s,n_ref,acc_withheld_study,n_withheld,completed
+actinn-jax,50000,7.72,6475.0,8.45,41.7,17753,0.721,5413,True
+actinn-jax,125000,16.42,7613.0,10.36,41.7,17753,0.7247,13586,True
+actinn-jax,250000,41.15,6076.0,9.95,41.7,17753,0.721,26983,True
+actinn-jax,524699,57.9,9063.0,14.98,41.7,17753,0.7196,56925,True
+linear-anova-pca,50000,16.09,3107.0,11.61,11.8,17753,0.6924,5413,True
+linear-anova-pca,125000,50.99,2451.0,24.09,13.3,17753,0.7043,13586,True
+linear-anova-pca,250000,148.9,1679.0,24.7,11.3,17753,0.7025,26983,True
+linear-anova-pca,524699,,,15.3,11.3,17753,,56925,False

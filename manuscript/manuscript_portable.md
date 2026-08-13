@@ -3,7 +3,7 @@ title: "A benchmark of cell-type annotation methods for single-cell data: cost, 
 author: "Ian Driver"
 date: ""
 abstract: |
-  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** — classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model — across **six datasets** (8–86 cell types; within-dataset, cross-dataset and cross-study splits) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.4×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but which fits a given job. We show that a low, flat inference cost makes multi-stage annotation practical on a laptop, using **actinn-jax**, a JAX reimplementation of ACTINN with a cached train-once/map-many reference: a shipped ~800-type reference with calibrated abstention hands off to a user's own focused reference (cross-study liver 0.23/0.58 → 0.72/0.86, exact/ontology), with resolution below the cell-type label and cluster-level novelty screening. The same route builds a pan-mouse reference with no GPU, and distills **Pan-human Azimuth** into a broad-pass model matching its concordance at 6–9× its throughput. We release the reimplementation, the harness and the pre-trained references.
+  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** — classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model — across **six datasets** (8–86 cell types; within-dataset, cross-dataset and cross-study splits) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.4×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but which fits a given job. We show that a low, flat inference cost makes multi-stage annotation practical on a laptop, using **actinn-jax**, a JAX reimplementation of ACTINN with a cached train-once/map-many reference: a shipped ~800-type reference with calibrated abstention hands off to a user's own focused reference (cross-study liver 0.23/0.58 → 0.72/0.86, exact/ontology), with resolution below the cell-type label and cluster-level novelty screening. The same profile annotates a whole 525,000-cell atlas in 58 s at 15 GB, on a query axis where the tuned linear pipeline does not finish. The same route builds a pan-mouse reference with no GPU, and distills **Pan-human Azimuth** into a broad-pass model matching its concordance at 6–9× its throughput. We release the reimplementation, the harness and the pre-trained references.
 ---
 
 *Independent Researcher, Detroit, MI, USA*  ·  *Correspondence: driver.ian@gmail.com*
@@ -360,7 +360,9 @@ cardinality** (§3.3, Figure 2) covers six reference sizes to 24k cells and sepa
 the number of cell types, and asks whether inference cost grows with either — the property the
 multi-stage workflow depends on. **Accuracy and memory to atlas scale** covers five sizes
 to 49k cells on lung and four to 47k on the HLiCA liver atlas (§3.3, Figure 3), and asks
-whether the ranking at laptop size survives at atlas size. Sizes are set by capping cells per
+whether the ranking at laptop size survives at atlas size. A third sweep runs the other way,
+holding the reference fixed and growing the *query* to a whole 525k-cell atlas (§3.3,
+Figure 4), which is the axis a reused reference is actually pointed along. Sizes are set by capping cells per
 type, which is why they are not round numbers. The lung sweep's top point is the whole atlas
 once the query is held out; the liver atlas is far larger (525k cells), so its sweep stops at
 a matching reference size rather than at its own ceiling, which is what lets the two be read
@@ -582,6 +584,35 @@ is a single run, so they cover sampling of the query and not run-to-run variatio
 is not a proportion and carries none. Fit time is not plotted: the 47k liver point was measured
 under CPU contention, so a cost axis there would report scheduling rather than scaling.
 
+**Annotating an atlas costs less than building one.** The sweeps above grow the reference
+and hold the query fixed. The reverse case is the one a user meets most often -- a reference
+built once, then pointed at everything -- and it is where a flat inference profile should
+pay. Holding the reference at 17,753 cells drawn from seven HLiCA studies and growing the
+query from 50k cells to the entire 524,699-cell atlas, actinn-jax annotates the whole atlas
+in **57.9 s** at **15.0 GB**, a throughput of 6,100–9,100 cells/s that does not fall as the
+query grows (Figure 4A, B). Accuracy on the withheld eighth study is 0.720 and does not move
+across the range, as it should not: the subsets are nested. Peak memory is dominated by
+holding the query in memory rather than by the model -- at the largest size, prediction added
+nothing measurable to the resident query -- so a caller streaming from disk would pay less.
+
+The tuned linear pipeline behaves differently on this axis. Its throughput *falls* with query
+size, 3,107 → 2,451 → 1,679 cells/s, so its per-cell cost grows with the job, and its memory
+reaches 24.7 GB at 250k cells against actinn-jax's 9.9 GB. At the full atlas it did not
+finish: after 76 minutes it held 15.3 GB resident with roughly 14 GB paged out and was still
+running, so it was stopped (Figure 4C). The ~2× memory band reported above is a
+*reference*-axis result and does not describe this axis.
+
+![annotating an atlas: cost against query size](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_query_scaling.png)
+
+**Figure 4.** Cost against query size with the reference fixed at 17,753 cells. *A:* wall-clock
+to annotate the query. *B:* throughput, which holds for actinn-jax and falls for the linear
+pipeline. *C:* peak memory; the open marker is the linear pipeline's unfinished 524,699-cell
+run, drawn at the memory still resident when it was stopped and deliberately not joined to
+its curve, since the rest of its working set had been evicted to swap. Wall-clock is a single
+run on a laptop and carries scheduling noise, which is why *B* is not monotone for either
+method.
+
+
 
 ## The broad→focused annotation workflow
 
@@ -592,7 +623,7 @@ inference (§3.1, §3.3), the whole workflow runs on a laptop.
 
 ![the broad pass and the focused pass on one query](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_workflow_umap_ondata.png)
 
-**Figure 4.** The workflow on a withheld HLiCA liver study (3,396 cells), same embedding
+**Figure 5.** The workflow on a withheld HLiCA liver study (3,396 cells), same embedding
 throughout. *Left:* the shipped census reference spreads 137 of its 798 labels over the query
 (concordance **0.34**) — it is not trying to name subtypes. *Center:* those calls resolved to
 tissue through the reference's per-class tissue map; **76%** of tissue-specific calls say
@@ -670,7 +701,7 @@ route does apply to mouse, but its one expensive step does not travel cheaply: t
 groups are found by Ward-clustering scPRINT embeddings of per-type expression centroids, which
 wants a GPU, and scPRINT's mouse support is untested here.
 
-That clustering step is the only one that has to be replaced (Figure 5A). The census already
+That clustering step is the only one that has to be replaced (Figure 6A). The census already
 labels every cell with a Cell Ontology term, and CL encodes the relation the embedding
 clustering is recovering — which cell types are kinds of the same thing. Describing each type
 by the CL terms it descends from and clustering *those*, with the same Ward linkage, gives a
@@ -678,7 +709,7 @@ hierarchy that is free, deterministic and species-independent.
 
 ![building a coarse hierarchy without a GPU](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_ontology_hierarchy.png)
 
-**Figure 5.** Replacing the one step of the reference build that needs a GPU. *A:* both routes
+**Figure 6.** Replacing the one step of the reference build that needs a GPU. *A:* both routes
 to the coarse groups; only the middle step differs. *B:* the 21 coarse groups of
 `broad_mouse_v1`, each named by the Cell Ontology term its members share, with a percentage
 where that term covers most but not all of the group; the gray bar is the single group whose
@@ -691,7 +722,7 @@ controls does not.
 **The groups it produces are lineages.** Twenty of the 21 mouse groups resolve to one CL
 lineage each — lymphocytes, neurons, epithelium, endothelium, mononuclear phagocytes, kidney
 tubule — and the twenty-first is a catch-all of 48 types whose census labels (`cell`,
-`blood cell`) are too vague to place anywhere (Figure 5B).
+`blood cell`) are too vague to place anywhere (Figure 6B).
 
 **The grouping is doing the work, not the splitting.** Any partition gives each fine
 classifier a smaller problem, so the substitution needs a control. Built from one human corpus
@@ -699,7 +730,7 @@ classifier a smaller problem, so the substitution needs a control. Built from on
 **0.616** against **0.547** for no hierarchy at all — a gain of **0.069**, or 13% relative,
 which on 2,161 scored cells sits outside the 95% interval of ±0.029. A random grouping with the
 same group sizes scores **0.539**, which is 0.008 from the no-hierarchy control and inside that
-interval (Figure 5C). What matters is *which* types share
+interval (Figure 6C). What matters is *which* types share
 a group. Each group has its own fine classifier and the coarse call decides which one ever
 sees the cell, so a group pays off only if the coarse classifier can recognize the group *and*
 the right answer is inside it. Lineage groups manage both; same-sized random groups manage
@@ -762,7 +793,7 @@ decision rather than a threshold.
 **Table 8.** Confidence-threshold sweep with 9 of 36 cell types held out of the liver
 reference, so 1,350 query cells are out-of-distribution. Each cell reads accuracy on kept
 cells / fraction of cells kept / fraction of held-out-type cells flagged. The full five-point
-sweep is in Figure 6 and in the result tables.
+sweep is in Figure 7 and in the result tables.
 
 **Five of the eight give a threshold that does something; three do not.** actinn-jax,
 scArches, scANVI, the linear pipeline and kNN all trade coverage for accuracy across the
@@ -784,7 +815,7 @@ mechanism the workflow of §3.4 routes on.
 
 ![the abstain trade-off](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_abstain.png)
 
-**Figure 6.** What abstention buys, and whether it finds the novel cells, for the eight methods
+**Figure 7.** What abstention buys, and whether it finds the novel cells, for the eight methods
 that return a per-cell confidence. *Left:* accuracy on kept cells against the fraction kept.
 *Right:* the share of held-out-type cells flagged as the threshold rises. A usable mechanism
 moves along both axes; CellTypist's saturated probabilities collapse four thresholds onto one
@@ -882,10 +913,10 @@ Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and
 in minutes — the gap to the top method was largely a gene-budget artifact, not the VAE. But
 more genes is **not** a universal win: it *regresses* tabula_sapiens by ~10 pt (its
 284-cell test batch across 160 fine types overfits reference-specific genes) and saturates
-hypomap (Figure 7). The budget is
+hypomap (Figure 8). The budget is
 **selectable without test labels**: held-out *reference* cross-validation rises for the
 datasets that benefit and is the one signal that *drops* for tabula_sapiens, and a trivial
-query-cells-per-class check independently flags it (Figure 8) —
+query-cells-per-class check independently flags it (Figure 9) —
 so the budget can be set deterministically per dataset. (iii) *Negative control* — a
 CPU-only, UCE-style protein-embedding featurization (expression-weighted mean of ESM2 gene
 embeddings) does **not** help and hurts the hardest case: the pooling discards the per-gene
@@ -894,13 +925,13 @@ in its GPU transformer, not a portable averaging trick.
 
 ![gene budget curve](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/gene_budget_curve.png)
 
-**Figure 7.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
+**Figure 8.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
 Problems datasets. More genes help most datasets but regress the fine-grained,
 domain-shifted tabula_sapiens.
 
 ![gene budget signals](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/gene_budget_signals.png)
 
-**Figure 8.** Label-free signals for setting the gene budget without test labels. Held-out
+**Figure 9.** Label-free signals for setting the gene budget without test labels. Held-out
 reference cross-validation and query-cells-per-class both single out tabula_sapiens, the one
 dataset where more genes hurt.
 
