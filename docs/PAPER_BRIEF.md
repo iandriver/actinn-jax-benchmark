@@ -254,10 +254,13 @@ concordance on two withheld datasets after 17 s of CPU.
 
 ### Abstention is tunable; zero-shot labels are not competitive
 
-Withholding 9 of 36 cell types entirely, a confidence threshold trades coverage against
-accuracy smoothly: accuracy on kept cells rises 0.885 → 0.969 as coverage falls 1.00 → 0.66
-and out-of-distribution flagging climbs 0.00 → 0.73. CellTypist's probabilities are saturated, so it
-offers essentially one operating point instead of a curve. Separately,
+Withholding 9 of 36 cell types entirely and sweeping a confidence threshold over the six
+methods that return a per-cell confidence, only three trade coverage for accuracy smoothly.
+For actinn-jax, accuracy on kept cells rises 0.885 → 0.969 as coverage falls 1.00 → 0.66 and
+out-of-distribution flagging climbs 0.00 → 0.73; at comparable coverage it flags more novel
+cells than the tuned linear pipeline (0.73 against 0.46). Of the rest, CellTypist's
+probabilities are saturated and give one operating point instead of a curve, and scTOP's
+projection score keeps only 6% of the query at p ≥ 0.5. Separately,
 a foundation model run zero-shot scored **0.201** ontology concordance against 0.917 for a
 reference-trained model on the same cells, taking ~280× longer — reproduced independently on
 Open Problems, where zero-shot entries sit at the bottom of the leaderboard.

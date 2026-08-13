@@ -767,34 +767,48 @@ tissue → subtype/state), not just a classifier, at classical-method speed thro
 ## Rejection / abstain
 
 Holding out 9 of 36 cell types entirely from the HLiCA liver reference (so 1,350 query
-cells are genuinely out-of-distribution), and sweeping a confidence threshold:
+cells are genuinely out-of-distribution), we sweep a confidence threshold over every method
+that returns a per-cell confidence. Six do. SVM, SingleR and scPRINT return none and cannot be
+swept at all; scmap-cluster has a single native "unassigned" decision rather than a threshold;
+and scANVI and scArches expose class probabilities in principle, but the adapters used here
+return hard labels only, so they are absent for an implementation reason rather than a
+methodological one.
 
-| threshold | actinn-jax: acc(kept) / coverage / OOD-flagged | CellTypist: acc(kept) / coverage / OOD-flagged |
-|---|---|---|
-| 0.0 | 0.885 / 1.00 / 0.00 | 0.873 / 1.00 / 0.00 |
-| 0.5 | 0.919 / 0.93 / 0.30 | 0.936 / 0.68 / 0.68 |
-| 0.7 | 0.946 / 0.84 / 0.52 | 0.936 / 0.68 / 0.68 |
-| 0.9 | 0.969 / 0.66 / 0.73 | 0.937 / 0.68 / 0.68 |
+| method | p≥0.5: acc / cov / OOD | p≥0.7 | p≥0.9 |
+|---|---|---|---|
+| **actinn-jax** | 0.919 / 0.93 / 0.30 | 0.946 / 0.84 / 0.52 | 0.969 / 0.66 / 0.73 |
+| linear-anova-pca | 0.894 / 0.99 / 0.07 | 0.916 / 0.93 / 0.25 | 0.941 / 0.85 / 0.46 |
+| kNN | 0.830 / 0.86 / 0.28 | 0.921 / 0.61 / 0.63 | 0.988 / 0.36 / 0.83 |
+| CellTypist | 0.936 / 0.68 / 0.68 | 0.936 / 0.68 / 0.68 | 0.937 / 0.68 / 0.68 |
+| ProtoCloud | 0.719 / 1.00 / 0.00 | 0.719 / 0.97 / 0.02 | 0.750 / 0.61 / 0.47 |
+| scTOP | 0.971 / 0.06 / 0.98 | 1.000 / 0.00 / 1.00 | 1.000 / 0.00 / 1.00 |
 
-**Table 8.** Confidence-threshold sweep with 9 of 36 cell types held out of the liver reference,
-so 1,350 query cells are genuinely out-of-distribution. Each cell reads accuracy on kept cells /
-fraction of cells kept / fraction of held-out-type cells flagged.
+**Table 8.** Confidence-threshold sweep with 9 of 36 cell types held out of the liver
+reference, so 1,350 query cells are out-of-distribution. Each cell reads accuracy on kept
+cells / fraction of cells kept / fraction of held-out-type cells flagged. The full five-point
+sweep is in Figure 6 and in the result tables.
 
-actinn-jax's probability gives a **smooth, tunable** abstain curve — accuracy on kept cells
-rises 0.885→0.969 as coverage falls 1.00→0.66 and OOD-flagging climbs 0.00→0.73 — so a user
-can dial the precision/coverage/novel-cell-detection trade-off. CellTypist's probabilities
-are **saturated** (near 0 or 1): the threshold jumps to 68% OOD-flagged at 0.5 and then does
-not move across 0.5–0.9, giving essentially one operating point rather than a tunable curve.
-The difference is in the shape rather than in any single row (Figure 6).
-scmap-cluster offers a single native "unassigned" decision (no sweep). A tunable threshold is
-what makes the abstain step usable as a routing decision in the workflow of §3.4.
+**A usable abstain needs the threshold to move both quantities, and only three of the six do.**
+actinn-jax, the linear pipeline and kNN each trade coverage for accuracy smoothly across the
+range. The other three fail in different ways: CellTypist's probabilities are saturated near 0
+or 1, so every threshold from 0.3 to 0.9 lands on one operating point; scTOP's projection score
+is not a calibrated probability and discards all but 6% of the query by p≥0.5; ProtoCloud's
+ambiguity flag barely moves until 0.9.
+
+Among the three that work, the trade-offs differ. kNN buys accuracy by dumping coverage —
+0.988 on the 36% of cells it keeps. actinn-jax and the linear pipeline sit at comparable
+coverage, and actinn-jax flags more of the genuinely novel cells at every threshold (0.73
+against 0.46 at p≥0.9), which is what the abstain step is for in the workflow of §3.4: a
+threshold that separates novel cells from confident ones is a routing decision, and one that
+merely lowers coverage is not.
 
 ![the abstain trade-off](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_abstain.png)
 
-**Figure 6.** What abstention buys, and whether it finds the novel cells. *Left:* accuracy on
-kept cells against the fraction kept. *Right:* the share of held-out-type cells flagged as the
-threshold rises. actinn-jax traces a usable curve on both axes; CellTypist's probabilities are
-saturated, so thresholds from 0.3 to 0.9 land on one operating point.
+**Figure 6.** What abstention buys, and whether it finds the novel cells, for the six methods
+that return a per-cell confidence. *Left:* accuracy on kept cells against the fraction kept.
+*Right:* the share of held-out-type cells flagged as the threshold rises. A usable mechanism
+moves along both axes; CellTypist's saturated probabilities collapse four thresholds onto one
+operating point, and scTOP's projection score discards the query rather than ranking it.
 
 
 ## Foundation-model zero-shot (scPRINT)

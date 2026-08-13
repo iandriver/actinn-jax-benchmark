@@ -9,12 +9,25 @@ sweep a confidence threshold, and report:
   - OOD-flag rate: fraction of OOD cells correctly sent below threshold
 
 scmap-cluster has a single native "unassigned" operating point (not a sweep) and is noted
-qualitatively in the writeup. Core-venv methods only. Run AFTER the main matrix.
+qualitatively in the writeup. Methods without a per-cell confidence (SVM, SingleR, scPRINT)
+cannot be swept at all.
+
+Which methods run is a per-environment question, not a scientific one: the adapters are
+imported into this process, so a method can only be swept from a virtualenv that has it.
+Pass --methods accordingly and merge the CSVs. The OOD type choice and the train/test split
+are both seeded, so runs from different environments describe the same experiment -- re-run
+one method that is already in the CSV to confirm before merging. Run AFTER the main matrix.
 """
-import sys, warnings; warnings.filterwarnings("ignore")
+import argparse, sys, warnings; warnings.filterwarnings("ignore")
 import numpy as np, pandas as pd, scanpy as sc
 sys.path.insert(0, "/Users/iandriver/Downloads/actinn-jax-benchmark")
 from benchmark import adapters, datasets
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--methods", default="actinn-jax,celltypist",
+                help="comma-separated; must be importable from the running interpreter")
+ap.add_argument("--out", default="docs/results_rejection.csv")
+ARGS = ap.parse_args()
 
 SRC = "/Volumes/IanSSD/hlica/liver_intra.h5ad"
 LABEL = "cell_type"
@@ -38,8 +51,11 @@ print(f"{len(types)} types: {len(ood)} held out OOD | ref {ref.n_obs} / query {q
       f"({q_is_ood.sum()} OOD cells)", flush=True)
 
 rows = []
-for name in ["actinn-jax", "celltypist"]:
-    m = adapters.get(name)
+for name in [s.strip() for s in ARGS.methods.split(",") if s.strip()]:
+    try:
+        m = adapters.get(name)
+    except Exception as e:
+        print(f"{name}: adapter unavailable in this environment ({e})"); continue
     m.fit(ref, LABEL)
     pred = m.predict(query)
     conf = pred.probabilities
@@ -57,5 +73,5 @@ for name in ["actinn-jax", "celltypist"]:
         print(f"  {name:11s} thr={thr}: acc(kept)={acc:.3f} cov={cov:.3f} "
               f"ood_flagged={ood_flagged:.3f}", flush=True)
 
-pd.DataFrame(rows).to_csv("docs/results_rejection.csv", index=False)
+pd.DataFrame(rows).to_csv(ARGS.out, index=False)
 print("REJECTION_DONE", flush=True)
