@@ -1,0 +1,8 @@
+dataset,level,ontology,n_labels,coverage,fit_s,predict_s,n_query
+liver_intra,1,0.6907,8,1.0,12.3,0.0,1332
+liver_intra,2,0.533,18,1.0,12.3,0.0,1332
+liver_intra,3,0.491,25,1.0,12.3,0.0,1332
+,flat-argmax,0.5616,24,1.0,,,1332
+lung_intra,1,0.7624,9,1.0,12.2,0.0,2694
+lung_intra,2,0.8125,21,1.0,12.2,0.0,2694
+lung_intra,3,0.6418,28,1.0,12.2,0.0,2694
