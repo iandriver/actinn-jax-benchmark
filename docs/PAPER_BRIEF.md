@@ -23,7 +23,7 @@ ACTINN with a cached train-once/map-many reference: a shipped ~800-type referenc
 calibrated abstention hands off to a user's own focused reference (cross-study liver
 0.23/0.58 → 0.72/0.86, exact/ontology), with resolution below the cell-type label and
 cluster-level novelty screening. The same profile annotates a whole 525,000-cell atlas in
-58 s at 15 GB, on a query axis where the tuned linear pipeline does not finish. The same route builds a pan-mouse reference with no GPU, and
+41 s, three to four times faster than a tuned linear pipeline on the same query axis. The same route builds a pan-mouse reference with no GPU, and
 distills **Pan-human Azimuth** into a broad-pass model matching its concordance at 6–9× its
 throughput. We release the reimplementation, the harness and the pre-trained references.
 
@@ -195,10 +195,13 @@ or 24k cells, and 5 or 86 types** (Figure 2). With train-once/map-many caching t
 once and only the flat prediction cost recurs — the regime that matters when one reference
 serves many queries. Peak memory is likewise bounded rather than divergent: the
 linear/actinn-jax ratio holds at ~2–3× (6.1 vs 13.2 GB at 49k cells) rather than widening
-(Figure 1C). The same flatness holds on the query axis: with the reference fixed, actinn-jax
-annotates the entire 524,699-cell liver atlas in **57.9 s** at 15.0 GB and 6,100–9,100
-cells/s, while the tuned linear pipeline's throughput falls with query size and its
-full-atlas run did not finish.
+(Figure 1C). The query axis behaves differently: with the reference fixed, actinn-jax
+annotates the entire 524,699-cell liver atlas in **41 s**, three to four times faster than
+the tuned linear pipeline's 126 s. Flatness does not carry to this axis, though — actinn-jax
+loses 31% of its throughput across a tenfold growth in query (18,400 → 12,800 cells/s) while
+the linear pipeline holds flat at ~4,200, narrowing the advantage from 4.2× to 3.1×. Peak
+memory does not separate them there at all: on that axis it measures holding the query
+rather than running the method.
 
 ![scaling](figures/fig_scaling.png)
 

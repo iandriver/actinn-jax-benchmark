@@ -5,7 +5,7 @@ author:
   - Ian Driver$^{\ast}$
 date: ""
 abstract: |
-  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** — classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model — across **six datasets** (8–86 cell types; within-dataset, cross-dataset and cross-study splits) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.4×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but which fits a given job. We show that a low, flat inference cost makes multi-stage annotation practical on a laptop, using **actinn-jax**, a JAX reimplementation of ACTINN with a cached train-once/map-many reference: a shipped ~800-type reference with calibrated abstention hands off to a user's own focused reference (cross-study liver 0.23/0.58 → 0.72/0.86, exact/ontology), with resolution below the cell-type label and cluster-level novelty screening. The same profile annotates a whole 525,000-cell atlas in 58 s at 15 GB, on a query axis where the tuned linear pipeline does not finish. The same route builds a pan-mouse reference with no GPU, and distills **Pan-human Azimuth** into a broad-pass model matching its concordance at 6–9× its throughput. We release the reimplementation, the harness and the pre-trained references.
+  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** — classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model — across **six datasets** (8–86 cell types; within-dataset, cross-dataset and cross-study splits) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.4×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but which fits a given job. We show that a low, flat inference cost makes multi-stage annotation practical on a laptop, using **actinn-jax**, a JAX reimplementation of ACTINN with a cached train-once/map-many reference: a shipped ~800-type reference with calibrated abstention hands off to a user's own focused reference (cross-study liver 0.23/0.58 → 0.72/0.86, exact/ontology), with resolution below the cell-type label and cluster-level novelty screening. The same profile annotates a whole 525,000-cell atlas in 41 s, three to four times faster than a tuned linear pipeline on the same query axis. The same route builds a pan-mouse reference with no GPU, and distills **Pan-human Azimuth** into a broad-pass model matching its concordance at 6–9× its throughput. We release the reimplementation, the harness and the pre-trained references.
 geometry: margin=1in
 fontsize: 11pt
 linkcolor: RoyalBlue
@@ -614,28 +614,48 @@ and hold the query fixed. The reverse case is the one a user meets most often --
 built once, then pointed at everything -- and it is where a flat inference profile should
 pay. Holding the reference at 17,753 cells drawn from seven HLiCA studies and growing the
 query from 50k cells to the entire 524,699-cell atlas, actinn-jax annotates the whole atlas
-in **57.9 s** at **15.0 GB**, a throughput of 6,100–9,100 cells/s that does not fall as the
-query grows (Figure 4A, B). Accuracy on the withheld eighth study is 0.720 and does not move
-across the range, as it should not: the subsets are nested. Peak memory is dominated by
-holding the query in memory rather than by the model -- at the largest size, prediction added
-nothing measurable to the resident query -- so a caller streaming from disk would pay less.
+in **41 s** (Figure 4A). Accuracy on the withheld eighth study is 0.720 and does not move
+across the range, as it should not: the subsets are nested.
 
-The tuned linear pipeline behaves differently on this axis. Its throughput *falls* with query
-size, 3,107 → 2,451 → 1,679 cells/s, so its per-cell cost grows with the job, and its memory
-reaches 24.7 GB at 250k cells against actinn-jax's 9.9 GB. At the full atlas it did not
-finish: after 76 minutes it held 15.3 GB resident with roughly 14 GB paged out and was still
-running, so it was stopped (Figure 4C). The ~2× memory band reported above is a
-*reference*-axis result and does not describe this axis.
+The tuned linear pipeline stays three to four times slower throughout, annotating the same
+atlas in 126 s, but the gap narrows as the query grows and the reason is ours rather than
+theirs: actinn-jax gives up 31% of its rate across the range, 18,400 → 12,800 cells/s, while
+the linear pipeline holds essentially flat at ~4,200, losing 6% (Figure 4B). The advantage is
+4.2× at 50k cells and 3.1× at the full atlas. It is the cheaper method whose per-cell cost
+drifts upward here, which is the opposite of what a flat-inference argument predicts, so the
+claim this axis supports is a three- to fourfold constant factor rather than flatness. The
+flat-inference result in §3.1 is a *reference*-axis result and should not be read onto this
+one.
+
+**Peak memory does not separate them at all.** Both land at 26–28 GB on the full atlas
+(Figure 4C), because on this axis peak memory measures holding the query rather than running
+the method: at the largest size, prediction added nothing measurable on top of the resident
+query for either. A caller streaming from disk would pay less, and would pay it equally. The
+~2× memory band reported above is likewise a *reference*-axis result and does not carry to
+this one; only the reference axis separates these methods on memory.
+
+Two caveats on measurement, both of which caught us. Prediction in our linear adapter blocks
+the query into 50,000-cell chunks; unblocked it densifies 20,000 genes for the whole query at
+once, which needs roughly 126 GB at the full atlas and does not complete on a 51 GB machine.
+That is a property of a wrapper rather than of the recipe, and an earlier draft of this figure
+reported the resulting non-completion as if it characterised the method. Blocking leaves every
+prediction bit-identical, and is verified to. Second, these are laptop numbers, so each point
+is the fastest of three runs: a competing process can only add time, and stalls on this
+machine are large and sporadic rather than small and Gaussian -- one repeat turned a 50 s fit
+into 975 s, and no mean over three runs would survive that. Peak memory takes the largest of
+three instead, since `ru_maxrss` counts resident pages and therefore reports *less* than a run
+needed whenever the OS evicts under pressure. Per-run values are released with the harness so
+the spread is inspectable rather than summarised away.
 
 ![annotating an atlas: cost against query size](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_query_scaling.png)
 
 **Figure 4.** Cost against query size with the reference fixed at 17,753 cells. *A:* wall-clock
-to annotate the query. *B:* throughput, which holds for actinn-jax and falls for the linear
-pipeline. *C:* peak memory; the open marker is the linear pipeline's unfinished 524,699-cell
-run, drawn at the memory still resident when it was stopped and deliberately not joined to
-its curve, since the rest of its working set had been evicted to swap. Wall-clock is a single
-run on a laptop and carries scheduling noise, which is why *B* is not monotone for either
-method.
+to annotate the query. *B:* throughput, which declines 31% for actinn-jax and holds flat for
+the linear pipeline, narrowing the advantage from 4.2× to 3.1×. *C:* peak memory, which does
+not distinguish them -- on this axis it measures holding the query, not running the method. Three
+runs per point on a shared laptop: *A* and *B* report the fastest run, since contention can
+only add time, and *C* the largest peak, since resident-set size understates a run that the OS
+has partly evicted. Per-run values are in `results_query_scaling.csv`.
 
 
 

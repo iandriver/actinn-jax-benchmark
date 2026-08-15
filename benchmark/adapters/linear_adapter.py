@@ -9,6 +9,13 @@ Their Tabula Sapiens 2.0 recipe, which matches single-cell foundation models
 This is a deliberately *strong* classical baseline: our other classical adapters
 (SVM/kNN/CellTypist) are untuned, so without this the classical tier is easy to beat.
 Everything is fit on the reference only and replayed on the query (no leakage).
+
+Prediction runs in row blocks. Every step after fitting is per-cell -- library-size
+normalization, log1p, standardization, the PCA projection, the logistic decision -- so a
+block sees exactly what the whole matrix would have. Densifying 20,000 genes for a
+524,699-cell query at once needs 42 GB for the array and as much again for each transform
+copy, which is a limit of this wrapper rather than of the recipe; blocking removes it and
+leaves every prediction bit-identical.
 """
 
 import numpy as np
@@ -29,11 +36,13 @@ class LinearAnovaPCA(AnnotationMethod):
     tier = "classical"
     device = "cpu"
 
-    def __init__(self, n_genes=20000, n_pcs=220, C=1.0, max_iter=1000):
+    def __init__(self, n_genes=20000, n_pcs=220, C=1.0, max_iter=1000,
+                 chunk_size=50000):
         self.n_genes = n_genes      # paper: 20000 (effectively "all informative genes")
         self.n_pcs = n_pcs          # paper: 220 components
         self.C = C
         self.max_iter = max_iter
+        self.chunk_size = chunk_size    # rows densified at once; matches actinn-jax's
 
     def fit(self, ref, label_key):
         a = lognorm(counts_adata(ref))
@@ -55,12 +64,21 @@ class LinearAnovaPCA(AnnotationMethod):
         self.clf = LogisticRegression(C=self.C, max_iter=self.max_iter,
                                       n_jobs=-1).fit(self.pca.transform(Xs), y)
 
-    def predict(self, query):
-        a = lognorm(counts_adata(query))
+    def _project(self, block):
+        """Rows of the query -> PCA space, densifying only this block."""
+        a = lognorm(counts_adata(block))
         X = dense_aligned(a, self.genes).astype(np.float32, copy=False)
-        Z = self.pca.transform(self.scaler.transform(X))
+        return self.pca.transform(self.scaler.transform(X))
+
+    def predict(self, query):
+        step = self.chunk_size or query.n_obs
+        labels, probs = [], []
+        for lo in range(0, query.n_obs, step):
+            Z = self._project(query[lo:lo + step])
+            labels.append(self.clf.predict(Z))
+            probs.append(self.clf.predict_proba(Z).max(axis=1).astype(np.float32))
         return Predictions(
             cell_ids=list(query.obs_names),
-            labels=self.clf.predict(Z),
-            probabilities=self.clf.predict_proba(Z).max(axis=1).astype(np.float32),
+            labels=np.concatenate(labels),
+            probabilities=np.concatenate(probs),
         )
