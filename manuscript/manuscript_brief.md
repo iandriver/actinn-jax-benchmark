@@ -5,7 +5,7 @@ author:
   - Ian Driver$^{\ast}$
 date: ""
 abstract: |
-  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** — classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model — across **six datasets** (8–86 cell types; within-dataset, cross-dataset and cross-study splits) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.4×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but which fits a given job. We show that a low, flat inference cost makes multi-stage annotation practical on a laptop, using **actinn-jax**, a JAX reimplementation of ACTINN with a cached train-once/map-many reference: a shipped ~800-type reference with calibrated abstention hands off to a user's own focused reference (cross-study liver 0.23/0.58 → 0.72/0.86, exact/ontology), with resolution below the cell-type label and cluster-level novelty screening. The same profile annotates a whole 525,000-cell atlas in 41 s, three to four times faster than a tuned linear pipeline on the same query axis. The same route builds a pan-mouse reference with no GPU, and distills **Pan-human Azimuth** into a broad-pass model matching its concordance at 6–9× its throughput. We release the reimplementation, the harness and the pre-trained references.
+  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** — classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model — across **six datasets** (8–86 cell types; within-dataset, cross-dataset and cross-study splits) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.5×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but which fits a given job. We show that a low, flat inference cost makes multi-stage annotation practical on a laptop, using **actinn-jax**, a JAX reimplementation of ACTINN with a cached train-once/map-many reference: a shipped ~800-type reference with calibrated abstention hands off to a user's own focused reference (cross-study liver 0.23/0.58 → 0.72/0.86, exact/ontology), with resolution below the cell-type label and cluster-level novelty screening. The same profile annotates a whole 525,000-cell atlas in 41 s, three to four times faster than a tuned linear pipeline on the same query axis. The same route builds a pan-mouse reference with no GPU, and distills **Pan-human Azimuth** into a broad-pass model matching its concordance at 6–9× its throughput. We release the reimplementation, the harness and the pre-trained references.
 geometry: margin=1in
 fontsize: 11pt
 linkcolor: RoyalBlue
@@ -36,7 +36,7 @@ header-includes:
 # Key Points
 
 - Among leading annotation methods, accuracy differences are small (top four within 0.008)
- while predict time differs by ~260× and peak memory by 2.4×; cost, not accuracy, is what
+ while predict time differs by ~205× and peak memory by 2.5×; cost, not accuracy, is what
  distinguishes them in practice.
 - Rankings are not stable: a prototype VAE moves from worst to best as the reference grows
  from 3k to 49k cells, and a tuned linear pipeline that fits 7× faster than a gene-space MLP
@@ -125,23 +125,25 @@ repository.
 ## Accuracy is clustered; cost is not
 
 The top of the accuracy table is a four-way cluster spanning **0.008**, led by a tuned linear
-pipeline rather than by a deep model (Table 1). Those same four methods differ by **~260× in
-predict time** (0.34 s to 89 s) and **2.4× in peak memory**. actinn-jax holds the best
-ontology-aware concordance (0.811), a margin inside repeat noise and best read as a tie.
+pipeline rather than by a deep model (Table 1). Those same four methods differ by **~205× in
+predict time** (0.33 s to 67 s) and **2.5× in peak memory**. Order within the cluster is not a
+result — the stochastic methods move by more than 0.008 between identical reruns, scANVI by up
+to 0.056 — so the four are best read as tied on accuracy and separated by cost. actinn-jax
+holds the best ontology-aware concordance (0.811), likewise a margin inside repeat noise.
 
 | method | acc | macro-F1 | ontology | fit (s) | predict (s) | peak mem (MB) |
 |---|---:|---:|---:|---:|---:|---:|
-| **linear-anova-pca** | **0.839** | 0.699 | 0.808 | **3.0** | **0.34** | 4294 |
-| scANVI | 0.833 | 0.697 | 0.809 | 0.0* | 89.2 | 2099 |
-| scArches | 0.832 | **0.699** | 0.805 | 54.7 | 21.4 | 1819 |
-| **actinn-jax** | 0.831 | 0.683 | **0.811** | 21.9 | **0.67** | 2399 |
-| CellTypist | 0.823 | 0.691 | 0.805 | 60.7 | **0.66** | 1569 |
-| SVM | 0.810 | 0.680 | 0.797 | 66.5 | **0.07** | 1415 |
-| ProtoCloud | 0.790 | 0.649 | 0.778 | 176.3 | 2.14 | 1893 |
-| SingleR | 0.770 | 0.652 | 0.750 | 0.3 | 62.1 | 3541 |
-| kNN | 0.770 | 0.622 | 0.769 | 0.4 | **0.15** | 1483 |
-| scTOP | 0.739 | 0.619 | 0.703 | 1.1 | 1.07 | 1928 |
-| scmap-cluster | 0.646 | 0.550 | 0.771 | 0.4 | 13.1 | 8073 |
+| **linear-anova-pca** | **0.839** | 0.699 | 0.808 | **3.4** | **0.33** | 4386 |
+| scArches | 0.833 | **0.701** | 0.804 | 48.7 | 17.2 | 1773 |
+| scANVI | 0.832 | 0.698 | 0.808 | 0.0* | 66.7 | 2087 |
+| **actinn-jax** | 0.831 | 0.683 | **0.811** | 24.2 | **0.54** | 2391 |
+| CellTypist | 0.823 | 0.690 | 0.805 | 54.4 | **0.61** | 1569 |
+| SVM | 0.808 | 0.675 | 0.796 | 55.2 | **0.07** | 1419 |
+| ProtoCloud | 0.790 | 0.649 | 0.778 | 221.5 | 2.07 | 1907 |
+| SingleR | 0.770 | 0.652 | 0.750 | 0.3 | 48.2 | 3612 |
+| kNN | 0.770 | 0.623 | 0.768 | 0.4 | **0.19** | 1483 |
+| scTOP | 0.739 | 0.619 | 0.703 | 1.1 | 1.21 | 1926 |
+| scmap-cluster | 0.646 | 0.550 | 0.771 | 0.3 | 9.30 | 8609 |
 
 **Table 1.** Accuracy and cost. Accuracy is the mean over the five shared-vocabulary
 datasets, macro-F1 over all six, and ontology concordance over the four that carry Cell

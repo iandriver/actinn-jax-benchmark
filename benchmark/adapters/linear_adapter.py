@@ -72,9 +72,14 @@ class LinearAnovaPCA(AnnotationMethod):
 
     def predict(self, query):
         step = self.chunk_size or query.n_obs
+        # A query that fits in one block is handed over whole. Slicing it first would build a
+        # view that `counts_adata` then has to materialise -- a copy the unblocked version
+        # never paid, and one that costs more than the prediction on a few thousand cells.
+        blocks = ([query] if step >= query.n_obs
+                  else (query[lo:lo + step] for lo in range(0, query.n_obs, step)))
         labels, probs = [], []
-        for lo in range(0, query.n_obs, step):
-            Z = self._project(query[lo:lo + step])
+        for b in blocks:
+            Z = self._project(b)
             labels.append(self.clf.predict(Z))
             probs.append(self.clf.predict_proba(Z).max(axis=1).astype(np.float32))
         return Predictions(

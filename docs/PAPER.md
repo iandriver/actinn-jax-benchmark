@@ -23,7 +23,7 @@ types; within-dataset, cross-dataset and cross-study splits) on commodity hardwa
 validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking
 we did not choose. Accuracy among the leading methods is tightly clustered — the top four span
 **0.008** — while their inference cost differs by two orders of magnitude and their peak memory
-by 2.4×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the
+by 2.5×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the
 reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature
 budget. Because several methods are now both accurate and cheap, the useful question is not
 which is best but which fits a given job. We show that a low, flat inference cost makes
@@ -449,17 +449,17 @@ carry Cell Ontology ids; cost is the mean per query (Table 3):
 
 | method | acc (5) | macro-F1 (6) | ontology (4) | fit (s) | **predict (s)** | peak mem (MB) |
 |----------|----:|----:|----:|----:|----:|----:|
-| **linear-anova-pca** | **0.839** | 0.699 | 0.808 | **3.0** | **0.34** | 4294 |
-| scANVI | 0.833 | 0.697 | 0.809 | 0.0* | 89.2 | 2099 |
-| scArches | 0.832 | **0.699** | 0.805 | 54.7 | 21.4 | 1819 |
-| **actinn-jax** | 0.831 | 0.683 | **0.811** | 21.9 | **0.67** | 2399 |
-| CellTypist | 0.823 | 0.691 | 0.805 | 60.7 | **0.66** | 1569 |
-| SVM | 0.810 | 0.680 | 0.797 | 66.5 | **0.07** | 1415 |
-| ProtoCloud | 0.790 | 0.649 | 0.778 | 176.3 | 2.14 | 1893 |
-| SingleR | 0.770 | 0.652 | 0.750 | 0.3 | 62.1 | 3541 |
-| kNN | 0.770 | 0.622 | 0.769 | 0.4 | **0.15** | 1483 |
-| scTOP | 0.739 | 0.619 | 0.703 | 1.1 | 1.07 | 1928 |
-| scmap-cluster | 0.646 | 0.550 | 0.771 | 0.4 | 13.1 | 8073 |
+| **linear-anova-pca** | **0.839** | 0.699 | 0.808 | **3.4** | **0.33** | 4386 |
+| scArches | 0.833 | **0.701** | 0.804 | 48.7 | 17.2 | 1773 |
+| scANVI | 0.832 | 0.698 | 0.808 | 0.0* | 66.7 | 2087 |
+| **actinn-jax** | 0.831 | 0.683 | **0.811** | 24.2 | **0.54** | 2391 |
+| CellTypist | 0.823 | 0.690 | 0.805 | 54.4 | **0.61** | 1569 |
+| SVM | 0.808 | 0.675 | 0.796 | 55.2 | **0.07** | 1419 |
+| ProtoCloud | 0.790 | 0.649 | 0.778 | 221.5 | 2.07 | 1907 |
+| SingleR | 0.770 | 0.652 | 0.750 | 0.3 | 48.2 | 3612 |
+| kNN | 0.770 | 0.623 | 0.768 | 0.4 | **0.19** | 1483 |
+| scTOP | 0.739 | 0.619 | 0.703 | 1.1 | 1.21 | 1926 |
+| scmap-cluster | 0.646 | 0.550 | 0.771 | 0.3 | 9.30 | 8609 |
 
 **Table 3.** Accuracy and cost together, ordered by accuracy. Accuracy is the mean over the five
 shared-vocabulary datasets, macro-F1 is the mean over all six, ontology concordance the mean
@@ -467,14 +467,18 @@ over the four datasets carrying Cell Ontology ids, and cost is the mean per quer
 
 *In Table 3, scANVI does most of its work in one train+predict pass, attributed to predict.
 
-The top four methods span **0.008 in accuracy, ~260× in predict time** (0.34 s to 89 s) and
-2.4× in memory. scANVI sits within 0.002 of second place and
-**134× slower than actinn-jax** at tied accuracy. The linear pipeline is both the most accurate
-and the fastest to fit, and pays for it in memory — 4294 vs 2399 MB — because ANOVA/PCA densify
+The top four methods span **0.008 in accuracy, ~205× in predict time** (0.33 s to 67 s) and
+2.5× in memory. That accuracy span is not a ranking and should not be read as one: the
+stochastic methods move further than 0.008 between identical reruns on their own — scANVI by
+up to 0.056 across its three repeats — so which of the top four places second and which places
+third is decided by seeds, not by method. The cost column is what separates them, and scANVI
+is **123× slower than actinn-jax** at accuracy that is tied within that noise. The linear
+pipeline is both the most accurate and the fastest to fit, and pays for it in memory — 4386 vs
+2391 MB — because ANOVA/PCA densify
 a cells × genes matrix while actinn-jax stays sparse; that ~1.8× ratio widens to ~2× at atlas
 scale (6.1 vs 13.2 GB at 49k cells, §4). The two profiles suit different jobs: one-shot
 labeling, versus a reference **trained once and reused**, where a cached model pays fit once
-while the linear pipeline refits scaler/PCA/classifier for every query. ProtoCloud's 176 s CPU
+while the linear pipeline refits scaler/PCA/classifier for every query. ProtoCloud's 222 s CPU
 fit buys nothing at this reference size — and buys the top accuracy at atlas scale (§3.3).
 
 **Pretrained annotators, scored ontology-only.** The two methods with fixed label vocabularies
@@ -517,7 +521,7 @@ low-cardinality problems. Per dataset (accuracy):
 | liver_intra (36 types) | 0.802 | linear-anova-pca 0.804 |
 | liver_cross (cross-study) | **0.686 exact / 0.731 ontology** | actinn-jax |
 | blood_gut (86 types) | 0.860 | linear-anova-pca 0.902 |
-| pbmc (8 types) | 0.913 | scArches 0.931 |
+| pbmc (8 types) | 0.913 | scArches 0.940 |
 
 **Table 5.** Per-dataset accuracy: actinn-jax against whichever method leads that dataset.
 † on lung_cross the exact-match score is a vocabulary artifact, so ontology concordance is the
@@ -629,6 +633,17 @@ drifts upward here, which is the opposite of what a flat-inference argument pred
 claim this axis supports is a three- to fourfold constant factor rather than flatness. The
 flat-inference result in §3.1 is a *reference*-axis result and should not be read onto this
 one.
+
+**This inverts the Table 3 ordering, and the inversion is the point.** At the query sizes in
+Table 3 — 657 to 13,550 cells — the linear pipeline is the faster of the two (0.33 s against
+0.54 s), because actinn-jax carries a fixed per-call cost that a few thousand cells never
+amortize. Across this axis the two trade places: actinn-jax climbs from roughly 2,000–15,000
+cells/s on those queries to 12,800–18,400 at atlas scale, while the linear pipeline falls from
+9,300–12,400 to ~4,200. The dense feature block explains it — 20,000 genes over 1,332 cells is
+107 MB and sits in cache, whereas the same 20,000 genes over a 50,000-cell block is 4 GB and is
+bounded by memory bandwidth. Neither figure is wrong and neither generalizes: which method is
+cheaper depends on how many cells are annotated at once, which is precisely what a benchmark
+reporting a single query size cannot tell you.
 
 **Peak memory does not separate them at all.** Both land at 26–28 GB on the full atlas
 (Figure 4C), because on this axis peak memory measures holding the query rather than running
@@ -857,7 +872,7 @@ kNN reaches the highest novelty detection (83%) by keeping only 36% of the query
 different operating regime rather than a better one, and the linear pipeline is the weakest
 here, flagging 46% of novel cells at the threshold where actinn-jax flags 73%. The distinction
 worth drawing is therefore not that actinn-jax abstains better than the deep methods but that
-it abstains as well for 0.67 s of predict time against scArches's 21.4 s and scANVI's 89.2 s
+it abstains as well for 0.54 s of predict time against scArches's 17.2 s and scANVI's 66.7 s
 (Table 3) — the same accuracy-at-a-fraction-of-the-cost pattern §3.1 reports, applied to the
 mechanism the workflow of §3.4 routes on.
 
@@ -986,7 +1001,7 @@ dataset where more genes hurt.
 ## 4. Discussion
 
 **Method choice is now dominated by cost, not accuracy.** The four leading methods are
-separated by 0.008 in mean accuracy and by ~260× in predict time (§3.1), so for most
+separated by 0.008 in mean accuracy and by ~205× in predict time (§3.1), so for most
 annotation jobs the decision is made on the cost axes. On laptop-sized references the tuned
 linear pipeline is the best of them on accuracy-per-second (0.839, fitting in 3.0 s); at
 atlas scale ProtoCloud is the most accurate by a clear margin (0.976 vs 0.936 at 49k lung

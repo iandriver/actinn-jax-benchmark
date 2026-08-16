@@ -84,7 +84,7 @@ Ensembl ids or gene symbols.
 | liver_intra (36 types) | 0.802 | linear-anova-pca 0.804 |
 | liver_cross (cross-study) | **0.686 exact / 0.731 ontology** | actinn-jax |
 | blood_gut (86 types) | 0.860 | linear-anova-pca 0.902 |
-| pbmc (8 types) | 0.913 | scArches 0.931 |
+| pbmc (8 types) | 0.913 | scArches 0.940 |
 
 **Table S3.** Per-dataset accuracy: actinn-jax against whichever method leads that dataset.
 † on lung_cross the exact-match score is a vocabulary artifact, so ontology concordance is
