@@ -559,9 +559,12 @@ the fast-frontier point; actinn-jax sits just inside it at this reference size, 
 separates it is visible only on the scaling axes of Figures 2 and 3.
 
 The **tuned linear pipeline** holds the fast-frontier point: the highest accuracy in Table 3
-(0.839) at the lowest fit time of any method in the leading cluster (3.0 s), placing it above
-and to the left of actinn-jax, SVM, kNN and CellTypist. The deep methods buy little or nothing on accuracy here — at or below the
-linear pipeline on every dataset except lung — for 36–373× the predict time. actinn-jax
+(0.839) at the lowest fit time of any method in the leading cluster (3.4 s), placing it above
+and to the left of actinn-jax, SVM and CellTypist. kNN is faster still, but 0.15 lower in
+accuracy on this panel; it holds a different corner of the frontier rather than sitting inside
+it. The deep methods buy little or nothing on accuracy on the two liver panels and on
+blood/gut, where they sit at or below the linear pipeline — they do lead it on lung and PBMC —
+and they pay 39–324× the predict time for it. actinn-jax
 sits just inside the frontier at this reference size; what separates it is not visible on a
 fixed-size plot but on the scaling axes of §3.3: predict time that stays flat as the
 reference grows, and ~2× lower peak memory that holds to atlas scale. The figure is drawn
@@ -573,7 +576,8 @@ and 5.
 ![scaling](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_scaling.png)
 
 **Figure 2.** Fit and predict time against reference size and label cardinality. Fit time grows
-for every trained method; predict time stays flat and sub-second across the whole range.
+for every trained method; predict time stays sub-second throughout — flat in reference size,
+and rising to 0.30 s at 86 types.
 
 Fit time grows with reference size and with #cell types for all trained methods —
 actinn-jax's fit goes 2.6 s → 17.4 s → 23.5 s as the reference grows 965 → 14.8k → 24k
@@ -581,10 +585,12 @@ cells, below CellTypist (6 s → 71 s → 116 s) and SVM (4 s → 51 s → 80 s)
 the sweep; kNN does no work at fit time beyond storing the reference, so all of its cost lands on
 predict, where it is also the least accurate method here.
 
-The other axis is the one that matters for the workflows: **predict time stays flat and
-sub-second across the entire range — 0.08–0.33 s whether the reference has 1k or 24k cells,
-or 5 or 86 types.** Inference cost does not grow with reference size or cardinality, and with the
-train-once/map-many cache the fit cost is paid once and the flat predict cost is all that
+The other axis is the one that matters for the workflows: **predict time stays sub-second
+across the entire range, 0.08–0.33 s.** It is genuinely flat in reference size — 0.30 s to
+0.33 s while the reference grows twenty-five-fold — but not in cardinality, where it rises
+3.8×, from 0.08 s at 5 types to 0.30 s at 86. The rise is real and worth stating; it is also
+still sub-second, against fits that reach 80–116 s on the same sweeps. With the
+train-once/map-many cache the fit cost is paid once and only that sub-second predict cost
 recurs — the regime that matters when a reference is reused across many queries. (This sweep's own
 memory column is process-cumulative and not a clean per-size measurement; the atlas sweep
 below and the matrix of §3.1 both run each method in its own process, and are what the
@@ -684,7 +690,7 @@ inference (§3.1, §3.3), the whole workflow runs on a laptop.
 ![the broad pass and the focused pass on one query](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_workflow_umap_ondata.png)
 
 **Figure 5.** The workflow on a withheld HLiCA liver study (3,396 cells), same embedding
-throughout. *Left:* the shipped census reference spreads 137 of its 798 labels over the query
+throughout. *Left:* the shipped census reference spreads 144 of its 798 labels over the query
 (concordance **0.34**) — it is not trying to name subtypes. *Center:* those calls resolved to
 tissue through the reference's per-class tissue map; **76%** of tissue-specific calls say
 liver against 4% for the next candidate, which is the decision that selects the next
@@ -993,7 +999,8 @@ domain-shifted tabula_sapiens.
 
 **Figure 9.** Label-free signals for setting the gene budget without test labels. Held-out
 reference cross-validation and query-cells-per-class both single out tabula_sapiens, the one
-dataset where more genes hurt.
+dataset where more genes cost real accuracy — about 10 points. hypomap drifts down as well,
+but from a saturated 0.998, and neither signal flags it.
 
 # Discussion
 
@@ -1006,8 +1013,8 @@ cells; 0.905 vs 0.824 at 47k liver cells), having been below the cluster on the 
 matrix. actinn-jax's place in that picture rests on a cost profile with two properties that
 matter for repeated use rather than for a single labeling run.
 
-*Footprint.* Inference is **sub-second and flat** — independent of reference size and
-cardinality (§3.3) — so a query costs the same against a 1k-cell reference and a 49k-cell
+*Footprint.* Inference is **sub-second** — flat in reference size, and rising only mildly
+with cardinality (§3.3) — so a query costs the same against a 1k-cell reference and a 49k-cell
 one. Peak memory is unremarkable on small references (2.4 GB mean — seven of the ten other
 methods are lighter), but it is the lowest of those we carried to **atlas scale**:
 ~2× below the linear pipeline (6.1 vs 13.2 GB at 49k lung cells; 6.5 vs 12.6 GB at 47k liver

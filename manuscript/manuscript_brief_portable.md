@@ -16,9 +16,9 @@ abstract: |
 - Rankings are not stable: a prototype VAE moves from worst to best as the reference grows
  from 3k to 49k cells, and a tuned linear pipeline that fits 7× faster than a gene-space MLP
  on one panel costs 2.7× more on another with a narrower feature budget.
-- Inference time is flat in reference size and cardinality for a cached gene-space MLP
- (0.08–0.33 s from 1k to 24k reference cells), which is what makes chaining several
- annotation stages practical on a laptop.
+- Inference time is flat in reference size for a cached gene-space MLP (0.30–0.33 s from 1k
+ to 24k reference cells) and stays sub-second as cardinality grows (0.08–0.30 s from 5 to 86
+ types), which is what makes chaining several annotation stages practical on a laptop.
 - A pretrained pan-human annotator can be distilled into a fast reference using only raw
  counts — no GPU, no labels — matching the teacher's concordance and beating a census-built
  reference, at 6–9× the teacher's throughput.
@@ -173,9 +173,9 @@ result inside three ordinary ones, traced to the fixed feature budget.
 ## Inference cost is flat in reference size
 
 Fit time grows with reference size and cardinality for every trained method. Prediction
-does not: for a cached reference model it stays **0.08–0.33 s whether the reference holds 1k
-or 24k cells, and 5 or 86 types** (Figure 2). With train-once/map-many caching the fit is paid
-once and only the flat prediction cost recurs — the regime that matters when one reference
+does not: for a cached reference model it holds at **0.30–0.33 s as the reference grows from
+1k to 24k cells**, and stays sub-second (0.08–0.30 s) from 5 to 86 types (Figure 2). With
+train-once/map-many caching the fit is paid once and only that sub-second cost recurs — the regime that matters when one reference
 serves many queries. Peak memory is likewise bounded rather than divergent: the
 linear/actinn-jax ratio holds at ~2–3× (6.1 vs 13.2 GB at 49k cells) rather than widening
 (Figure 1C). The query axis behaves differently: with the reference fixed, actinn-jax
@@ -189,7 +189,8 @@ rather than running the method.
 ![scaling](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_scaling.png)
 
 **Figure 2.** Fit and prediction time against reference size and label cardinality. Fit time
-grows for every trained method; prediction stays flat and sub-second across the whole range.
+grows for every trained method; prediction stays sub-second throughout — flat in reference
+size, and rising to 0.30 s at 86 types.
 
 ## A flat cost profile makes multi-stage annotation practical
 
@@ -208,7 +209,7 @@ not resolution.
 ![workflow](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_workflow_umap_ondata.png)
 
 **Figure 3.** The workflow on a withheld liver study (3,396 cells), same embedding
-throughout. The census reference spreads 137 of its 798 labels over the query (concordance
+throughout. The census reference spreads 144 of its 798 labels over the query (concordance
 0.34); resolving those calls to tissue gives **76% liver** against 4% for the next candidate,
 which selects the reference to load; the 36-type liver reference then re-annotates the same
 cells at **0.73**, tracking the clusters. Rightmost panel is the study's own labels.

@@ -438,6 +438,11 @@ def main():
     # actually showed.
     ranked, pan_frac, _ = tissue_vote(raw["broad"],
                                       dict(getattr(broad_model, "class_to_tissue", {}) or {}))
+    # Both of these appear in the caption but existed only inside the drawing, so a rerun
+    # could not confirm them. Printed so the caption is checkable against a log.
+    print(f"broad pass used {len(set(map(str, raw['broad'])))} distinct labels", flush=True)
+    print("tissue vote: " + ", ".join(f"{t} {f:.0%}" for t, f in ranked[:3])
+          + f" (pan-tissue {pan_frac:.0%}, not counted)", flush=True)
     fig, axes = plt.subplots(1, 4, figsize=(16.5, 4.8 if a.style == "ondata" else 5.4),
                              gridspec_kw={"width_ratios": [1, 0.52, 1, 1], "wspace": 0.16})
     route_panel(axes[1], ranked, pan_frac)

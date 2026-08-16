@@ -67,10 +67,41 @@ def pareto(dsname):
         big = r["method"] == "actinn-jax"
         ax.scatter(r["total_s"], r["accuracy"], s=180 if big else 90, color=c(r["method"]),
                    edgecolor="black", linewidth=1.4 if big else 0.6, zorder=3)
+    ax.set_xscale("log")
+    # Labels are placed after the axes are scaled, and each one is checked against the labels
+    # already down. Methods that tie -- scANVI, scArches and CellTypist land within 0.01
+    # accuracy and a few seconds of each other on liver -- otherwise print on top of one
+    # another, and a legend would not help because the point is which name sits where.
+    ax.margins(x=0.13, y=0.13)                 # headroom, so a label cannot reach the title
+    ax.autoscale_view()
+    # Markers are obstacles too, not just other labels: on liver the tied methods sit close
+    # enough that a label dodging its neighbour's text lands on its dot instead. Anything
+    # pushed clear of its own point gets a leader line, since a label far from its marker is
+    # worse than no label -- the reader has to guess which dot it belongs to.
+    pts = [ax.transData.transform((r["total_s"], r["accuracy"])) for _, r in d.iterrows()]
+    placed = [(x - 9, y - 9, x + 9, y + 9) for x, y in pts]
+    CAND = [(9, 0), (-9, 0), (9, 15), (-9, 15), (9, -15), (-9, -15),
+            (9, 29), (-9, 29), (9, -29), (-9, -29), (9, 43), (-9, 43)]
+    for _, r in d.sort_values("total_s").iterrows():
+        big = r["method"] == "actinn-jax"
+        px, py = ax.transData.transform((r["total_s"], r["accuracy"]))
+        w, h = 6.2 * len(r["method"]) + 4, 13          # display-space label box, approximate
+        dx, dy = CAND[0]
+        for cx, cy in CAND:
+            x0 = px + cx if cx > 0 else px + cx - w
+            box = (x0, py + cy - h / 2, x0 + w, py + cy + h / 2)
+            if not any(box[0] < q[2] and q[0] < box[2] and box[1] < q[3] and q[1] < box[3]
+                       for q in placed):
+                dx, dy = cx, cy
+                placed.append(box)
+                break
         ax.annotate(r["method"], (r["total_s"], r["accuracy"]),
-                    xytext=(6, 4), textcoords="offset points",
-                    fontweight="bold" if big else "normal", fontsize=9)
-    ax.set_xscale("log"); ax.set_xlabel("total time: fit + predict (s, log scale)")
+                    xytext=(dx, dy), textcoords="offset points",
+                    ha="left" if dx > 0 else "right", va="center",
+                    fontweight="bold" if big else "normal", fontsize=9,
+                    arrowprops=(dict(arrowstyle="-", lw=0.6, color="0.45",
+                                     shrinkA=0, shrinkB=4) if abs(dy) > 8 else None))
+    ax.set_xlabel("total time: fit + predict (s, log scale)")
     ax.set_ylabel("accuracy"); ax.set_title(f"Accuracy vs. speed — {dsname}")
     ax.grid(True, alpha=0.25)
     fig.tight_layout(); fig.savefig(f"{FIG}/fig_pareto_{dsname}.png", bbox_inches="tight"); plt.close(fig)
@@ -96,25 +127,41 @@ speed_mem()
 
 # ---- Fig 4: scaling curves ----
 def scaling():
+    """Fit and predict, both axes.
+
+    This figure used to plot fit time twice and nothing else, while its caption -- and the
+    paper's central claim that cached inference is flat -- described predict time. The
+    evidence was in the CSVs and simply never drawn. The bottom row draws it: the predict
+    axes share a y-scale with each other so the flatness is a visual fact rather than an
+    artefact of two differently zoomed panels.
+    """
     sc_cells = f"{REPO}/docs/results_scaling_cells.csv"
     sc_types = f"{REPO}/docs/results_scaling_types.csv"
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
-    if os.path.exists(sc_cells):
-        sd = pd.read_csv(sc_cells)
-        for m in sd.method.unique():
-            s = sd[sd.method == m].sort_values("n_ref")
-            axes[0].plot(s.n_ref, s.fit_s, "-o", color=c(m), label=m, lw=2 if m == "actinn-jax" else 1)
-        axes[0].set_xlabel("# reference cells"); axes[0].set_ylabel("fit time (s)")
-        axes[0].set_title("Training time vs. reference size"); axes[0].legend(fontsize=8)
-        axes[0].set_xscale("log"); axes[0].grid(True, alpha=0.25)
-    if os.path.exists(sc_types):
-        td = pd.read_csv(sc_types)
-        for m in td.method.unique():
-            s = td[td.method == m].sort_values("n_types")
-            axes[1].plot(s.n_types, s.fit_s, "-o", color=c(m), label=m, lw=2 if m == "actinn-jax" else 1)
-        axes[1].set_xlabel("# cell types"); axes[1].set_ylabel("fit time (s)")
-        axes[1].set_title("Training time vs. #types"); axes[1].legend(fontsize=8)
-        axes[1].grid(True, alpha=0.25)
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+    panels = [(sc_cells, "n_ref", "# reference cells", True),
+              (sc_types, "n_types", "# cell types", False)]
+    pmax = 0
+    for col, (path, xcol, xlabel, logx) in enumerate(panels):
+        if not os.path.exists(path):
+            continue
+        sd = pd.read_csv(path)
+        pmax = max(pmax, sd.predict_s.max())
+        for row, ycol, ylabel in ((0, "fit_s", "fit time (s)"),
+                                  (1, "predict_s", "predict time (s)")):
+            ax = axes[row][col]
+            for m in sd.method.unique():
+                s = sd[sd.method == m].sort_values(xcol)
+                ax.plot(s[xcol], s[ycol], "-o", color=c(m), label=m,
+                        lw=2 if m == "actinn-jax" else 1)
+            ax.set_xlabel(xlabel); ax.set_ylabel(ylabel)
+            if logx:
+                ax.set_xscale("log")
+            ax.grid(True, alpha=0.25)
+        axes[0][col].set_title(f"Training time vs. {'reference size' if logx else '#types'}")
+        axes[1][col].set_title(f"Predict time vs. {'reference size' if logx else '#types'}")
+        axes[0][col].legend(fontsize=8)
+    for ax in axes[1]:                       # shared scale, and zero-based: the claim is flatness
+        ax.set_ylim(0, pmax * 1.15)
     fig.tight_layout(); fig.savefig(f"{FIG}/fig_scaling.png", bbox_inches="tight"); plt.close(fig)
 scaling()
 

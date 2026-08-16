@@ -32,9 +32,11 @@ it is already right most of the time, so the ontology has little left to recover
 **Figure S2.** Per-class recall for eleven methods on the 86-type blood+gut split, ordered by
 how much the methods disagree (best minus worst recall, right-hand strip). The best and worst
 method differ by a median of 0.30 recall per class and up to 0.73; mean pairwise Spearman
-between methods' per-class recall is 0.58. Class size is not the explanation — the test split
-is capped per label at 14–30 cells for all 86 classes, and the ten smallest classes score
-slightly higher than the ten largest (0.865 vs 0.827).
+between methods' per-class recall is 0.58. Class size is not the explanation, and on this
+split it cannot be: capping per label leaves **84 of the 86 classes holding exactly 30 test
+cells**, with the remaining two at 29 and 14. There is no size variation left for rarity to
+act through, so the disagreement is about which types a method finds hard, not how many
+examples it saw.
 
 ![per-class recall, lung](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_perclass_lung_intra.png)
 

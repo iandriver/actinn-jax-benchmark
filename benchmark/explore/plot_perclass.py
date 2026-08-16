@@ -13,9 +13,14 @@ recall is 0.58 -- correlated, but a long way from the 1.0 that "they all fail on
 types" would need.
 
 An earlier version sorted by abundance and was captioned "methods fail in the same place:
-the rare classes". Both halves were wrong. The test split is capped per label (14-30 cells
-across all 86 classes), so rarity is not a variable here, and the ten smallest classes score
-slightly *higher* than the ten largest (0.865 vs 0.827).
+the rare classes". Both halves were wrong. Capping per label leaves 84 of the 86 classes with
+exactly 30 test cells (the other two hold 29 and 14), so rarity is not a variable here at all.
+
+The fix for that caption then over-corrected, comparing the ten largest classes against the
+ten smallest. That comparison is empty on this split: with 84 classes tied at 30 cells, both
+groups are arbitrary samples from one pool, and `value_counts()` decides which is which. The
+reported gap moved from 0.038 to 0.005 between two runs on identical predictions, purely
+because the tie order changed. The size summary below prints the tie count instead.
 
     .venv/bin/python benchmark/explore/plot_perclass.py --dataset blood_gut_intra
 """
@@ -132,9 +137,10 @@ def main():
         off = cc[np.triu_indices_from(cc, k=1)]
         print(f"mean pairwise Spearman of per-class recall between methods: {off.mean():.3f} "
               f"(1.0 would mean identical difficulty ranking)")
-        big, small = sizes.index[:10], sizes.index[-10:]
-        print(f"mean recall, 10 largest classes: {m.reindex(big).mean().mean():.3f}")
-        print(f"mean recall, 10 smallest classes: {m.reindex(small).mean().mean():.3f}")
+        top = sizes.value_counts().idxmax()
+        print(f"class sizes in the test split: {sizes.min()}-{sizes.max()} cells, "
+              f"{(sizes == top).sum()} of {len(sizes)} classes tied at {top} "
+              f"-- too little spread to attribute recall differences to class size")
         sp = (m.max(axis=1) - m.min(axis=1))
         print(f"best-minus-worst method recall per class: median {sp.median():.2f}, "
               f"max {sp.max():.2f}")
