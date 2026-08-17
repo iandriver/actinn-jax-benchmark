@@ -383,7 +383,7 @@ more than the leaderboard's own set.
 (§3.7) run on AWS `r7i.8xlarge` instances (32 vCPU, 247 GB) through OP's own Nextflow
 pipeline, two tasks at a time.
 
-**Accuracy** in Table 9 comes from a single AWS run covering all eleven methods, so every
+**Accuracy** in Table 8 comes from a single AWS run covering all eleven methods, so every
 score is one harness, one machine, one invocation.
 
 **Cost** is reported as a ratio to actinn-jax rather than in seconds, because wall-clock on a
@@ -550,23 +550,35 @@ and 5.
 
 ![scaling](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_scaling.png)
 
-**Figure 2.** Fit and predict time against reference size and label cardinality. Fit time grows
-for every trained method; predict time stays sub-second throughout — flat in reference size,
-and rising to 0.30 s at 86 types.
+**Figure 2.** Fit and predict time against reference size and label cardinality, for the six
+CPU methods. Fit grows with both axes for every trained method, steeply for CellTypist and the
+SVM. Predict is flat in reference size for all six, so that flatness is a property of cached
+inference generally rather than of any one method; the axis that separates them is cardinality,
+where actinn-jax rises 3.2× from 5 to 86 types against the tuned linear pipeline's 11.9×, the
+two meeting at ~0.30 s. SVM and kNN predict faster than either throughout. scTOP's
+smallest-reference point carries one-time import cost and is not a scaling effect.
 
 Fit time grows with reference size and with #cell types for all trained methods —
-actinn-jax's fit goes 2.6 s → 17.4 s → 23.5 s as the reference grows 965 → 14.8k → 24k
-cells, below CellTypist (6 s → 71 s → 116 s) and SVM (4 s → 51 s → 80 s) at every size in
-the sweep; kNN does no work at fit time beyond storing the reference, so all of its cost lands on
-predict, where it is also the least accurate method here.
+actinn-jax's fit goes 3 s → 17 s → 29 s as the reference grows 965 → 14.8k → 24k cells, below
+CellTypist (7 s → 68 s → 123 s) and SVM (4 s → 54 s → 89 s) at every size in the sweep, and
+above the tuned linear pipeline (2 s → 10 s → 19 s); kNN does no work at fit time beyond
+storing the reference, so all of its cost lands on predict, where it is also the least accurate
+method here.
 
-The other axis is the one that matters for the workflows: **predict time stays sub-second
-across the entire range, 0.08–0.33 s.** It is genuinely flat in reference size — 0.30 s to
-0.33 s while the reference grows twenty-five-fold — but not in cardinality, where it rises
-3.8×, from 0.08 s at 5 types to 0.30 s at 86. The rise is real and worth stating; it is also
-still sub-second, against fits that reach 80–116 s on the same sweeps. With the
-train-once/map-many cache the fit cost is paid once and only that sub-second predict cost
-recurs — the regime that matters when a reference is reused across many queries. (This sweep's own
+On the other axis, **predict stays sub-second for every method across the whole sweep**, and
+the first thing to say is that flatness in reference size does not distinguish anything: all
+six move by 1.2–1.9× while the reference grows twenty-five-fold, because a cached model's
+inference does not depend on how many cells trained it. Cardinality is where they part.
+actinn-jax rises 3.2× from 5 to 86 types (0.09 → 0.30 s); the tuned linear pipeline starts
+three and a half times cheaper and rises 11.9× (0.03 → 0.31 s), so the two arrive at the same
+place; scTOP rises 11.0×. Neither of the two cheapest is ours — SVM (0.015–0.076 s) and kNN
+(0.021–0.263 s) predict faster than actinn-jax everywhere, and pay for it in accuracy (Table 3).
+
+What the cached reference buys is therefore not a uniquely flat predict but the right *ratio*:
+a sub-second call recurring against a fit of 19–123 s that is paid once. That is the regime
+that matters when one reference serves many queries, and it is what makes chaining several
+annotation stages practical; it would be as true of the linear pipeline if it cached its
+scaler, PCA and classifier rather than refitting them per query. (This sweep's own
 memory column is process-cumulative and not a clean per-size measurement; the atlas sweep
 below and the matrix of §3.1 both run each method in its own process, and are what the
 memory numbers come from.)
@@ -820,21 +832,14 @@ maximum class posterior from the model's soft prediction. SVM, SingleR and scPRI
 per-cell confidence and cannot be swept, and scmap-cluster has a single native "unassigned"
 decision rather than a threshold.
 
-| method | p≥0.5: acc / cov / OOD | p≥0.7 | p≥0.9 |
-|---|---|---|---|
-| **actinn-jax** | 0.919 / 0.93 / 0.30 | 0.946 / 0.84 / 0.52 | 0.969 / 0.66 / 0.73 |
-| scArches | 0.902 / 0.94 / 0.20 | 0.941 / 0.82 / 0.44 | 0.983 / 0.61 / 0.71 |
-| scANVI | 0.893 / 0.96 / 0.13 | 0.929 / 0.88 / 0.34 | 0.965 / 0.74 / 0.60 |
-| linear-anova-pca | 0.894 / 0.99 / 0.07 | 0.916 / 0.93 / 0.25 | 0.941 / 0.85 / 0.46 |
-| kNN | 0.830 / 0.86 / 0.28 | 0.921 / 0.61 / 0.63 | 0.988 / 0.36 / 0.83 |
-| CellTypist | 0.936 / 0.68 / 0.68 | 0.936 / 0.68 / 0.68 | 0.937 / 0.68 / 0.68 |
-| ProtoCloud | 0.719 / 1.00 / 0.00 | 0.719 / 0.97 / 0.02 | 0.750 / 0.61 / 0.47 |
-| scTOP | 0.971 / 0.06 / 0.98 | 1.000 / 0.00 / 1.00 | 1.000 / 0.00 / 1.00 |
+![what a threshold does to each method](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_abstain_grid.png)
 
-**Table 8.** Confidence-threshold sweep with 9 of 36 cell types held out of the liver
-reference, so 1,350 query cells are out-of-distribution. Each cell reads accuracy on kept
-cells / fraction of cells kept / fraction of held-out-type cells flagged. The full five-point
-sweep is in Figure 7 and in the result tables.
+**Figure 7.** What a confidence threshold does to each of the eight methods that return a
+per-cell confidence, with 9 of 36 cell types held out of the liver reference so 1,350 query
+cells are out-of-distribution. Every quantity is a fraction, so all three share one axis:
+accuracy on kept cells, coverage, and the share of held-out-type cells flagged. The five that
+work share a shape — accuracy and novelty rising as coverage falls — and the three that do not
+each fail visibly and differently. Per-threshold values are in `results_rejection.csv`.
 
 **Five of the eight give a threshold that does something; three do not.** actinn-jax,
 scArches, scANVI, the linear pipeline and kNN all trade coverage for accuracy across the
@@ -843,8 +848,8 @@ or 1, so every threshold from 0.3 to 0.9 lands on one operating point; scTOP's p
 is not a calibrated probability and discards all but 6% of the query by p≥0.5; ProtoCloud's
 ambiguity flag barely moves until 0.9.
 
-Among the five that work, abstain quality does not separate them the way cost does.
-actinn-jax and scArches are effectively tied — at p≥0.9, 0.969 accuracy on 66% of cells with
+Among the five that work, abstain quality does not separate them the way cost does
+(Figure 8). actinn-jax and scArches are effectively tied — at p≥0.9, 0.969 accuracy on 66% of cells with
 73% of novel cells flagged against 0.983 on 61% with 71% flagged — and scANVI is close behind.
 kNN reaches the highest novelty detection (83%) by keeping only 36% of the query, which is a
 different operating regime rather than a better one, and the linear pipeline is the weakest
@@ -856,11 +861,12 @@ mechanism the workflow of §3.4 routes on.
 
 ![the abstain trade-off](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_abstain.png)
 
-**Figure 7.** What abstention buys, and whether it finds the novel cells, for the eight methods
-that return a per-cell confidence. *Left:* accuracy on kept cells against the fraction kept.
-*Right:* the share of held-out-type cells flagged as the threshold rises. A usable mechanism
-moves along both axes; CellTypist's saturated probabilities collapse four thresholds onto one
-operating point, and scTOP's projection score discards the query rather than ranking it.
+**Figure 8.** The same sweep read as a trade-off, which is what compares methods to each
+other rather than to themselves. *Left:* accuracy on kept cells against the fraction kept — the
+five usable methods lie along one band, which is the basis for calling their abstain quality
+tied. *Right:* the share of held-out-type cells flagged as the threshold rises. The three
+methods Figure 7 shows failing appear here as curves that go nowhere along one axis or the
+other.
 
 
 ## Foundation-model zero-shot (scPRINT)
@@ -909,7 +915,7 @@ Means over the six datasets, every method through the same pipeline on one insta
 | naive_bayes | 0.738 | 0.613 | 0.19× | 19.5 GB |
 | **scTOP** | 0.581 | 0.462 | **0.16×** | 20.4 GB |
 
-**Table 9.** All eleven methods on the six Open Problems datasets, ordered by accuracy. Bold
+**Table 8.** All eleven methods on the six Open Problems datasets, ordered by accuracy. Bold
 marks the five components we contributed. *cost* is per-dataset wall-clock relative to
 actinn-jax (§2.10), for which 1.00× is roughly two minutes.
 
@@ -954,10 +960,10 @@ Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and
 in minutes — the gap to the top method was largely a gene-budget artifact, not the VAE. But
 more genes is **not** a universal win: it *regresses* tabula_sapiens by ~10 pt (its
 284-cell test batch across 160 fine types overfits reference-specific genes) and saturates
-hypomap (Figure 8). The budget is
+hypomap (Figure 9). The budget is
 **selectable without test labels**: held-out *reference* cross-validation rises for the
 datasets that benefit and is the one signal that *drops* for tabula_sapiens, and a trivial
-query-cells-per-class check independently flags it (Figure 9) —
+query-cells-per-class check independently flags it (Figure 10) —
 so the budget can be set deterministically per dataset. (iii) *Negative control* — a
 CPU-only, UCE-style protein-embedding featurization (expression-weighted mean of ESM2 gene
 embeddings) does **not** help and hurts the hardest case: the pooling discards the per-gene
@@ -966,13 +972,13 @@ in its GPU transformer, not a portable averaging trick.
 
 ![gene budget curve](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/gene_budget_curve.png)
 
-**Figure 8.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
+**Figure 9.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
 Problems datasets. More genes help most datasets but regress the fine-grained,
 domain-shifted tabula_sapiens.
 
 ![gene budget signals](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/gene_budget_signals.png)
 
-**Figure 9.** Label-free signals for setting the gene budget without test labels. Held-out
+**Figure 10.** Label-free signals for setting the gene budget without test labels. Held-out
 reference cross-validation and query-cells-per-class both single out tabula_sapiens, the one
 dataset where more genes cost real accuracy — about 10 points. hypomap drifts down as well,
 but from a saturated 0.998, and neither signal flags it.
@@ -988,8 +994,9 @@ cells; 0.905 vs 0.824 at 47k liver cells), having been below the cluster on the 
 matrix. actinn-jax's place in that picture rests on a cost profile with two properties that
 matter for repeated use rather than for a single labeling run.
 
-*Footprint.* Inference is **sub-second** — flat in reference size, and rising only mildly
-with cardinality (§3.3) — so a query costs the same against a 1k-cell reference and a 49k-cell
+*Footprint.* Inference is **sub-second** — flat in reference size, and rising 3.2× with
+cardinality while staying under a third of a second (§3.3) — so a query costs the same
+against a 1k-cell reference and a 49k-cell
 one. Peak memory is unremarkable on small references (2.4 GB mean — seven of the ten other
 methods are lighter), but it is the lowest of those we carried to **atlas scale**:
 ~2× below the linear pipeline (6.1 vs 13.2 GB at 49k lung cells; 6.5 vs 12.6 GB at 47k liver
@@ -1123,7 +1130,7 @@ scientist can run, inspect, and run again.
  Measured `%cpu` on the OP harness spans 49% to 2338% across methods — some are
  single-threaded, some saturate 23 cores — so the same method timed at two concurrency
  settings differs by up to 12×, and any wall-clock ranking taken at high concurrency
- silently ranks threading and scheduler contention alongside algorithm. Table 9 therefore
+ silently ranks threading and scheduler contention alongside algorithm. Table 8 therefore
  reports cost as a ratio within a run, anchored by a method common to both (§2.10) — the
  anchor itself moved 165 s → 87 s between them, which is the size of the effect.
 - **The cross-method comparison is human only**; six datasets per benchmark; GPU foundation

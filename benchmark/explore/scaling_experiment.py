@@ -1,17 +1,39 @@
 """Scaling curves for the CPU-classical tier (the Pareto-relevant comparison):
 runtime + peak memory vs #reference cells (fixed #types) and vs #cell types (fixed
-cells/type). Methods: actinn-jax, svm, knn, celltypist -- all core-venv, same machine.
+cells/type).
+
+The tier spans two pinned environments -- celltypist lives in the core venv, sctop in the
+protocloud one -- so the sweep runs once per environment and the halves are merged. That is
+safe because every split here is seeded: `stratified_subsample` and `intra_split` both
+default to seed 0, so the two runs build byte-identical references and queries.
+
+This hardcoded four methods and was written before the tuned linear pipeline and scTOP joined
+the panel, which left the paper's flat-inference claim demonstrated against SVM, kNN and
+CellTypist but never against the method that competes with it on accuracy.
 
 Run AFTER the main matrix (it saturates the CPU). Outputs:
   docs/results_scaling_cells.csv, docs/results_scaling_types.csv
+
+    .venv/bin/python benchmark/explore/scaling_experiment.py \\
+        --methods actinn-jax,svm,knn,celltypist --suffix core
+    .venv-protocloud/bin/python benchmark/explore/scaling_experiment.py \\
+        --methods linear-anova-pca,sctop --suffix protocloud
 """
-import sys, time, warnings; warnings.filterwarnings("ignore")
+import argparse, sys, time, warnings; warnings.filterwarnings("ignore")
 import numpy as np, pandas as pd, scanpy as sc
 sys.path.insert(0, "/Users/iandriver/Downloads/actinn-jax-benchmark")
 from benchmark import adapters, datasets
 from benchmark.resources import ResourceMonitor
 
-METHODS = ["actinn-jax", "svm", "knn", "celltypist"]
+_ap = argparse.ArgumentParser()
+_ap.add_argument("--methods", default="actinn-jax,svm,knn,celltypist",
+                 help="comma-separated; all must be importable in this interpreter")
+_ap.add_argument("--suffix", default=None,
+                 help="write results_scaling_{cells,types}_SUFFIX.csv instead of the merged name")
+_a = _ap.parse_args()
+METHODS = [m.strip() for m in _a.methods.split(",") if m.strip()]
+_sfx = f"_{_a.suffix}" if _a.suffix else ""
+CELLS_OUT, TYPES_OUT = f"docs/results_scaling_cells{_sfx}.csv", f"docs/results_scaling_types{_sfx}.csv"
 LUNG = "/Users/iandriver/Downloads/krasnow_lung_atlas_10x.h5ad"
 BLOODGUT = "/Volumes/IanSSD/hlica/blood_gut_intra.h5ad"
 LABEL = "cell_type"
@@ -48,7 +70,7 @@ for N in [1000, 2000, 5000, 10000, 20000, 40000]:
         rows_c.append(r)
         print(f"  N={ref.n_obs:6d} {name:11s} fit={r['fit_s']:6.1f}s pred={r['predict_s']:5.2f}s "
               f"mem={r['peak_mem_mb']:.0f}MB", flush=True)
-pd.DataFrame(rows_c).to_csv("docs/results_scaling_cells.csv", index=False)
+pd.DataFrame(rows_c).to_csv(CELLS_OUT, index=False)
 
 # ---- B) vs #cell types (fixed cells/type) ----
 print("=== scaling vs #types (blood+gut) ===", flush=True)
@@ -66,5 +88,5 @@ for K in [5, 10, 20, 40, 86]:
         rows_t.append(r)
         print(f"  K={K:3d} {name:11s} fit={r['fit_s']:6.1f}s pred={r['predict_s']:5.2f}s "
               f"mem={r['peak_mem_mb']:.0f}MB", flush=True)
-pd.DataFrame(rows_t).to_csv("docs/results_scaling_types.csv", index=False)
+pd.DataFrame(rows_t).to_csv(TYPES_OUT, index=False)
 print("SCALING_DONE", flush=True)

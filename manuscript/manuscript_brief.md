@@ -41,9 +41,10 @@ header-includes:
 - Rankings are not stable: a prototype VAE moves from worst to best as the reference grows
  from 3k to 49k cells, and a tuned linear pipeline that fits 7× faster than a gene-space MLP
  on one panel costs 2.7× more on another with a narrower feature budget.
-- Inference time is flat in reference size for a cached gene-space MLP (0.30–0.33 s from 1k
- to 24k reference cells) and stays sub-second as cardinality grows (0.08–0.30 s from 5 to 86
- types), which is what makes chaining several annotation stages practical on a laptop.
+- Predict is sub-second for every CPU method tested and flat in reference size for all of
+ them; what makes chaining stages practical is the ratio, a 0.09–0.31 s call recurring against
+ a fit of 19–123 s paid once. On cardinality the methods do separate: a cached gene-space MLP
+ rises 3.2× from 5 to 86 types where a tuned linear pipeline rises 11.9×.
 - A pretrained pan-human annotator can be distilled into a fast reference using only raw
  counts — no GPU, no labels — matching the teacher's concordance and beating a census-built
  reference, at 6–9× the teacher's throughput.
@@ -195,13 +196,17 @@ Bold marks components we contributed to that benchmark. *cost* is per-dataset wa
 relative to actinn-jax on the same instance. scTOP's mean reflects two collapses and one weak
 result inside three ordinary ones, traced to the fixed feature budget.
 
-## Inference cost is flat in reference size
+## Fit is what costs; inference stays sub-second
 
-Fit time grows with reference size and cardinality for every trained method. Prediction
-does not: for a cached reference model it holds at **0.30–0.33 s as the reference grows from
-1k to 24k cells**, and stays sub-second (0.08–0.30 s) from 5 to 86 types (Figure 2). With
-train-once/map-many caching the fit is paid once and only that sub-second cost recurs — the regime that matters when one reference
-serves many queries. Peak memory is likewise bounded rather than divergent: the
+Fit time grows with reference size and cardinality for every trained method — actinn-jax
+3 s → 29 s across 965 to 24k reference cells, against CellTypist's 7 s → 123 s. Prediction
+does not: it stays **sub-second for all six CPU methods across both sweeps**, and flatness in
+reference size distinguishes none of them, since a cached model's inference does not depend on
+how many cells trained it. Cardinality separates them: actinn-jax rises 3.2× from 5 to 86
+types (0.09 → 0.30 s) where the tuned linear pipeline starts cheaper and rises 11.9×
+(0.03 → 0.31 s), the two meeting at the top (Figure 2). What the cache buys is the ratio — a
+sub-second call recurring against a fit paid once — which is the regime that matters when one
+reference serves many queries. Peak memory is likewise bounded rather than divergent: the
 linear/actinn-jax ratio holds at ~2–3× (6.1 vs 13.2 GB at 49k cells) rather than widening
 (Figure 1C). The query axis behaves differently: with the reference fixed, actinn-jax
 annotates the entire 524,699-cell liver atlas in **41 s**, three to four times faster than
@@ -213,9 +218,11 @@ rather than running the method.
 
 ![scaling](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_scaling.png)
 
-**Figure 2.** Fit and prediction time against reference size and label cardinality. Fit time
-grows for every trained method; prediction stays sub-second throughout — flat in reference
-size, and rising to 0.30 s at 86 types.
+**Figure 2.** Fit and prediction time against reference size and label cardinality, six CPU
+methods. Fit grows on both axes for every trained method. Prediction is sub-second throughout
+and flat in reference size for all six; cardinality is the axis that separates them, where
+actinn-jax rises 3.2× against the linear pipeline's 11.9×. SVM and kNN predict faster than
+either. scTOP's smallest-reference point carries one-time import cost.
 
 ## A flat cost profile makes multi-stage annotation practical
 
