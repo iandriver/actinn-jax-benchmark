@@ -1,0 +1,18 @@
+model,subset,n,coverage,ontology
+census (broad_human_v1),all cells,156285,1.0,0.7916
+distilled (panhuman_distill_v1),all cells,156285,1.0,0.981
+Pan-human Azimuth,all cells,156285,1.0,0.9866
+consensus,all cells,156285,1.0,0.8366
+consensus (naive tie-break),all cells,156285,1.0,0.8334
+consensus,3 of 3 references agree,146191,0.9354,0.8372
+census (broad_human_v1),3 of 3 references agree,146191,0.9354,0.8388
+distilled (panhuman_distill_v1),3 of 3 references agree,146191,0.9354,0.997
+Pan-human Azimuth,3 of 3 references agree,146191,0.9354,0.997
+consensus,2 of 3 references agree,8987,0.0575,0.8601
+census (broad_human_v1),2 of 3 references agree,8987,0.0575,0.1069
+distilled (panhuman_distill_v1),2 of 3 references agree,8987,0.0575,0.8285
+Pan-human Azimuth,2 of 3 references agree,8987,0.0575,0.8686
+consensus,1 of 3 references agree,1107,0.0071,0.5673
+census (broad_human_v1),1 of 3 references agree,1107,0.0071,0.1165
+distilled (panhuman_distill_v1),1 of 3 references agree,1107,0.0071,0.1057
+Pan-human Azimuth,1 of 3 references agree,1107,0.0071,0.5678

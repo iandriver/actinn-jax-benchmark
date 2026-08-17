@@ -33,10 +33,11 @@ workflow**: a shipped ~800-type reference routes a query to tissue and hands off
 reference (cross-study liver 0.23/0.58 to 0.72/0.86, exact/ontology); a pan-human annotator is
 distilled into an interchangeable entry point from raw counts alone, with no GPU and no
 labels, matching its teacher at six to nine times the throughput; and running three broad
-references over the same cells partitions them by agreement, where all three concur the
-concordance of every one of them roughly doubles. That partition costs three sub-second calls
-and no labels, which is what makes it usable on a query whose answers are unknown. We release
-the reimplementation, the harness and the pre-trained references.
+references over the same cells partitions it by agreement. Across liver, lung and brain every
+reference is far more accurate where all three concur than where they do not, though a
+consensus *label* beats none of them — the value is knowing which calls to trust, at the price
+of three sub-second calls and no labels. We release the reimplementation, the harness and the
+pre-trained references.
 
 ## 1. Introduction
 
@@ -863,31 +864,84 @@ make a question affordable that would not be worth asking if a broad call cost m
 happens if a user simply runs all of them? They answer in three different vocabularies (798,
 382 and 324 classes), so agreement is defined in the Cell Ontology where all three map: two
 calls agree when they are the same term or one is an ancestor of the other, the relation the
-concordance metric already uses. Partitioning the 3,396 withheld cells by how many of the
-three mutually agree:
+concordance metric already uses. Partitioning by how many of the three mutually agree, on the
+withheld cross-study liver query and on the 65,662-cell Krasnow lung atlas:
 
-| | coverage | census | distilled | Azimuth |
-|---|---:|---:|---:|---:|
-| all three agree | 23% | 0.690 | **0.778** | 0.785 |
-| two agree | 55% | 0.241 | 0.303 | 0.311 |
-| none agree | 22% | 0.212 | 0.276 | 0.257 |
-| *whole query* | 100% | *0.338* | *0.406* | *0.408* |
+| tissue | tier | coverage | census | distilled | Azimuth |
+|---|---|---:|---:|---:|---:|
+| liver | all three agree | 23% | 0.690 | 0.778 | 0.785 |
+| liver | two agree | 55% | 0.241 | 0.303 | 0.311 |
+| liver | none agree | 22% | 0.212 | 0.276 | 0.257 |
+| liver | *whole query* | 100% | *0.338* | *0.406* | *0.408* |
+| lung | all three agree | 48% | 0.934 | 0.917 | 0.917 |
+| lung | two agree | 50% | 0.156 | 0.768 | 0.770 |
+| lung | none agree | 3% | 0.059 | 0.436 | 0.425 |
+| lung | *whole query* | 100% | *0.524* | *0.830* | *0.831* |
+| brain | all three agree | 94% | 0.839 | 0.997 | 0.997 |
+| brain | two agree | 6% | 0.107 | 0.829 | 0.869 |
+| brain | none agree | 1% | 0.117 | 0.106 | 0.568 |
+| brain | *whole query* | 100% | *0.792* | *0.981* | *0.987* |
 
 **Table 8.** Ontology concordance within each agreement tier, three broad references on
-identical cells.
+identical cells, in three tissues: withheld cross-study liver (3,396 cells, 34 truth types),
+the Krasnow lung atlas (65,662, 46) and the Allen human middle temporal gyrus (156,285, 18).
 
-Every model roughly doubles on the cells where all three agree, and that they improve
-*together* is what makes the partition useful: agreement is selecting cells that are
-unambiguous rather than cells one model happens to get right. Unlike accuracy, it can be
-computed on a query whose answers are unknown, for the price of three sub-second calls.
+One thing replicates in all three tissues: cells the references disagree about are annotated
+far less reliably than cells they concur on, for every reference. The census model spans 0.690
+to 0.212 across the liver partition, 0.934 to 0.059 across lung and 0.839 to 0.117 across
+brain, with the same direction for the other two. That all three improve *together* is what
+makes the partition useful — agreement selects cells that are unambiguous rather than cells one
+model happens to get right — and unlike accuracy it can be computed on a query whose answers
+are unknown, for the price of three sub-second calls.
 
-The consensus *label* is not the prize. Taking the most specific call the agreeing references
-support scores 0.365 over the whole query — below the best single reference's 0.408 — even
-after falling back to the strongest model on cells where nothing agrees. Choosing the deepest
-agreeing call slightly underperforms simply trusting the best model, so running several
-references does not produce a better annotation; it identifies which annotations to trust. We
-report this as one query in one tissue with three references: the direction is clear, the
-magnitude is not established beyond this setting.
+What does not replicate is how much of a query the agreeing set covers: 23% on liver, 48% on
+lung, 94% on brain. Brain explains the spread rather than extending it. That query's Cell
+Ontology annotation uses **18 terms for a region whose own taxonomy, `CCN201908210`, defines
+154 cell sets**, and 55% of its cells fall in one class, `L2/3-6 intratelencephalic projecting
+glutamatergic neuron`. Concordances near 0.98 and agreement at 94% are what a coarse truth
+vocabulary produces, not what an easy tissue produces. The partition reports the resolution of
+the annotation it is scored against, which is a property of the query rather than of the
+method, and is the form in which it is useful to a user: it says how much of *their* data is
+unambiguous at the resolution *they* have.
+
+The consensus *label* is not the prize in any of the three, and brain shows why the rule
+itself is weak. Taking the most specific call the agreeing references support scores 0.365 on
+liver against the best single reference's 0.408, 0.828 on lung against 0.831, and 0.837 on
+brain against 0.987. That last gap is large because "most specific agreeing call" lets one
+reference's confident, lineage-compatible but wrong specificity override two correct coarser
+calls: on the 94% of brain cells where all three agree, the two strong references score 0.997
+and the consensus built from them scores 0.837. A better rule may exist; what the experiment
+establishes is that the *partition* carries the information and the label does not.
+
+**What counts as agreement is the ontology's judgment, not ours.** The relation above is
+inherited wholesale from the Cell Ontology: two calls agree when CL says one subsumes the
+other. That is a dependency worth naming, because where CL is coarse or incomplete two
+references naming the same population can be scored as disagreeing, and where it is deep a
+pair of calls can agree at a resolution neither reference meant to assert. The comparison was
+possible at all only because Pan-human Azimuth publishes a CL term for every node of its
+typology; an annotator that ships no crosswalk cannot enter this analysis regardless of how
+good its labels are.
+
+The alternative design targets exactly this problem, and looking at it closely shows why the
+substitution is not free. The Common Cell type Nomenclature [Miller 2020] gives each taxonomy's
+cell sets stable accessions (`CS[taxonomy id]_[n]`) plus a curated alias layer, treating CL as
+one alignment target rather than as the coordinate system. In the published human middle
+temporal gyrus taxonomy `CCN201908210`, 154 cell sets carry an accession and a structure tag —
+`UBERON:0002771`, the gyrus itself — but **no cell-type ontology id at all**; the field that
+matches cell sets across taxonomies, the aligned alias, is populated for **23 of the 154**. Of
+those 23, eight match a CL term name or synonym by exact string (`L2/3 IT`, `L5 IT`, `L5/6 NP`,
+`L6 CT`, `L6 IT`, `Lamp5`, `OPC`, `Sst Chodl`); most of the rest are abbreviations such as
+`Astro`, `Oligo` and `Endo` whose expansions do exist in CL, so the true overlap is larger than
+a string test finds and is exactly as large as someone is willing to curate.
+
+That is the substantive difference. CL supplies a *total* subsumption relation — every pair of
+terms is comparable, at whatever granularity CL happens to encode — which is what makes an
+agreement partition computable at all. CCN supplies exact provenance, which CL cannot: it
+records which taxonomy, which algorithm and which publication a label came from. An agreement
+relation built on CCN accessions alone would be undefined for most pairs of cell sets, because
+accessions are deliberately taxonomy-scoped rather than shared. The two systems answer
+different questions, and a workflow that compares annotations across references needs both: CL
+to decide whether two calls are compatible, CCN to say what each call actually was.
 
 ### 3.5 Rejection / abstain
 

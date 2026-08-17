@@ -5,7 +5,7 @@ author:
   - Ian Driver$^{\ast}$
 date: ""
 abstract: |
-  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** — classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model — across **six datasets** (8–86 cell types; within-dataset, cross-dataset and cross-study splits) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.5×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but what a low annotation cost makes possible. Using **actinn-jax**, a JAX reimplementation of ACTINN with a cached train-once/map-many reference, we show that sub-second reference calling turns annotation from a single decision into a **multi-pass workflow**: a shipped ~800-type reference routes a query to tissue and hands off to a focused reference (cross-study liver 0.23/0.58 to 0.72/0.86, exact/ontology); a pan-human annotator is distilled into an interchangeable entry point from raw counts alone, with no GPU and no labels, matching its teacher at six to nine times the throughput; and running three broad references over the same cells partitions them by agreement, where all three concur the concordance of every one of them roughly doubles. That partition costs three sub-second calls and no labels, which is what makes it usable on a query whose answers are unknown. We release the reimplementation, the harness and the pre-trained references.
+  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** — classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model — across **six datasets** (8–86 cell types; within-dataset, cross-dataset and cross-study splits) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.5×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but what a low annotation cost makes possible. Using **actinn-jax**, a JAX reimplementation of ACTINN with a cached train-once/map-many reference, we show that sub-second reference calling turns annotation from a single decision into a **multi-pass workflow**: a shipped ~800-type reference routes a query to tissue and hands off to a focused reference (cross-study liver 0.23/0.58 to 0.72/0.86, exact/ontology); a pan-human annotator is distilled into an interchangeable entry point from raw counts alone, with no GPU and no labels, matching its teacher at six to nine times the throughput; and running three broad references over the same cells partitions it by agreement. Across liver, lung and brain every reference is far more accurate where all three concur than where they do not, though a consensus *label* beats none of them — the value is knowing which calls to trust, at the price of three sub-second calls and no labels. We release the reimplementation, the harness and the pre-trained references.
 geometry: margin=1in
 fontsize: 11pt
 linkcolor: RoyalBlue
@@ -858,31 +858,84 @@ make a question affordable that would not be worth asking if a broad call cost m
 happens if a user simply runs all of them? They answer in three different vocabularies (798,
 382 and 324 classes), so agreement is defined in the Cell Ontology where all three map: two
 calls agree when they are the same term or one is an ancestor of the other, the relation the
-concordance metric already uses. Partitioning the 3,396 withheld cells by how many of the
-three mutually agree:
+concordance metric already uses. Partitioning by how many of the three mutually agree, on the
+withheld cross-study liver query and on the 65,662-cell Krasnow lung atlas:
 
-| | coverage | census | distilled | Azimuth |
-|---|---:|---:|---:|---:|
-| all three agree | 23% | 0.690 | **0.778** | 0.785 |
-| two agree | 55% | 0.241 | 0.303 | 0.311 |
-| none agree | 22% | 0.212 | 0.276 | 0.257 |
-| *whole query* | 100% | *0.338* | *0.406* | *0.408* |
+| tissue | tier | coverage | census | distilled | Azimuth |
+|---|---|---:|---:|---:|---:|
+| liver | all three agree | 23% | 0.690 | 0.778 | 0.785 |
+| liver | two agree | 55% | 0.241 | 0.303 | 0.311 |
+| liver | none agree | 22% | 0.212 | 0.276 | 0.257 |
+| liver | *whole query* | 100% | *0.338* | *0.406* | *0.408* |
+| lung | all three agree | 48% | 0.934 | 0.917 | 0.917 |
+| lung | two agree | 50% | 0.156 | 0.768 | 0.770 |
+| lung | none agree | 3% | 0.059 | 0.436 | 0.425 |
+| lung | *whole query* | 100% | *0.524* | *0.830* | *0.831* |
+| brain | all three agree | 94% | 0.839 | 0.997 | 0.997 |
+| brain | two agree | 6% | 0.107 | 0.829 | 0.869 |
+| brain | none agree | 1% | 0.117 | 0.106 | 0.568 |
+| brain | *whole query* | 100% | *0.792* | *0.981* | *0.987* |
 
 **Table 8.** Ontology concordance within each agreement tier, three broad references on
-identical cells.
+identical cells, in three tissues: withheld cross-study liver (3,396 cells, 34 truth types),
+the Krasnow lung atlas (65,662, 46) and the Allen human middle temporal gyrus (156,285, 18).
 
-Every model roughly doubles on the cells where all three agree, and that they improve
-*together* is what makes the partition useful: agreement is selecting cells that are
-unambiguous rather than cells one model happens to get right. Unlike accuracy, it can be
-computed on a query whose answers are unknown, for the price of three sub-second calls.
+One thing replicates in all three tissues: cells the references disagree about are annotated
+far less reliably than cells they concur on, for every reference. The census model spans 0.690
+to 0.212 across the liver partition, 0.934 to 0.059 across lung and 0.839 to 0.117 across
+brain, with the same direction for the other two. That all three improve *together* is what
+makes the partition useful — agreement selects cells that are unambiguous rather than cells one
+model happens to get right — and unlike accuracy it can be computed on a query whose answers
+are unknown, for the price of three sub-second calls.
 
-The consensus *label* is not the prize. Taking the most specific call the agreeing references
-support scores 0.365 over the whole query — below the best single reference's 0.408 — even
-after falling back to the strongest model on cells where nothing agrees. Choosing the deepest
-agreeing call slightly underperforms simply trusting the best model, so running several
-references does not produce a better annotation; it identifies which annotations to trust. We
-report this as one query in one tissue with three references: the direction is clear, the
-magnitude is not established beyond this setting.
+What does not replicate is how much of a query the agreeing set covers: 23% on liver, 48% on
+lung, 94% on brain. Brain explains the spread rather than extending it. That query's Cell
+Ontology annotation uses **18 terms for a region whose own taxonomy, `CCN201908210`, defines
+154 cell sets**, and 55% of its cells fall in one class, `L2/3-6 intratelencephalic projecting
+glutamatergic neuron`. Concordances near 0.98 and agreement at 94% are what a coarse truth
+vocabulary produces, not what an easy tissue produces. The partition reports the resolution of
+the annotation it is scored against, which is a property of the query rather than of the
+method, and is the form in which it is useful to a user: it says how much of *their* data is
+unambiguous at the resolution *they* have.
+
+The consensus *label* is not the prize in any of the three, and brain shows why the rule
+itself is weak. Taking the most specific call the agreeing references support scores 0.365 on
+liver against the best single reference's 0.408, 0.828 on lung against 0.831, and 0.837 on
+brain against 0.987. That last gap is large because "most specific agreeing call" lets one
+reference's confident, lineage-compatible but wrong specificity override two correct coarser
+calls: on the 94% of brain cells where all three agree, the two strong references score 0.997
+and the consensus built from them scores 0.837. A better rule may exist; what the experiment
+establishes is that the *partition* carries the information and the label does not.
+
+**What counts as agreement is the ontology's judgment, not ours.** The relation above is
+inherited wholesale from the Cell Ontology: two calls agree when CL says one subsumes the
+other. That is a dependency worth naming, because where CL is coarse or incomplete two
+references naming the same population can be scored as disagreeing, and where it is deep a
+pair of calls can agree at a resolution neither reference meant to assert. The comparison was
+possible at all only because Pan-human Azimuth publishes a CL term for every node of its
+typology; an annotator that ships no crosswalk cannot enter this analysis regardless of how
+good its labels are.
+
+The alternative design targets exactly this problem, and looking at it closely shows why the
+substitution is not free. The Common Cell type Nomenclature [\[Miller 2020\]](https://doi.org/10.7554/eLife.59928) gives each taxonomy's
+cell sets stable accessions (`CS[taxonomy id]_[n]`) plus a curated alias layer, treating CL as
+one alignment target rather than as the coordinate system. In the published human middle
+temporal gyrus taxonomy `CCN201908210`, 154 cell sets carry an accession and a structure tag —
+`UBERON:0002771`, the gyrus itself — but **no cell-type ontology id at all**; the field that
+matches cell sets across taxonomies, the aligned alias, is populated for **23 of the 154**. Of
+those 23, eight match a CL term name or synonym by exact string (`L2/3 IT`, `L5 IT`, `L5/6 NP`,
+`L6 CT`, `L6 IT`, `Lamp5`, `OPC`, `Sst Chodl`); most of the rest are abbreviations such as
+`Astro`, `Oligo` and `Endo` whose expansions do exist in CL, so the true overlap is larger than
+a string test finds and is exactly as large as someone is willing to curate.
+
+That is the substantive difference. CL supplies a *total* subsumption relation — every pair of
+terms is comparable, at whatever granularity CL happens to encode — which is what makes an
+agreement partition computable at all. CCN supplies exact provenance, which CL cannot: it
+records which taxonomy, which algorithm and which publication a label came from. An agreement
+relation built on CCN accessions alone would be undefined for most pairs of cell sets, because
+accessions are deliberately taxonomy-scoped rather than shared. The two systems answer
+different questions, and a workflow that compares annotations across references needs both: CL
+to decide whether two calls are compatible, CCN to say what each call actually was.
 
 ## Rejection / abstain
 
@@ -1306,16 +1359,17 @@ splits — and Tables S1–S3, the method and dataset descriptions and per-datas
 14. Lin Z, et al. Evolutionary-scale prediction of atomic-level protein structure with a language model (ESM-2). *Science* 379:1123-1130 (2023). [doi:10.\allowbreak{}1126/\allowbreak{}science.\allowbreak{}ade2574](https://doi.org/10.1126/science.ade2574).
 15. Lotfollahi M, et al. Mapping single-cell data to reference atlases by transfer learning (scArches). *Nature Biotechnology* 40:121-130 (2022). [doi:10.\allowbreak{}1038/\allowbreak{}s41587-021-01001-7](https://doi.org/10.1038/s41587-021-01001-7).
 16. Ma F, Pellegrini M. ACTINN: automated identification of cell types in single cell RNA sequencing. *Bioinformatics* 36(2):533-538 (2020). [doi:10.\allowbreak{}1093/\allowbreak{}bioinformatics/\allowbreak{}btz592](https://doi.org/10.1093/bioinformatics/btz592).
-17. Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis (2024). [openproblems.bio](https://openproblems.bio).
-18. Pedregosa F, et al. Scikit-learn: machine learning in Python. *JMLR* 12:2825-2830 (2011). [jmlr.org/papers/v12/pedregosa11a.html](https://www.jmlr.org/papers/v12/pedregosa11a.html).
-19. Rosen Y, et al. Universal cell embedding provides a foundation model for cell biology (UCE). *Nature* (2026). [doi:10.\allowbreak{}1038/\allowbreak{}s41586-026-10689-z](https://doi.org/10.1038/s41586-026-10689-z).
-20. Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026). [doi:10.\allowbreak{}64898/\allowbreak{}2026.\allowbreak{}07.\allowbreak{}16.\allowbreak{}738997](https://doi.org/10.64898/2026.07.16.738997).
-21. Sikkema L, et al. An integrated cell atlas of the lung in health and disease (HLCA). *Nature Medicine* 29:1563-1577 (2023). [doi:10.\allowbreak{}1038/\allowbreak{}s41591-023-02327-2](https://doi.org/10.1038/s41591-023-02327-2).
-22. Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. *bioRxiv* (2026). [doi:10.\allowbreak{}64898/\allowbreak{}2026.\allowbreak{}02.\allowbreak{}11.\allowbreak{}705358](https://doi.org/10.64898/2026.02.11.705358).
-23. Travaglini KJ, Nabhan AN, Penland L, et al. A molecular cell atlas of the human lung from single-cell RNA sequencing. *Nature* 587(7835):619-625 (2020). [doi:10.\allowbreak{}1038/\allowbreak{}s41586-020-2922-4](https://doi.org/10.1038/s41586-020-2922-4).
-24. Xu C, et al. Probabilistic harmonization and annotation of single-cell transcriptomics data with deep generative models (scANVI). *Molecular Systems Biology* 17:e9620 (2021). [doi:10.\allowbreak{}15252/\allowbreak{}msb.\allowbreak{}20209620](https://doi.org/10.15252/msb.20209620).
-25. Yampolskaya M, Herriges MJ, Ikonomou L, Kotton DN, Mehta P. scTOP: physics-inspired order parameters for cellular identification and visualization. *Development* 150(21):dev201873 (2023). [doi:10.\allowbreak{}1242/\allowbreak{}dev.\allowbreak{}201873](https://doi.org/10.1242/dev.201873).
-26. Munroe R. Standards. *xkcd* 927. [xkcd.com/927](https://xkcd.com/927/).
+17. Miller JA, Gouwens NW, Tasic B, et al. Common cell type nomenclature for the mammalian brain. *eLife* 9:e59928 (2020). [doi:10.\allowbreak{}7554/\allowbreak{}eLife.\allowbreak{}59928](https://doi.org/10.7554/eLife.59928).
+18. Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis (2024). [openproblems.bio](https://openproblems.bio).
+19. Pedregosa F, et al. Scikit-learn: machine learning in Python. *JMLR* 12:2825-2830 (2011). [jmlr.org/papers/v12/pedregosa11a.html](https://www.jmlr.org/papers/v12/pedregosa11a.html).
+20. Rosen Y, et al. Universal cell embedding provides a foundation model for cell biology (UCE). *Nature* (2026). [doi:10.\allowbreak{}1038/\allowbreak{}s41586-026-10689-z](https://doi.org/10.1038/s41586-026-10689-z).
+21. Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026). [doi:10.\allowbreak{}64898/\allowbreak{}2026.\allowbreak{}07.\allowbreak{}16.\allowbreak{}738997](https://doi.org/10.64898/2026.07.16.738997).
+22. Sikkema L, et al. An integrated cell atlas of the lung in health and disease (HLCA). *Nature Medicine* 29:1563-1577 (2023). [doi:10.\allowbreak{}1038/\allowbreak{}s41591-023-02327-2](https://doi.org/10.1038/s41591-023-02327-2).
+23. Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. *bioRxiv* (2026). [doi:10.\allowbreak{}64898/\allowbreak{}2026.\allowbreak{}02.\allowbreak{}11.\allowbreak{}705358](https://doi.org/10.64898/2026.02.11.705358).
+24. Travaglini KJ, Nabhan AN, Penland L, et al. A molecular cell atlas of the human lung from single-cell RNA sequencing. *Nature* 587(7835):619-625 (2020). [doi:10.\allowbreak{}1038/\allowbreak{}s41586-020-2922-4](https://doi.org/10.1038/s41586-020-2922-4).
+25. Xu C, et al. Probabilistic harmonization and annotation of single-cell transcriptomics data with deep generative models (scANVI). *Molecular Systems Biology* 17:e9620 (2021). [doi:10.\allowbreak{}15252/\allowbreak{}msb.\allowbreak{}20209620](https://doi.org/10.15252/msb.20209620).
+26. Yampolskaya M, Herriges MJ, Ikonomou L, Kotton DN, Mehta P. scTOP: physics-inspired order parameters for cellular identification and visualization. *Development* 150(21):dev201873 (2023). [doi:10.\allowbreak{}1242/\allowbreak{}dev.\allowbreak{}201873](https://doi.org/10.1242/dev.201873).
+27. Munroe R. Standards. *xkcd* 927. [xkcd.com/927](https://xkcd.com/927/).
 
 [10x Genomics 2016]: https://www.10xgenomics.com/datasets/3-k-pbm-cs-from-a-healthy-donor-1-standard-1-1-0
 [Abdelaal 2019]: https://doi.org/10.1186/s13059-019-1795-z
@@ -1333,6 +1387,7 @@ splits — and Tables S1–S3, the method and dataset descriptions and per-datas
 [Lin 2023]: https://doi.org/10.1126/science.ade2574
 [Lotfollahi 2022]: https://doi.org/10.1038/s41587-021-01001-7
 [Ma & Pellegrini 2020]: https://doi.org/10.1093/bioinformatics/btz592
+[Miller 2020]: https://doi.org/10.7554/eLife.59928
 [Open Problems 2024]: https://openproblems.bio
 [Pedregosa 2011]: https://www.jmlr.org/papers/v12/pedregosa11a.html
 [Rosen 2026]: https://doi.org/10.1038/s41586-026-10689-z

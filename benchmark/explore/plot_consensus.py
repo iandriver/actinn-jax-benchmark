@@ -33,15 +33,8 @@ SHORT = {"census (broad_human_v1)": "census reference",
          "Pan-human Azimuth": "Pan-human Azimuth"}
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default="docs/results_consensus_broad.csv")
-    ap.add_argument("--out", default="docs/figures/fig_consensus.png")
-    a = ap.parse_args()
-    d = pd.read_csv(a.csv)
+def panel(ax, d, title, show_legend):
     models = [m for m in COLOUR if m in set(d.model)]
-
-    fig, ax = plt.subplots(figsize=(8.4, 4.6))
     width = 0.26
     for j, m in enumerate(models):
         vals, covs = [], []
@@ -61,22 +54,43 @@ def main():
     covs = [float(d[(d.model == models[0]) & (d.subset == t)].coverage.iloc[0]) for t in TIERS]
     ax.set_xticks(range(len(TIERS)))
     ax.set_xticklabels([f"{LABEL[t]}\n{c:.0%} of cells" for t, c in zip(TIERS, covs)],
-                       fontsize=9.4)
-    ax.set_ylabel("ontology concordance", fontsize=9.6)
-    ax.set_ylim(0, 0.92)
+                       fontsize=9)
+    ax.set_ylim(0, 1.02)
     ax.tick_params(axis="y", labelsize=8.4)
     ax.grid(axis="y", alpha=0.22, lw=0.6)
-    for s in ("top", "right"):
-        ax.spines[s].set_visible(False)
-    ax.legend(frameon=False, fontsize=9, loc="upper right")
-    ax.text(0.015, 0.965, "dashed: same model over the whole query",
-            transform=ax.transAxes, fontsize=7.8, color="#555555", va="top")
-    ax.set_title("Where broad references agree, all of them are right more often\n"
-                 "3,396 withheld cross-study liver cells", fontsize=11.5, loc="left", pad=9)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    if show_legend:
+        ax.legend(frameon=False, fontsize=8.6, loc="lower left", ncol=1)
+    ax.set_title(title, fontsize=10.5, loc="left", pad=8)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--liver", default="docs/results_consensus_broad.csv")
+    ap.add_argument("--lung", default="docs/results_consensus_broad_lung.csv")
+    ap.add_argument("--brain", default="docs/results_consensus_broad_brain.csv")
+    ap.add_argument("--out", default="docs/figures/fig_consensus.png")
+    a = ap.parse_args()
+
+    have = [(p, t) for p, t in (
+        (a.liver, "A  liver — 3,396 cells, 34 truth types"),
+        (a.lung, "B  lung — 65,662 cells, 46 truth types"),
+        (a.brain, "C  brain (MTG) — 156,285 cells, 18 truth types"))
+        if os.path.exists(p)]
+    fig, axes = plt.subplots(1, len(have), figsize=(5.4 * len(have), 4.5), sharey=True)
+    axes = np.atleast_1d(axes)
+    for i, ((path, title), ax) in enumerate(zip(have, axes)):
+        panel(ax, pd.read_csv(path), title, show_legend=(i == 0))
+    axes[0].set_ylabel("ontology concordance", fontsize=9.6)
+    fig.suptitle("Where independent broad references agree, every one of them is right more "
+                 "often", fontsize=12.5, y=1.02)
+    fig.text(0.5, -0.045, "dashed lines: the same model over the whole query",
+             ha="center", fontsize=8, color="#555555")
     fig.tight_layout()
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     fig.savefig(a.out, dpi=200, bbox_inches="tight")
-    print(f"wrote {a.out}")
+    print(f"wrote {a.out} ({len(have)} tissue panels)")
     print("CONSENSUS_PLOT_DONE", flush=True)
 
 

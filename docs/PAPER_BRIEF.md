@@ -24,10 +24,11 @@ workflow**: a shipped ~800-type reference routes a query to tissue and hands off
 reference (cross-study liver 0.23/0.58 to 0.72/0.86, exact/ontology); a pan-human annotator is
 distilled into an interchangeable entry point from raw counts alone, with no GPU and no
 labels, matching its teacher at six to nine times the throughput; and running three broad
-references over the same cells partitions them by agreement, where all three concur the
-concordance of every one of them roughly doubles. That partition costs three sub-second calls
-and no labels, which is what makes it usable on a query whose answers are unknown. We release
-the reimplementation, the harness and the pre-trained references.
+references over the same cells partitions it by agreement. Across liver, lung and brain every
+reference is far more accurate where all three concur than where they do not, though a
+consensus *label* beats none of them — the value is knowing which calls to trust, at the price
+of three sub-second calls and no labels. We release the reimplementation, the harness and the
+pre-trained references.
 
 ## Key Points
 
@@ -43,9 +44,11 @@ the reimplementation, the harness and the pre-trained references.
 - A pretrained pan-human annotator can be distilled into a fast reference using only raw
  counts — no GPU, no labels — matching the teacher's concordance and beating a census-built
  reference, at 6–9× the teacher's throughput.
-- Agreement between independent broad references is a label-free confidence signal: on the
- 23% of cells where three references concur, each one's concordance roughly doubles. A
- consensus *label*, by contrast, does not beat the best single reference.
+- Agreement between independent broad references is a label-free confidence signal,
+ replicated on three tissues: where three references concur, every one of them is far more
+ accurate than where they disagree. How much of a query that covers varies from 23% to 94%
+ and tracks the resolution of the query's own annotation. A consensus *label* beats the best
+ single reference in none of the three.
 
 ## Introduction
 
@@ -227,27 +230,54 @@ concordance on two withheld datasets after 17 s of CPU.
 
 Three interchangeable entry points invite a question that is only affordable when calls are
 cheap: what if a user runs all of them? Scored on identical cells and compared in the Cell
-Ontology, they partition the query by agreement, and the partition is informative (Figure 2).
-On the **23%** of cells where all three concur, every model's concordance roughly doubles — the
-census reference from 0.338 to 0.690, the distilled reference from 0.406 to **0.778**, Azimuth
-from 0.408 to 0.785. On the 22% where none agree, all three fall to 0.21–0.28.
+Ontology, they partition each query by agreement (Figure 2). We ran this on three tissues:
+withheld cross-study **liver** (3,396 cells, 34 truth types), the Krasnow **lung** atlas
+(65,662 cells, 46 types), and the Allen human **middle temporal gyrus** (156,285 cells, 18
+types).
 
-That all three improve together is what makes the signal useful: agreement is selecting cells
-that are unambiguous rather than cells that one model happens to get right. And unlike
-accuracy, it can be computed on a query whose answers are unknown, for the price of three
-sub-second calls and no labels.
+One result holds everywhere. Cells on which the references disagree are annotated far less
+reliably than cells on which they concur, for every reference and in every tissue: the census
+model falls from 0.690 to 0.212 across the liver partition, 0.934 to 0.059 across lung, and
+0.839 to 0.117 across brain, with the same direction for the other two. Because all three
+improve together, agreement is selecting cells that are unambiguous rather than cells that one
+model happens to get right — and unlike accuracy it is computable on a query whose answers are
+unknown, for three sub-second calls and no labels.
 
-A consensus *label*, by contrast, is not the prize. Taking the most specific call the agreeing
-references support scores **0.365**, below the best single reference's 0.408, even after
-falling back to the strongest model where nothing agrees. Running several references does not
+What varies, and varies enormously, is how much of a query the agreeing set covers: **23% on
+liver, 48% on lung, 94% on brain**. The brain figure is the instructive one. That query's Cell
+Ontology annotation uses 18 terms for a region whose own working taxonomy, `CCN201908210`,
+defines 154 cell sets, and 55% of its cells fall in a single class. High agreement there
+reflects a coarse truth vocabulary rather than an easy tissue, and it shows the partition
+reporting the resolution of the annotation it is scored against — which is a property of the
+query, not of the method.
+
+A consensus *label* is not the prize in any of the three. Taking the most specific call the
+agreeing references support scores 0.365 on liver against the best single reference's 0.408,
+0.828 on lung against 0.831, and 0.837 on brain against 0.987 — the last badly worse, because
+choosing the deepest agreeing call lets one reference's confident, lineage-compatible but
+wrong specificity override two correct coarser calls. Running several references does not
 produce a better annotation; it tells you which annotations to trust.
+
+What counts as agreement is the ontology's judgment rather than ours, and the comparison was
+possible only because all three references carry Cell Ontology terms. The Common Cell type
+Nomenclature [Miller 2020] answers the same problem differently, giving each taxonomy's cell
+sets stable accessions and a curated alias layer rather than a shared coordinate system. The
+two are complements, not substitutes: in the published human MTG taxonomy `CCN201908210` the
+154 cell sets carry an anatomical tag but no cell-type ontology id, and the field that matches
+cell sets across taxonomies is filled for 23 of them. CL supplies the *total* subsumption
+relation that makes an agreement partition computable; CCN supplies the provenance CL cannot,
+recording which taxonomy and publication each label came from. A workflow that compares
+annotations across references wants both.
 
 ![reference agreement](figures/fig_consensus.png)
 
-**Figure 2.** Ontology concordance within each agreement tier for three broad references over
-the same 3,396 withheld liver cells; dashed lines are the same models over the whole query.
-Agreement is evaluated in the Cell Ontology because the three answer in different vocabularies
-(798, 382 and 324 classes).
+**Figure 2.** Ontology concordance within each agreement tier for three broad references, on
+withheld cross-study liver (*A*), the Krasnow lung atlas (*B*) and the Allen human middle
+temporal gyrus (*C*); dashed lines are the same models over the whole query. Agreement is
+evaluated in the Cell Ontology because the three references answer in different vocabularies
+(798, 382 and 324 classes). The ordering is the same in all three tissues; the fraction of
+cells on which the references agree is not, and tracks how finely the query's own annotation
+is resolved.
 
 ### Abstention is tunable; zero-shot labels are not competitive
 
@@ -301,6 +331,9 @@ stage on the machine already on the desk.
 The main limitations are that the cross-method comparison is human-only and single
 hardware-family; that our classical tier is untuned while the linear baseline is tuned, which
 biases against our own method; that the distilled reference inherits a vocabulary but not its
-teacher's calibrated abstention; and that the agreement result is one query in one tissue with
-three references, so its magnitude is not established beyond this setting. Full limitations
-are in the extended report.
+teacher's calibrated abstention; that the agreement result covers three tissues with three
+references, so its direction is replicated but the size of the agreeing fraction is strongly
+dependent on how finely the query is annotated; and that agreement is defined in the Cell
+Ontology, whose subsumption judgments decide what counts as agreeing and whose resolution in
+cortex is roughly a tenth of the working taxonomy's. Full limitations are in the extended
+report.

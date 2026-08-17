@@ -68,6 +68,10 @@ datasets:
     cite: 10x Genomics 2016
 
 entries:
+  Miller 2020:
+    text: "Miller JA, Gouwens NW, Tasic B, et al. Common cell type nomenclature for the mammalian brain. *eLife* 9:e59928 (2020)."
+    doi: 10.7554/eLife.59928
+    status: verified
   Ma & Pellegrini 2020:
     text: "Ma F, Pellegrini M. ACTINN: automated identification of cell types in single cell RNA sequencing. *Bioinformatics* 36(2):533-538 (2020)."
     doi: 10.1093/bioinformatics/btz592
