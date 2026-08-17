@@ -26,15 +26,17 @@ we did not choose. Accuracy among the leading methods is tightly clustered — t
 by 2.5×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the
 reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature
 budget. Because several methods are now both accurate and cheap, the useful question is not
-which is best but which fits a given job. We show that a low, flat inference cost makes
-multi-stage annotation practical on a laptop, using **actinn-jax**, a JAX reimplementation of
-ACTINN with a cached train-once/map-many reference: a shipped ~800-type reference with
-calibrated abstention hands off to a user's own focused reference (cross-study liver
-0.23/0.58 → 0.72/0.86, exact/ontology), with resolution below the cell-type label and
-cluster-level novelty screening. The same profile annotates a whole 525,000-cell atlas in
-41 s, three to four times faster than a tuned linear pipeline on the same query axis. The same route builds a pan-mouse reference with no GPU, and
-distills **Pan-human Azimuth** into a broad-pass model matching its concordance at 6–9× its
-throughput. We release the reimplementation, the harness and the pre-trained references.
+which is best but what a low annotation cost makes possible. Using **actinn-jax**, a JAX
+reimplementation of ACTINN with a cached train-once/map-many reference, we show that
+sub-second reference calling turns annotation from a single decision into a **multi-pass
+workflow**: a shipped ~800-type reference routes a query to tissue and hands off to a focused
+reference (cross-study liver 0.23/0.58 to 0.72/0.86, exact/ontology); a pan-human annotator is
+distilled into an interchangeable entry point from raw counts alone, with no GPU and no
+labels, matching its teacher at six to nine times the throughput; and running three broad
+references over the same cells partitions them by agreement, where all three concur the
+concordance of every one of them roughly doubles. That partition costs three sub-second calls
+and no labels, which is what makes it usable on a query whose answers are unknown. We release
+the reimplementation, the harness and the pre-trained references.
 
 ## 1. Introduction
 
@@ -411,7 +413,7 @@ more than the leaderboard's own set.
 (§3.7) run on AWS `r7i.8xlarge` instances (32 vCPU, 247 GB) through OP's own Nextflow
 pipeline, two tasks at a time.
 
-**Accuracy** in Table 8 comes from a single AWS run covering all eleven methods, so every
+**Accuracy** in Table 9 comes from a single AWS run covering all eleven methods, so every
 score is one harness, one machine, one invocation.
 
 **Cost** is reported as a ratio to actinn-jax rather than in seconds, because wall-clock on a
@@ -733,24 +735,29 @@ three atlases plus a census-wide sample. On
 | broad-pass model | classes | ontology | cells/s |
 |------------------------------|------:|------:|--------:|
 | census-built (`broad_human_v1`) | 798 | 0.338 | 2,962 |
-| Pan-human Azimuth | 382 | 0.380 | 1,076–1,563 |
-| **distilled (`panhuman_distill_v1`)** | 324 | **0.406** | **8,937–10,021** |
+| Pan-human Azimuth | 382 | **0.408** | 1,076–1,563 |
+| **distilled (`panhuman_distill_v1`)** | 324 | 0.406 | **8,937–10,021** |
 
 **Table 6.** Three broad-pass entry points on 3,396 withheld cross-study liver cells: the
 census-built reference, the Pan-human Azimuth teacher, and the model distilled from that
-teacher.
+teacher. All three are scored on identical cells through one script (below). An earlier
+version of this table put the teacher at 0.380, which was an artefact of our own cache: the
+dump it was scored from carried a Cell Ontology id for only 90.5% of its calls, and an
+unmapped call scores as wrong. Run through the adapter directly it maps 99.9% and scores
+0.408, level with the student.
 
-This makes the entry point both more accurate and ~3× faster than building it from the
-census directly, and it answers in a harmonized, ontology-mapped vocabulary rather than raw census
+This makes the entry point as accurate as its teacher and ~6–9× faster, and more accurate
+than building it from the census directly, and it answers in a harmonized, ontology-mapped vocabulary rather than raw census
 strings. Withholding a whole atlas from the corpus, the distilled model tracks the one it
 was distilled from to within **1.5 points** on lung (0.695 vs 0.710) and **3.0** on liver
 (0.481 vs 0.511). Distillation itself therefore costs very little: on data neither model was
 built for, the student stays within a few points of its teacher. What holds the student back
 is which tissues and studies its training corpus happened to contain — widening the corpus
 should move these numbers, changing the distillation procedure should not. Two caveats keep this
-modest. The 0.406/0.380 ordering is one query, and both actinn-jax models draw on a census
-sample that may include these studies while Pan-human Azimuth does not, so read the distilled
-model as *comparable to* the one it distills rather than better. And it does **not** inherit
+modest. Student and teacher are level on this query (0.406 against 0.408), and both
+actinn-jax models draw on a census sample that may include these studies while Pan-human
+Azimuth does not, so read the distilled model as *comparable to* the one it distills rather
+than better. And it does **not** inherit
 that model's trained abstention: its confidence separates right from wrong poorly (keeping the 90.5% of
 cells it calls with probability at least 0.5 moves concordance only 0.406 → 0.427), so the calibrated broad-pass abstain
 of §3.5 belongs to the census-built reference until this one is recalibrated.
@@ -766,7 +773,7 @@ from; the broad model's job is to route to it, not to be right about subtypes it
 assumption is that a better broad call should also make the focused call better. It does not.
 On the leakage-free cross-study
 liver split, substituting the stronger **Pan-human Azimuth** for the broad pass lifts it
-(ontology 0.380 vs 0.338 for our own broad model) but changes nothing downstream. Using that
+(ontology 0.408 vs 0.338 for our own broad model) but changes nothing downstream. Using that
 broad call to *narrow* the focused pass's classes — the zero-retrain masking actinn-jax ships — makes
 the result **worse**, 0.731 → 0.708: the broad call matches the true lineage on 85.8%
 of cells, and the 14% it misses cost more than the 86% it gets right can gain, since a wrong
@@ -850,6 +857,37 @@ resolution**: the same machinery resolves hepatocyte zonation (portal→central)
 within-one-zone across held-out donors, and 0.88–0.92 transferring between datasets — a
 third stage below the cell-type label. Together these make actinn-jax a *pipeline* (broad →
 tissue → subtype/state), not just a classifier, at classical-method speed throughout.
+
+**Running all three: where independent references agree.** Three interchangeable entry points
+make a question affordable that would not be worth asking if a broad call cost minutes — what
+happens if a user simply runs all of them? They answer in three different vocabularies (798,
+382 and 324 classes), so agreement is defined in the Cell Ontology where all three map: two
+calls agree when they are the same term or one is an ancestor of the other, the relation the
+concordance metric already uses. Partitioning the 3,396 withheld cells by how many of the
+three mutually agree:
+
+| | coverage | census | distilled | Azimuth |
+|---|---:|---:|---:|---:|
+| all three agree | 23% | 0.690 | **0.778** | 0.785 |
+| two agree | 55% | 0.241 | 0.303 | 0.311 |
+| none agree | 22% | 0.212 | 0.276 | 0.257 |
+| *whole query* | 100% | *0.338* | *0.406* | *0.408* |
+
+**Table 8.** Ontology concordance within each agreement tier, three broad references on
+identical cells.
+
+Every model roughly doubles on the cells where all three agree, and that they improve
+*together* is what makes the partition useful: agreement is selecting cells that are
+unambiguous rather than cells one model happens to get right. Unlike accuracy, it can be
+computed on a query whose answers are unknown, for the price of three sub-second calls.
+
+The consensus *label* is not the prize. Taking the most specific call the agreeing references
+support scores 0.365 over the whole query — below the best single reference's 0.408 — even
+after falling back to the strongest model on cells where nothing agrees. Choosing the deepest
+agreeing call slightly underperforms simply trusting the best model, so running several
+references does not produce a better annotation; it identifies which annotations to trust. We
+report this as one query in one tissue with three references: the direction is clear, the
+magnitude is not established beyond this setting.
 
 ### 3.5 Rejection / abstain
 
@@ -943,7 +981,7 @@ Means over the six datasets, every method through the same pipeline on one insta
 | naive_bayes | 0.738 | 0.613 | 0.19× | 19.5 GB |
 | **scTOP** | 0.581 | 0.462 | **0.16×** | 20.4 GB |
 
-**Table 8.** All eleven methods on the six Open Problems datasets, ordered by accuracy. Bold
+**Table 9.** All eleven methods on the six Open Problems datasets, ordered by accuracy. Bold
 marks the five components we contributed. *cost* is per-dataset wall-clock relative to
 actinn-jax (§2.10), for which 1.00× is roughly two minutes.
 
@@ -1158,7 +1196,7 @@ scientist can run, inspect, and run again.
  Measured `%cpu` on the OP harness spans 49% to 2338% across methods — some are
  single-threaded, some saturate 23 cores — so the same method timed at two concurrency
  settings differs by up to 12×, and any wall-clock ranking taken at high concurrency
- silently ranks threading and scheduler contention alongside algorithm. Table 8 therefore
+ silently ranks threading and scheduler contention alongside algorithm. Table 9 therefore
  reports cost as a ratio within a run, anchored by a method common to both (§2.10) — the
  anchor itself moved 165 s → 87 s between them, which is the size of the effect.
 - **The cross-method comparison is human only**; six datasets per benchmark; GPU foundation

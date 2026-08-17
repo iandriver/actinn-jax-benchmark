@@ -35,7 +35,7 @@ header-includes:
 
 
 *Supplement to "A benchmark of cell-type annotation methods for single-cell data". Figures and tables referenced from
-the main text as Supplementary Figure S1–S4 and Supplementary Table S1–S3.*
+the main text as Supplementary Figure S1–S9 and Supplementary Table S1–S3.*
 
 # Supplementary figures
 
@@ -125,3 +125,56 @@ Ensembl ids or gene symbols.
 **Table S3.** Per-dataset accuracy: actinn-jax against whichever method leads that dataset.
 † on lung_cross the exact-match score is a vocabulary artifact, so ontology concordance is
 the meaningful column.
+
+# Cost and scaling
+
+These studies establish the cost claims the main text summarizes in one paragraph each. They
+are here rather than in the main text because the workflow argument depends on inference being
+cheap, not on the shape of the curve that makes it cheap.
+
+![accuracy and memory against reference size](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_atlas_scaling.png)
+
+**Figure S5.** Accuracy and peak memory against reference size, four methods carried to full
+atlas scale on two datasets. *A:* lung, 3k → 49k reference cells. *B:* the HLiCA liver atlas,
+2.7k → 47k, an independent replication of the same reversal — a prototype VAE moves from worst
+to best as the reference grows. *C:* peak memory over both sweeps. Error bars on *A* and *B*
+are 95% binomial intervals on the query, which grows with the reference (1,035 to 16,398 cells
+on lung), so they narrow from left to right; each point is a single run, so they cover sampling
+of the query and not run-to-run variation.
+
+![fit and predict scaling](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_scaling.png)
+
+**Figure S6.** Fit and predict time against reference size and label cardinality, for the six
+CPU methods. Fit grows on both axes for every trained method, steeply for CellTypist and the
+SVM. Predict is flat in reference size for all six, so that flatness is a property of cached
+inference generally rather than of any one method; cardinality is the axis that separates them,
+where actinn-jax rises 3.2× from 5 to 86 types against the tuned linear pipeline's 11.9×. SVM
+and kNN predict faster than either throughout. scTOP's smallest-reference point carries
+one-time import cost and is not a scaling effect.
+
+![annotating an atlas](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_query_scaling.png)
+
+**Figure S7.** Cost against query size with the reference fixed at 17,753 cells. *A:*
+wall-clock to annotate the query. *B:* throughput, which declines 31% for actinn-jax and holds
+flat for the linear pipeline, narrowing the advantage from 4.2× to 3.1×. *C:* peak memory,
+which does not distinguish them — on this axis it measures holding the query, not running the
+method. Three runs per point on a shared laptop: *A* and *B* report the fastest run, since
+contention can only add time, and *C* the largest peak, since resident-set size understates a
+run the OS has partly evicted.
+
+# Abstention
+
+![what a threshold does to each method](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_abstain_grid.png)
+
+**Figure S8.** What a confidence threshold does to each of the eight methods that return a
+per-cell confidence, with 9 of 36 cell types held out of the liver reference so 1,350 query
+cells are out-of-distribution. Every quantity is a fraction, so all three share one axis. The
+five that work share a shape — accuracy and novelty rising as coverage falls — and the three
+that do not each fail visibly and differently.
+
+![the abstain trade-off](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_abstain.png)
+
+**Figure S9.** The same sweep read as a trade-off, which is what compares methods to each other
+rather than to themselves. *Left:* accuracy on kept cells against the fraction kept — the five
+usable methods lie along one band, which is the basis for calling their abstain quality tied.
+*Right:* the share of held-out-type cells flagged as the threshold rises.

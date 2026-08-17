@@ -5,7 +5,7 @@ author:
   - Ian Driver$^{\ast}$
 date: ""
 abstract: |
-  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** — classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model — across **six datasets** (8–86 cell types; within-dataset, cross-dataset and cross-study splits) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.5×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but which fits a given job. We show that a low, flat inference cost makes multi-stage annotation practical on a laptop, using **actinn-jax**, a JAX reimplementation of ACTINN with a cached train-once/map-many reference: a shipped ~800-type reference with calibrated abstention hands off to a user's own focused reference (cross-study liver 0.23/0.58 → 0.72/0.86, exact/ontology), with resolution below the cell-type label and cluster-level novelty screening. The same profile annotates a whole 525,000-cell atlas in 41 s, three to four times faster than a tuned linear pipeline on the same query axis. The same route builds a pan-mouse reference with no GPU, and distills **Pan-human Azimuth** into a broad-pass model matching its concordance at 6–9× its throughput. We release the reimplementation, the harness and the pre-trained references.
+  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** — classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model — across **six datasets** (8–86 cell types; within-dataset, cross-dataset and cross-study splits) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.5×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but what a low annotation cost makes possible. Using **actinn-jax**, a JAX reimplementation of ACTINN with a cached train-once/map-many reference, we show that sub-second reference calling turns annotation from a single decision into a **multi-pass workflow**: a shipped ~800-type reference routes a query to tissue and hands off to a focused reference (cross-study liver 0.23/0.58 to 0.72/0.86, exact/ontology); a pan-human annotator is distilled into an interchangeable entry point from raw counts alone, with no GPU and no labels, matching its teacher at six to nine times the throughput; and running three broad references over the same cells partitions them by agreement, where all three concur the concordance of every one of them roughly doubles. That partition costs three sub-second calls and no labels, which is what makes it usable on a query whose answers are unknown. We release the reimplementation, the harness and the pre-trained references.
 geometry: margin=1in
 fontsize: 11pt
 linkcolor: RoyalBlue
@@ -39,17 +39,17 @@ header-includes:
  while predict time differs by ~205× and peak memory by 2.5×; cost, not accuracy, is what
  distinguishes them in practice.
 - Rankings are not stable: a prototype VAE moves from worst to best as the reference grows
- from 3k to 49k cells, and a tuned linear pipeline that fits 7× faster than a gene-space MLP
- on one panel costs 2.7× more on another with a narrower feature budget.
+ from 3k to 49k cells, and a tuned linear pipeline that fits faster than a gene-space MLP on
+ one panel costs 2.7× more on another with a narrower feature budget.
 - Predict is sub-second for every CPU method tested and flat in reference size for all of
- them; what makes chaining stages practical is the ratio, a 0.09–0.31 s call recurring against
- a fit of 19–123 s paid once. On cardinality the methods do separate: a cached gene-space MLP
- rises 3.2× from 5 to 86 types where a tuned linear pipeline rises 11.9×.
+ them; what makes chaining stages practical is the ratio, a sub-second call recurring against
+ a fit of 19–123 s paid once.
 - A pretrained pan-human annotator can be distilled into a fast reference using only raw
  counts — no GPU, no labels — matching the teacher's concordance and beating a census-built
  reference, at 6–9× the teacher's throughput.
-- Zero-shot foundation-model labels remain the weakest option in both our benchmark and the
- external one; their value is in learned structure, not in their label heads.
+- Agreement between independent broad references is a label-free confidence signal: on the
+ 23% of cells where three references concur, each one's concordance roughly doubles. A
+ consensus *label*, by contrast, does not beat the best single reference.
 
 # Introduction
 
@@ -58,6 +58,17 @@ cost. Existing comparisons [Abdelaal 2019, Fu 2024] emphasize accuracy; the axis
 what runs on a laptop — wall-clock and memory without a GPU — is usually absent. Foundation
 models [\[Kalfon 2025\]](https://doi.org/10.1038/s41467-025-58699-1) raise accuracy in some settings but need accelerators, and their
 zero-shot label predictions underperform small models trained on curated references.
+
+That reporting gap matters more than a missing column, because annotation in practice is not
+one decision. A working analysis asks what broad compartments are present, which tissue the
+query resembles, how the cells resolve against a reference matched to that tissue, whether
+anything is present that no reference describes, and how much of the answer to believe. Each
+of those is a reference call. When a call costs minutes, the workflow collapses to a single
+pass against a single reference chosen in advance; when it costs a fraction of a second,
+running several references and comparing them becomes ordinary. The benchmark below is
+therefore a means rather than an end: it establishes that the accuracy differences among the
+leading methods are small and the cost differences are not, which is what licenses spending
+the budget on more passes instead of on a better single pass.
 
 Concurrent work sharpens the question rather than settling it. **Pan-human Azimuth**
 [\[Sarkar et al. 2026\]](https://doi.org/10.64898/2026.07.16.738997) ships a supervised hierarchical classifier over a harmonized
@@ -69,11 +80,6 @@ quality and organization matter as much as architecture or scale, with accuracy 
 past ~5M training cells. A purpose-built pan-human model is therefore the right thing to
 *start* from; the open question is what to do next, since no fixed typology can re-annotate
 into a user's own label set or resolve states below its own leaves.
-
-We therefore ask a practical question: for a given annotation job on commodity hardware,
-which method should be run, and what does the surrounding workflow look like? The leading methods
-now annotate quickly, accurately, and with a usable signal on unknown cells, so the shortage
-is not another leaderboard but guidance on fit for purpose.
 
 Because a benchmark written by a method's own author has a known failure mode, the comparison
 was constrained by construction: every method runs on **every** dataset through one harness on
@@ -101,18 +107,23 @@ reference and query share only 20 of 46 type names, so exact-match accuracy (~0.
 measures vocabulary mismatch rather than transfer. Concordance is reported only where both
 sides carry ontology ids.
 
+**Agreement between references.** Three broad annotators answer in three different
+vocabularies, so agreement is defined in the Cell Ontology, where all three map: two calls
+agree when they are the same term or one is an ancestor of the other — the same relation the
+concordance metric uses. Cells are partitioned by how many of the three mutually agree.
+
 **Execution.** Each method runs in its own environment as a separate process, because the
 dependency sets are mutually unsatisfiable; one driver builds each split once from a fixed
 seed and hands the identical pair to every method. Three repeats. Hardware: Apple Silicon,
 CPU for classical/linear/correlation tiers, Apple MPS for deep and foundation tiers.
 External validation runs on AWS `r7i.8xlarge` through Open Problems' own Nextflow pipeline.
-Because wall-clock on a shared machine depends on co-scheduled load, external cost is
-reported as a ratio to a method present in every run. Environments are pinned and the Cell
-Ontology release is recorded.
+Because wall-clock on a shared machine depends on co-scheduled load, cost is reported from the
+fastest of three runs on an otherwise idle machine, and external cost as a ratio to a method
+present in every run. Environments are pinned and the Cell Ontology release is recorded.
 
-**Supplementary material** (separate document) contains Figures S1–S4 — confusion matrices
-with ontology-equivalent errors outlined, and per-class recall for eleven methods on three
-splits — and Tables S1–S3.
+**Supplementary material** (separate document) carries the scaling studies (Figures S5–S7),
+the abstention sweep (Figures S8–S9), confusion matrices and per-class recall (Figures S1–S4),
+and Tables S1–S3.
 
 **Workflow components.** A broad reference built from the CELLxGENE Census [\[CZI Census 2025\]](https://chanzuckerberg.github.io/cellxgene-census/);
 a coarse→fine hierarchy obtained either from foundation-model embeddings or from Cell Ontology
@@ -126,11 +137,11 @@ repository.
 ## Accuracy is clustered; cost is not
 
 The top of the accuracy table is a four-way cluster spanning **0.008**, led by a tuned linear
-pipeline rather than by a deep model (Table 1). Those same four methods differ by **~205× in
-predict time** (0.33 s to 67 s) and **2.5× in peak memory**. Order within the cluster is not a
-result — the stochastic methods move by more than 0.008 between identical reruns, scANVI by up
-to 0.056 — so the four are best read as tied on accuracy and separated by cost. actinn-jax
-holds the best ontology-aware concordance (0.811), likewise a margin inside repeat noise.
+pipeline rather than by a deep model (Table 1). Those same four differ by **~205× in predict
+time** (0.33 s to 67 s) and **2.5× in peak memory**. Order within the cluster is not a result:
+the stochastic methods move by more than 0.008 between identical reruns, scANVI by up to
+0.056, so the four are best read as tied on accuracy and separated by cost. actinn-jax holds
+the best ontology-aware concordance (0.811), likewise a margin inside repeat noise.
 
 | method | acc | macro-F1 | ontology | fit (s) | predict (s) | peak mem (MB) |
 |---|---:|---:|---:|---:|---:|---:|
@@ -151,86 +162,27 @@ datasets, macro-F1 over all six, and ontology concordance over the four that car
 Ontology ids; bold marks the best value in a column. *scANVI does most of its work in one train+predict pass, attributed to predict.
 Per-dataset scores: Supplementary Table S3.
 
-No method leads everywhere. The linear pipeline and ProtoCloud each take two datasets,
-actinn-jax and scArches one apiece; actinn-jax leads the cross-study split, the regime closest
-to real reference mapping. The spread across leading methods on any one dataset is 1–4 points.
+Neither ordering is stable. Carrying four methods from a 3k-cell reference to a full atlas
+reverses the accuracy ranking — a prototype VAE moves from worst to best — and the external
+Open Problems panel, whose 1,000-gene budget is narrower than ours, reverses the cost ranking,
+with the tuned linear pipeline costing 2.7× more than it does here (Supplementary Figure S5,
+and the extended report).
 
-## Rankings invert with reference size and with feature budget
+Prediction is where the annotation budget is actually spent, and it is small: sub-second for
+every CPU method tested, and flat in reference size for all of them, since a cached model's
+inference does not depend on how many cells trained it. What makes chaining stages practical
+is therefore not a uniquely flat predict but the ratio — a sub-second call recurring against a
+fit of 19–123 s that is paid once (Supplementary Figure S6). With the reference held fixed,
+annotating a whole 525,000-cell atlas takes **41 s** (Supplementary Figure S7).
 
-Scaling the reference from 3k to 49k cells reverses the order: **ProtoCloud moves from worst
-(0.722) to best (0.976)**, clear of actinn-jax (0.936) and the linear pipeline (0.939), at 19×
-the CPU fit cost (Figure 1A). The HLiCA liver atlas reproduces the reversal independently
-(Figure 1B), and peak memory stays within a bounded band rather than widening (Figure 1C).
-Conclusions from subsampled references do not transfer to atlas scale in either direction.
+## One query, two passes: routing and then resolution
 
-![accuracy and memory against reference size](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_atlas_scaling.png)
-
-**Figure 1.** Accuracy and peak memory against reference size, four methods carried to atlas
-scale. *A:* lung, 3k → 49k reference cells. *B:* the HLiCA liver atlas, an independent
-replication. *C:* peak memory over both sweeps.
-
-External validation inverts a different axis. On Open Problems — datasets, metrics and ranking
-not ours — all eleven methods were run in a single execution of its pipeline (Table 2). The
-tuned linear pipeline places third on accuracy and costs **2.7× more** than actinn-jax, having
-fit **7× faster** on our own panel. Open Problems supplies every method 1,000 highly variable
-genes, and an ANOVA→PCA→logistic pipeline pays for the decomposition on every query whereas a
-gene-space MLP amortizes it into a single fit. Neither a cost ranking nor an accuracy ranking
-survives a change of feature budget.
-
-| method | acc | macro-F1 | cost | peak mem |
-|---|---:|---:|---:|---:|
-| mlp | 0.843 | 0.662 | 1.98× | 19.9 GB |
-| **actinn-jax** | 0.836 | 0.663 | 1.00× | 21.0 GB |
-| **linear-anova-pca** | 0.828 | 0.647 | 2.67× | 20.1 GB |
-| **SVM (SGD)** | 0.816 | 0.652 | 6.07× | 20.1 GB |
-| logistic_regression | 0.813 | **0.689** | **0.18×** | 20.0 GB |
-| **CellTypist** | 0.810 | 0.643 | 7.62× | 20.1 GB |
-| knn | 0.793 | 0.648 | **0.07×** | 19.5 GB |
-| xgboost | 0.791 | 0.614 | 5.48× | 80.7 GB |
-| cellmapper_linear | 0.776 | 0.553 | 0.35× | 31.5 GB |
-| naive_bayes | 0.738 | 0.613 | 0.19× | 19.5 GB |
-| **scTOP** | 0.581 | 0.462 | **0.16×** | 20.4 GB |
-
-**Table 2.** External validation on Open Problems `label_projection`, ordered by accuracy.
-Bold marks components we contributed to that benchmark. *cost* is per-dataset wall-clock
-relative to actinn-jax on the same instance. scTOP's mean reflects two collapses and one weak
-result inside three ordinary ones, traced to the fixed feature budget.
-
-## Fit is what costs; inference stays sub-second
-
-Fit time grows with reference size and cardinality for every trained method — actinn-jax
-3 s → 29 s across 965 to 24k reference cells, against CellTypist's 7 s → 123 s. Prediction
-does not: it stays **sub-second for all six CPU methods across both sweeps**, and flatness in
-reference size distinguishes none of them, since a cached model's inference does not depend on
-how many cells trained it. Cardinality separates them: actinn-jax rises 3.2× from 5 to 86
-types (0.09 → 0.30 s) where the tuned linear pipeline starts cheaper and rises 11.9×
-(0.03 → 0.31 s), the two meeting at the top (Figure 2). What the cache buys is the ratio — a
-sub-second call recurring against a fit paid once — which is the regime that matters when one
-reference serves many queries. Peak memory is likewise bounded rather than divergent: the
-linear/actinn-jax ratio holds at ~2–3× (6.1 vs 13.2 GB at 49k cells) rather than widening
-(Figure 1C). The query axis behaves differently: with the reference fixed, actinn-jax
-annotates the entire 524,699-cell liver atlas in **41 s**, three to four times faster than
-the tuned linear pipeline's 126 s. Flatness does not carry to this axis, though — actinn-jax
-loses 31% of its throughput across a tenfold growth in query (18,400 → 12,800 cells/s) while
-the linear pipeline holds flat at ~4,200, narrowing the advantage from 4.2× to 3.1×. Peak
-memory does not separate them there at all: on that axis it measures holding the query
-rather than running the method.
-
-![scaling](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_scaling.png)
-
-**Figure 2.** Fit and prediction time against reference size and label cardinality, six CPU
-methods. Fit grows on both axes for every trained method. Prediction is sub-second throughout
-and flat in reference size for all six; cardinality is the axis that separates them, where
-actinn-jax rises 3.2× against the linear pipeline's 11.9×. SVM and kNN predict faster than
-either. scTOP's smallest-reference point carries one-time import cost.
-
-## A flat cost profile makes multi-stage annotation practical
-
-Because each stage is a cached model with sub-second, memory-bounded inference, several can be
-chained on a laptop (Figure 3). A shipped ~800-type census reference gives any query a
-first-pass annotation with calibrated abstention; a small focused reference then re-annotates
-at full resolution. On withheld cross-study liver cells the broad pass scores **0.23 exact /
-0.58 ontology** and the focused reference reaches **0.72 / 0.86** on the same cells.
+That budget buys a workflow rather than a call (Figure 1). A shipped ~800-type census
+reference annotates any query without being told what tissue it is; resolving those calls
+through the reference's per-class tissue map identifies the tissue; a small focused reference
+for that tissue then re-annotates the same cells at full resolution. On withheld cross-study
+liver cells the broad pass scores **0.23 exact / 0.58 ontology** and the focused reference
+reaches **0.72 / 0.86**.
 
 The two passes hand off; they do not combine. Substituting a stronger broad model lifts the
 broad call but changes nothing downstream, and using it to narrow the focused pass's classes
@@ -240,40 +192,66 @@ not resolution.
 
 ![workflow](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_workflow_umap_ondata.png)
 
-**Figure 3.** The workflow on a withheld liver study (3,396 cells), same embedding
+**Figure 1.** The workflow on a withheld liver study (3,396 cells), same embedding
 throughout. The census reference spreads 144 of its 798 labels over the query (concordance
 0.34); resolving those calls to tissue gives **76% liver** against 4% for the next candidate,
 which selects the reference to load; the 36-type liver reference then re-annotates the same
 cells at **0.73**, tracking the clusters. Rightmost panel is the study's own labels.
 
-## A pretrained annotator can be distilled without a GPU or labels
+## The broad entry point is interchangeable, and one can be distilled without a GPU
 
-Building the broad pass from the census requires a foundation model on a GPU to discover its
-hierarchy. A pretrained pan-human annotator [\[Sarkar et al. 2026\]](https://doi.org/10.64898/2026.07.16.738997) already publishes one, so
+Building a broad reference from the census requires a foundation model on a GPU to discover
+its hierarchy. A pretrained pan-human annotator [\[Sarkar et al. 2026\]](https://doi.org/10.64898/2026.07.16.738997) already publishes one, so
 labeling a corpus with it and training on those labels transfers both vocabulary and
-structure — using **only raw counts**. On withheld cross-study liver cells the distilled model
-**matches the teacher and beats the census-built reference**, at several times the teacher's
-throughput, in under ten minutes of CPU (Table 3).
+structure — using **only raw counts**, no GPU and no labeled input, in under ten minutes of
+CPU. The result matches its teacher and beats our census-built reference, at six to nine times
+the teacher's throughput (Table 2).
 
 | broad-pass model | classes | ontology | cells/s |
 |------------------------------|------:|------:|--------:|
 | census-built, ours | 798 | 0.338 | 2,962 |
-| Pan-human Azimuth (teacher) | 382 | 0.380 | 1,076–1,563 |
-| **distilled from Azimuth, ours** | 324 | **0.406** | **8,937–10,021** |
+| Pan-human Azimuth (teacher) | 382 | **0.408** | 1,076–1,563 |
+| **distilled from Azimuth, ours** | 324 | 0.406 | **8,937–10,021** |
 
-**Table 3.** Broad-pass entry points on 3,396 withheld cross-study liver cells. The distilled
-student needs only raw human counts to build — no GPU, no labeled input — and inherits the
-teacher's vocabulary and hierarchy. It does not inherit the teacher's calibrated abstention,
-which remains a limitation. The 0.406/0.380 ordering is one query, and both actinn-jax models
-draw on a census sample that may include these studies while Azimuth does not, so read the
-student as level with its teacher rather than ahead of it.
+**Table 2.** Broad-pass entry points on 3,396 withheld cross-study liver cells, all three
+scored on identical cells through one script. The distilled student needs only raw human
+counts to build and inherits the teacher's vocabulary and hierarchy. It does not inherit the
+teacher's calibrated abstention, which remains a limitation. Student and teacher are level
+here rather than separated: read the distillation as preserving the teacher's annotations at a
+fraction of its cost, not as improving on them.
 
-The GPU can be removed from the other route as well. Deriving the coarse hierarchy from Cell
+The GPU can be removed from the census route as well. Deriving the coarse hierarchy from Cell
 Ontology lineage rather than from a foundation-model embedding beats both no hierarchy at all
 (0.616 vs 0.547) and a same-sized random grouping (0.539), so it is the lineage structure and
 not the mere act of splitting that helps. Being species-independent, that route also reaches a
 second organism: a pan-mouse reference of 453 types across 85 tissues reaches 0.638 ontology
 concordance on two withheld datasets after 17 s of CPU.
+
+## Where independent references agree, all of them are right more often
+
+Three interchangeable entry points invite a question that is only affordable when calls are
+cheap: what if a user runs all of them? Scored on identical cells and compared in the Cell
+Ontology, they partition the query by agreement, and the partition is informative (Figure 2).
+On the **23%** of cells where all three concur, every model's concordance roughly doubles — the
+census reference from 0.338 to 0.690, the distilled reference from 0.406 to **0.778**, Azimuth
+from 0.408 to 0.785. On the 22% where none agree, all three fall to 0.21–0.28.
+
+That all three improve together is what makes the signal useful: agreement is selecting cells
+that are unambiguous rather than cells that one model happens to get right. And unlike
+accuracy, it can be computed on a query whose answers are unknown, for the price of three
+sub-second calls and no labels.
+
+A consensus *label*, by contrast, is not the prize. Taking the most specific call the agreeing
+references support scores **0.365**, below the best single reference's 0.408, even after
+falling back to the strongest model where nothing agrees. Running several references does not
+produce a better annotation; it tells you which annotations to trust.
+
+![reference agreement](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_consensus.png)
+
+**Figure 2.** Ontology concordance within each agreement tier for three broad references over
+the same 3,396 withheld liver cells; dashed lines are the same models over the whole query.
+Agreement is evaluated in the Cell Ontology because the three answer in different vocabularies
+(798, 382 and 324 classes).
 
 ## Abstention is tunable; zero-shot labels are not competitive
 
@@ -281,13 +259,16 @@ Withholding 9 of 36 cell types entirely and sweeping a confidence threshold over
 methods that return a per-cell confidence, five trade coverage for accuracy across the range
 and three do not: CellTypist's probabilities are saturated and give one operating point
 instead of a curve, scTOP's projection score keeps only 6% of the query at p ≥ 0.5, and
-ProtoCloud's ambiguity flag is flat until 0.9. Among the five that work, abstain quality does
-not separate them — actinn-jax and scArches are effectively tied (0.969 accuracy on 66% of
-cells with 73% of novel cells flagged, against 0.983 on 61% with 71%) — but cost does, at
-0.67 s of predict time against 21.4 s. Separately,
-a foundation model run zero-shot scored **0.201** ontology concordance against 0.917 for a
-reference-trained model on the same cells, taking ~280× longer — reproduced independently on
-Open Problems, where zero-shot entries sit at the bottom of the leaderboard.
+ProtoCloud's ambiguity flag is flat until 0.9 (Supplementary Figures S8–S9). Among the five
+that work, abstain quality does not separate them — actinn-jax and scArches are effectively
+tied (0.969 accuracy on 66% of cells with 73% of novel cells flagged, against 0.983 on 61%
+with 71%) — but cost does, at 0.54 s of predict time against 17.2 s. This is a second and
+complementary route to the same end as reference agreement: a calibrated threshold within one
+reference, or concurrence across several with no calibration at all.
+
+Separately, a foundation model run zero-shot scored **0.201** ontology concordance against
+0.917 for a reference-trained model on the same cells, taking ~280× longer — reproduced
+independently on Open Problems, where zero-shot entries sit at the bottom of the leaderboard.
 
 # Discussion
 
@@ -297,25 +278,36 @@ ordering is stable across reference size or feature budget. Reporting accuracy a
 under-determines the choice of method, and reporting it from a single reference size can
 invert the recommendation.
 
-Two consequences follow. First, benchmark design should treat reference size and input budget
-as axes rather than as fixed settings; our own results reverse along both. Second, once
-several methods are accurate and cheap, the productive contribution is not a further ranking
-but a characterization of fit — which is why we report accuracy-per-second and
-accuracy-per-byte, and demonstrate what a low flat cost profile enables rather than arguing
-from the accuracy column.
+The consequence we think matters most is not a ranking but a change in what an annotation
+pipeline can afford to do. When a reference call costs a fraction of a second, the pipeline
+stops being one classification and becomes a sequence of cheap ones: route the query to a
+tissue, re-annotate against a reference matched to it, resolve states below the label, and ask
+several independent references where they agree. Each step is unremarkable alone; together
+they are what a user actually wants, and their feasibility is a cost property rather than an
+accuracy property.
+
+The agreement result is the clearest case, and also the most honest about its limits. It buys
+no better label — the consensus call loses to the best single reference — but it identifies,
+with no ground truth at all, the fraction of a query on which independent references concur
+and on which every one of them is markedly more often right. That is available to anyone
+willing to run three annotators instead of one, which is only a reasonable thing to ask when
+each takes under a second.
 
 We are explicit about what is not ours. ProtoCloud provides uncertainty, attribution and a
 retraining-based refinement path, and becomes the most accurate method at atlas scale. A
-purpose-built pan-human annotator is better resourced than our census-built reference and we
-make no claim to improve on its annotations; we distill it. What remains distinct is the
-hand-off no fixed typology performs — re-annotation into a user's own label set, resolution
-below a typology's leaves, and screening for what none of them claims — at a cost that keeps
-every stage on the machine already on the desk.
+purpose-built pan-human annotator is better resourced than our census-built reference, and our
+distilled model matches rather than improves on it; we claim not better annotations but
+cheaper ones that preserve its vocabulary and structure. What remains distinct is the hand-off
+no fixed typology performs — re-annotation into a user's own label set, resolution below a
+typology's leaves, and screening for what none of them claims — at a cost that keeps every
+stage on the machine already on the desk.
 
 The main limitations are that the cross-method comparison is human-only and single
 hardware-family; that our classical tier is untuned while the linear baseline is tuned, which
-biases against our own method; and that the distilled reference inherits a vocabulary but not
-its teacher's calibrated abstention. Full limitations are in the extended report.
+biases against our own method; that the distilled reference inherits a vocabulary but not its
+teacher's calibrated abstention; and that the agreement result is one query in one tissue with
+three references, so its magnitude is not established beyond this setting. Full limitations
+are in the extended report.
 
 # References {-}
 
