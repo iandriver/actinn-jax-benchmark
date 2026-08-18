@@ -115,12 +115,12 @@ Heavier methods get their own environment under [`envs/`](envs).
 - **[docs/METHODS_SURVEY.md](docs/METHODS_SURVEY.md)** — cited methods landscape.
 - **[docs/TWO_STAGE.md](docs/TWO_STAGE.md)** — scPRINT (broad) shaping a fast CPU classifier: a scPRINT-discovered coarse→fine hierarchy beats flat (macro-F1 0.71 vs 0.68), pure-CPU inference.
 - **[docs/UPDATE_BROAD_REFERENCE.md](docs/UPDATE_BROAD_REFERENCE.md)** — how to rebuild the
-  shipped census-wide reference: one driver, four stages, and a verification gate that
+  census-wide reference: one driver, four stages, and a verification gate that
   scores the rebuilt model before you keep it.
 - **[docs/PANHUMAN_DISTILL.md](docs/PANHUMAN_DISTILL.md)** — distilling Pan-human Azimuth
   into an actinn-jax reference. On a withheld liver study the 324-class distilled model
-  scores 0.406 ontology concordance against 0.338 for the reference we ship and 0.380 for
-  the teacher, at 3.4× the shipped model's speed — built with no GPU and no labels.
+  scores 0.406 ontology concordance against 0.338 for the census-built reference and 0.380
+  for the teacher, at 3.4× the census-built model's speed — built with no GPU and no labels.
 
 Tier-1 (classical) complete; deep + foundation tiers next. See the full
 [benchmark plan](https://github.com/iandriver/actinn-jax/blob/main/BENCHMARK_PLAN.md).

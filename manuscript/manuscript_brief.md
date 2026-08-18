@@ -5,7 +5,7 @@ author:
   - Ian Driver$^{\ast}$
 date: ""
 abstract: |
-  Cell-type annotation by reference mapping is one of the most repeated operations in single-cell analysis, yet comparisons report accuracy far more often than the time and memory that decide what a scientist can actually run. We benchmarked **thirteen methods**, classical through foundation-model, across **eight splits of seven datasets** (8–151 cell types) on commodity hardware, and on Open Problems `label_projection`, whose datasets and metrics we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.5×. No method leads everywhere, and no ordering is stable — it inverts with reference size, feature budget and label granularity. With several methods both accurate and cheap, the useful question is not which is best but what cheap annotation makes possible. Using **actinn-jax**, a JAX reimplementation of ACTINN whose cached reference maps a query in under a second, we show annotation becoming a **multi-pass workflow** rather than a single decision: a shipped ~800-type reference routes a query to tissue and hands off to a focused one (cross-study liver 0.23/0.58 to 0.72/0.86, exact/ontology); a pan-human annotator distills into an interchangeable entry point from raw counts alone — no GPU, no labels — matching its teacher at six to nine times the throughput; and three broad references over the same cells partition it by agreement. In liver, lung and brain every reference is far more accurate where all three concur, though a consensus *label* beats none of them: the value is knowing which calls to trust. Code and pre-trained references are available at github.com/iandriver/actinn-jax, github.com/iandriver/actinn-jax-benchmark and doi:10.5281/zenodo.21688150.
+  Cell-type annotation by reference mapping is one of the most repeated operations in single-cell analysis, yet comparisons report accuracy far more often than the time and memory that decide what a scientist can actually run. We benchmarked **thirteen methods**, classical through foundation-model, across **eight splits of seven datasets** (8–151 cell types) on commodity hardware, and on Open Problems `label_projection`, whose datasets and metrics we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.5×. No method leads everywhere, and no ordering is stable: it inverts with reference size, feature budget and label granularity. Because annotation is this cheap, a query can be labelled several times rather than once. We ran three procedures that do so, all using **actinn-jax**, a JAX reimplementation of ACTINN that caches a trained reference and labels a query in under a second. A 798-type human reference assigns a tissue, and a tissue-specific reference then relabels the same cells, raising cross-study liver from 0.23 exact / 0.58 ontology to 0.72 / 0.86. A pretrained pan-human annotator was distilled into an actinn-jax reference that matches its accuracy and labels six to nine times faster, built from unlabelled data without a GPU. Running three broad references over one query and grouping cells by whether the three agree separates reliable calls from unreliable ones: in liver, lung and brain every reference scores far higher where all three agree, though the consensus label beats no single reference. Code and pre-trained references are available at github.com/iandriver/actinn-jax, github.com/iandriver/actinn-jax-benchmark and doi:10.5281/zenodo.21688150.
 geometry: margin=1in
 fontsize: 11pt
 linkcolor: RoyalBlue
@@ -36,22 +36,21 @@ header-includes:
 # Key Points
 
 - Among leading annotation methods, accuracy differences are small (top four within 0.008)
- while predict time differs by ~205× and peak memory by 2.5×; cost, not accuracy, is what
- distinguishes them in practice.
+ while predict time differs by ~205× and peak memory by 2.5×.
 - Rankings are not stable: a prototype VAE moves from worst to best as the reference grows
  from 3k to 49k cells, and a tuned linear pipeline that fits faster than a gene-space MLP on
  one panel costs 2.7× more on another with a narrower feature budget.
 - Predict is sub-second for every CPU method tested and flat in reference size for all of
  them; what makes chaining stages practical is the ratio, a sub-second call recurring against
  a fit of 19–123 s paid once.
-- A pretrained pan-human annotator can be distilled into a fast reference using only raw
- counts — no GPU, no labels — matching the teacher's concordance and beating a census-built
- reference, at 6–9× the teacher's throughput.
-- Agreement between independent broad references is a label-free confidence signal,
- replicated on three tissues: where three references concur, every one of them is far more
- accurate than where they disagree. How much of a query that covers varies from 23% to 94%
- and tracks the resolution of the query's own annotation. A consensus *label* beats the best
- single reference in none of the three.
+- A pretrained pan-human annotator was distilled into an actinn-jax reference that matches
+ its concordance at 6–9× the throughput and beats a census-built reference. The distillation
+ used unlabelled data and no GPU.
+- Running three independent broad references over one query and grouping cells by whether
+ the three agree separates reliable calls from unreliable ones, in all three tissues tested:
+ where the references concur, every one of them is far more accurate than where they do not.
+ The agreeing set covers 23% to 94% of a query, tracking the resolution of that query's own
+ annotation. A consensus *label* beats the best single reference in none of the three.
 
 # Introduction
 
@@ -73,7 +72,7 @@ leading methods are small and the cost differences are not, which is what licens
 the budget on more passes instead of on a better single pass.
 
 Concurrent work sharpens the question rather than settling it. **Pan-human Azimuth**
-[\[Sarkar et al. 2026\]](https://doi.org/10.64898/2026.07.16.738997) ships a supervised hierarchical classifier over a harmonized
+[\[Sarkar et al. 2026\]](https://doi.org/10.64898/2026.07.16.738997) is a supervised hierarchical classifier over a harmonized
 organism-wide typology — 8 levels, 382 leaf types, ~7M parameters over a fixed 5,055-gene
 panel, trained on 9.7M curated cells, with abstention *learned* rather than thresholded
 (expected calibration error 0.0044) — and runs on a laptop. It is better resourced than any
@@ -203,7 +202,7 @@ annotating a whole 525,000-cell atlas takes **41 s** (Supplementary Figure S8).
 
 ## One query, two passes: routing and then resolution
 
-That budget buys a workflow rather than a call (Figure 2). A shipped ~800-type census
+That budget buys a workflow rather than a call (Figure 2). A ~800-type census
 reference annotates any query without being told what tissue it is; resolving those calls
 through the reference's per-class tissue map identifies the tissue; a small focused reference
 for that tissue then re-annotates the same cells at full resolution. On withheld cross-study
@@ -255,9 +254,9 @@ concordance on two withheld datasets after 17 s of CPU.
 
 ## Where independent references agree, all of them are right more often
 
-Three interchangeable entry points invite a question that is only affordable when calls are
-cheap: what if a user runs all of them? Scored on identical cells and compared in the Cell
-Ontology, they partition each query by agreement (Figure 3). We ran this on three tissues:
+The three entry points are interchangeable, so we ran all of them over the same query. Scored
+on identical cells and compared in the Cell Ontology, they partition each query by agreement
+(Figure 3). We ran this on three tissues:
 withheld cross-study **liver** (3,396 cells, 34 truth types), the Krasnow **lung** atlas
 (65,662 cells, 46 types), and the Allen human **middle temporal gyrus** (156,285 cells, 18
 types).
