@@ -31,8 +31,9 @@ pan-human annotator distills into an interchangeable entry point from raw counts
 no labels — matching its teacher at six to nine times the throughput; and three broad references
 over the same cells partition it by agreement. In liver, lung and brain every reference is far
 more accurate where all three concur, though a consensus *label* beats none of them: the value
-is knowing which calls to trust. We release the reimplementation, the harness and the
-pre-trained references.
+is knowing which calls to trust. Code and pre-trained references are available at
+github.com/iandriver/actinn-jax, github.com/iandriver/actinn-jax-benchmark and
+doi:10.5281/zenodo.21688150.
 
 ## 1. Introduction
 
