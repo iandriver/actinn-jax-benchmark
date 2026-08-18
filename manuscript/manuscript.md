@@ -708,16 +708,31 @@ claim this axis supports is a three- to fourfold constant factor rather than fla
 flat-inference result in §3.1 is a *reference*-axis result and should not be read onto this
 one.
 
-**This inverts the Table 3 ordering.** At the query sizes in
-Table 3 — 657 to 13,550 cells — the linear pipeline is the faster of the two (0.33 s against
-0.54 s), because actinn-jax carries a fixed per-call cost that a few thousand cells never
-amortize. Across this axis the two trade places: actinn-jax climbs from roughly 2,000–15,000
-cells/s on those queries to 12,800–18,400 at atlas scale, while the linear pipeline falls from
-9,300–12,400 to ~4,200. The dense feature block explains it — 20,000 genes over 1,332 cells is
-107 MB and sits in cache, whereas the same 20,000 genes over a 50,000-cell block is 4 GB and is
-bounded by memory bandwidth. Neither figure is wrong and neither generalizes: which method is
-cheaper depends on how many cells are annotated at once, which is precisely what a benchmark
-reporting a single query size cannot tell you.
+**This inverts the Table 3 ordering, and the two measurements do not overlap.** Every query in
+this sweep holds 50,000 cells or more; every query in Table 3 holds 13,550 or fewer, so no
+query size is measured in both, and the crossover falls in the untested gap between them.
+
+Within Table 3's range the ordering is mixed rather than uniform. The linear pipeline predicts
+faster on six of the eight splits, by 1.3× to 3.1×, and actinn-jax is faster on liver_cross
+(0.217 s against 0.267 s for 3,396 cells) and level on the brain cluster split (0.363 against
+0.372 for 3,618). Query size does not order those outcomes — actinn-jax wins at 3,396 cells and
+loses at 13,550 — because the two methods' per-cell costs depend on the gene panel each dataset
+selects. Table 3's 0.54 s against 0.33 s is a mean over that mixture, not a result that holds
+per dataset.
+
+Part of the small-query gap is one-time cost. Calling `predict` repeatedly on one liver_intra
+model and query settles from 0.24–0.30 s on the first call to 0.12–0.13 s by the third (two
+runs, `predict_overhead_probe.py`), so roughly 0.12–0.17 s is compilation and warm-up — about
+half the first call at 1,332 cells, and near a tenth of it at 13,550. The harness times the
+first call, which is what a one-shot annotation costs, but it means Table 3 charges actinn-jax
+a fixed cost that the linear pipeline does not pay.
+
+At atlas scale a different mechanism dominates and the ordering stops being mixed. actinn-jax
+climbs from 4,100–15,700 cells/s on the Table 3 queries to 12,800–18,400 here, while the linear
+pipeline falls from 9,700–13,000 to ~4,200, because its dense feature block leaves cache:
+20,000 genes over 1,332 cells is 107 MB, and the same 20,000 genes over a 50,000-cell block is
+4 GB and bounded by memory bandwidth. Which method is cheaper therefore depends on how many
+cells are annotated at once — which a benchmark reporting one query size cannot show.
 
 **Peak memory does not separate them at all.** Both land at 26–28 GB on the full atlas
 (Figure 4C), because on this axis peak memory measures holding the query rather than running
@@ -741,8 +756,9 @@ the spread is inspectable rather than summarised away.
 
 ![annotating an atlas: cost against query size](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_query_scaling.png)
 
-**Figure 4.** Cost against query size with the reference fixed at 17,753 cells. *A:* wall-clock
-to annotate the query. *B:* throughput, which declines 31% for actinn-jax and holds flat for
+**Figure 4.** Cost against query size — 50,000 to 524,699 cells — with the reference fixed at
+17,753 cells. Table 3's queries are all smaller than the leftmost point here (657 to 13,550
+cells), so the two do not overlap. *A:* wall-clock to annotate the query. *B:* throughput, which declines 31% for actinn-jax and holds flat for
 the linear pipeline, narrowing the advantage from 4.2× to 3.1×. *C:* peak memory, which does
 not distinguish them -- on this axis it measures holding the query, not running the method. Three
 runs per point on a shared laptop: *A* and *B* report the fastest run, since contention can

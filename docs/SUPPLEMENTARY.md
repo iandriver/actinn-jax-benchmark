@@ -136,8 +136,9 @@ one-time import cost and is not a scaling effect.
 
 ![annotating an atlas](figures/fig_query_scaling.png)
 
-**Figure S8.** Cost against query size with the reference fixed at 17,753 cells. *A:*
-wall-clock to annotate the query. *B:* throughput, which declines 31% for actinn-jax and holds
+**Figure S8.** Cost against query size — 50,000 to 524,699 cells — with the reference fixed at
+17,753 cells; every query in the main accuracy panel is smaller than the leftmost point here.
+*A:* wall-clock to annotate the query. *B:* throughput, which declines 31% for actinn-jax and holds
 flat for the linear pipeline, narrowing the advantage from 4.2× to 3.1×. *C:* peak memory,
 which does not distinguish them — on this axis it measures holding the query, not running the
 method. Three runs per point on a shared laptop: *A* and *B* report the fastest run, since
