@@ -50,8 +50,9 @@ github.com/iandriver/actinn-jax-benchmark and doi:10.5281/zenodo.21688150.
 Annotating cells by mapping to a labeled reference is run constantly and rarely reported as a
 cost. Existing comparisons [Abdelaal 2019, Fu 2024] emphasize accuracy; the axis that decides
 what runs on a laptop — wall-clock and memory without a GPU — is usually absent. Foundation
-models [Kalfon 2025] raise accuracy in some settings but need accelerators, and their
-zero-shot label predictions underperform small models trained on curated references.
+models [Kalfon 2025] raise accuracy in some settings but need accelerators, and used zero-shot
+they underperform far simpler alternatives, here (0.201 against 0.917 ontology concordance on
+lung) and in an independent evaluation of scGPT and Geneformer embeddings [Kedzierska 2025].
 
 That reporting gap matters more than a missing column, because annotation in practice is not
 one decision. A working analysis asks what broad compartments are present, which tissue the

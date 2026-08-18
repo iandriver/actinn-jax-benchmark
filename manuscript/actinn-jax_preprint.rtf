@@ -15,7 +15,10 @@
 , {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1093/bib/bbae392"}}{\fldrslt{\ul
 [Fu 2024]
 }}}
-) emphasize accuracy and rarely report the axis that decides what a working scientist actually runs on their own machine: {\b wall-clock time and memory on commodity hardware}, without a GPU. Foundation models (scGPT, Geneformer, scPRINT) push accuracy in some settings but need GPUs and minutes-to- hours, and \u8212- as we and others find \u8212- their {\i zero-shot} label predictions underperform a small model trained on curated reference labels.\par}
+) emphasize accuracy and rarely report the axis that decides what a working scientist actually runs on their own machine: {\b wall-clock time and memory on commodity hardware}, without a GPU. Foundation models (scGPT, Geneformer, scPRINT) push accuracy in some settings but need GPUs and minutes-to-hours, and used {\i zero-shot} they underperform far simpler alternatives: scPRINT\u8217's zero-shot labels score 0.201 ontology concordance on the lung split against 0.917 for a reference-trained model on the same cells (\u167 ?3.6), and an independent evaluation places Geneformer\u8217's and scGPT\u8217's zero-shot embeddings behind scVI, Harmony and plain highly-variable-gene selection on clustering and batch correction {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1186/s13059-025-03574-x"}}{\fldrslt{\ul
+[Kedzierska 2025]
+}}}
+.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 We ask a practical question: {\b for a given annotation job on commodity hardware, which method should you actually run, and what does the surrounding workflow look like?} The leading methods now annotate quickly and accurately and give a usable signal on unknown cells, so the shortage is not another leaderboard but guidance on fit-for-purpose \u8212- accuracy per second, accuracy per byte, and how each behaves as the reference grows. We answer with a neutral 13-method benchmark plus a set of demonstrated workflows, held to a single standard: every method runs in its own environment through the same harness, on the same splits, scored by the same metrics, and reported as measured \u8212- including where actinn-jax is not the leader.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 {\b How the comparison was constrained.} A benchmark written by a method\u8217's own author has a well-known failure mode: the datasets, baselines and metrics that flatter the method are the ones that get reported. Every method here runs on {\b every} dataset, so none appears on a favorable subset, and the two methods outside that matrix are named with reasons (\u167 ?2.2). The panel was chosen to include the baselines most likely to beat a small MLP \u8212- a carefully tuned linear pipeline, scTOP, ProtoCloud \u8212- and each of them does beat it somewhere; our own classical tier is left untuned while the linear baseline is tuned, which is the unfavorable direction (\u167 ?5). Metrics are fixed across all methods and reported in full. And the {\b external validation is not ours to design}: Open Problems {\f1 label_projection} (\u167 ?3.7) sets the datasets, the metrics and the ranking, and we did not choose any of them. Where results run against this method\u8217's interests \u8212- ProtoCloud overtaking actinn-jax at atlas scale, a memory advantage that stays a fixed factor instead of growing with the data, a better-resourced broad annotator, a correlation method leading the finest-grained split \u8212- they are reported in those terms.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 {\b On adding another method to a crowded field.} We are not concluding that the new method wins. On accuracy it sits inside a four-way cluster it does not lead; the panel was assembled to include the baselines most likely to beat it, and they do. What earns it a place is narrower: the original ACTINN no longer installs or runs on current Python and ML environments, and the reimplementation\u8217's flat, sub-second, memory-bounded inference over a cached reference is what makes the multi-stage workflow of \u167 ?3.4 practical on a laptop. A field already full of working methods ({\field{\*\fldinst{HYPERLINK "https://xkcd.com/927/"}}{\fldrslt{\ul
@@ -534,7 +537,10 @@ xkcd 927
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 brain_intra\par}
 \cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 [Jorstad 2023]\par}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1126/science.ade9516"}}{\fldrslt{\ul
+[Jorstad 2023]
+}}}
+\par}
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 within-dataset\par}
 \cell}
@@ -555,7 +561,10 @@ xkcd 927
 {
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 brain_cluster\par}
 \cell}
-{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 [Jorstad 2023]\par}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1126/science.ade9516"}}{\fldrslt{\ul
+[Jorstad 2023]
+}}}
+\par}
 \cell}
 {{\pard\intbl \ql \f0 \sa0 \li0 \fi0 within-dataset\par}
 \cell}
@@ -572,7 +581,10 @@ xkcd 927
 {\pard \ql \f0 \sa180 \li0 \fi0 \par}
 {\pard \ql \f0 \sa180 \li0 \fi0 {\b Table 2.} The eight benchmark splits, over seven datasets \u8212- brain appears twice because the same nuclei are scored at two levels of one taxonomy. {\i split} separates within-dataset holdouts from cross-dataset and cross-study transfer; {\i genes} records whether the matrix is keyed by Ensembl ids or by gene symbols, since a method or reference built on one convention cannot read the other without remapping.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 The blood+gut set is a subsample of {\b IBDverse} (Wellcome Sanger Institute; blood, terminal ileum and rectum from 421 individuals), included here because 86 fine-grained labels make it the high-cardinality stress case for the panel. It carries no Cell Ontology ids, so it contributes to accuracy and macro-F1 but to no ontology-scored result.\par}
-{\pard \ql \f0 \sa180 \li0 \fi0 The brain set is single nuclei from the Allen Institute\u8217's human {\b middle temporal gyrus} taxonomy [Jorstad 2023], the same query used in the multi-reference agreement experiment of \u167 ?3.4. It enters twice, at two levels of that taxonomy: {\b {\f1 Subclass}} (24 types, ~300 cells each), the standard annotation level, and {\b {\f1 Cluster}} (151 types, ~100 cells each), whose members are the cell sets {\f1 CCN201908210} enumerates. Only the 10x 3\u8242 ? v3 nuclei are kept (141,782 of 156,285); the remaining Smart-seq v4 nuclei would put a full-length protocol on one side of a within-dataset split.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 The brain set is single nuclei from the Allen Institute\u8217's human {\b middle temporal gyrus} taxonomy {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1126/science.ade9516"}}{\fldrslt{\ul
+[Jorstad 2023]
+}}}
+, the same query used in the multi-reference agreement experiment of \u167 ?3.4. It enters twice, at two levels of that taxonomy: {\b {\f1 Subclass}} (24 types, ~300 cells each), the standard annotation level, and {\b {\f1 Cluster}} (151 types, ~100 cells each), whose members are the cell sets {\f1 CCN201908210} enumerates. Only the 10x 3\u8242 ? v3 nuclei are kept (141,782 of 156,285); the remaining Smart-seq v4 nuclei would put a full-length protocol on one side of a within-dataset split.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 Both levels are scored by exact match alone. The Cell Ontology collapses the five intratelencephalic subclasses ({\f1 L2/3 IT}, {\f1 L4 IT}, {\f1 L5 IT}, {\f1 L6 IT}, {\f1 L6 IT Car3}) into one term and merges {\f1 Lamp5}/{\f1 Lamp5_Lhx6} and {\f1 Sst}/{\f1 Sst Chodl}, leaving {\b 18 terms for the 24 subclasses} and none for the 151 clusters, so an ontology-aware score would credit a method for confusing cortical layers. Brain therefore contributes accuracy and macro-F1 and no ontology-scored result, as blood+gut does for a different reason. \u167 ?3.4 returns to this gap.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 The set spans the three generalization regimes (within-dataset, across datasets, across studies), more than an order of magnitude in cell-type count (8\u8594 ?151), five tissues (lung, liver, blood, gut, brain), whole cells and single nuclei, and both gene-ID conventions.\par}
 {\pard \ql \f0 \sa180 \li0 \fi0 \outlinelevel1 \b \fs32 Metrics\par}
@@ -1843,67 +1855,75 @@ doi:10.1093/bib/bbae392
 doi:10.1016/j.xgen.2026.101217
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 12.\tx360\tab Kalfon J, Samaran J, Peyr\u233 ? G, Cantini L. scPRINT: pre-training on 50 million cells allows robust gene network predictions. {\i Nature Communications} 16:3607 (2025). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1038/s41467-025-58699-1"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 12.\tx360\tab Jorstad NL, Song JHT, Exposito-Alonso D, et al.\u160 ?Comparative transcriptomics reveals human-specific cortical features. {\i Science} 382(6667):eade9516 (2023). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1126/science.ade9516"}}{\fldrslt{\ul
+doi:10.1126/science.ade9516
+}}}
+.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 13.\tx360\tab Kalfon J, Samaran J, Peyr\u233 ? G, Cantini L. scPRINT: pre-training on 50 million cells allows robust gene network predictions. {\i Nature Communications} 16:3607 (2025). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1038/s41467-025-58699-1"}}{\fldrslt{\ul
 doi:10.1038/s41467-025-58699-1
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 13.\tx360\tab Kiselev VY, Yiu A, Hemberg M. scmap: projection of single-cell RNA-seq data across data sets. {\i Nature Methods} 15:359-362 (2018). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1038/nmeth.4644"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 14.\tx360\tab Kedzierska KZ, Crawford L, Amini AP, Lu AX. Zero-shot evaluation reveals limitations of single-cell foundation models. {\i Genome Biology} 26:101 (2025). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1186/s13059-025-03574-x"}}{\fldrslt{\ul
+doi:10.1186/s13059-025-03574-x
+}}}
+.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 15.\tx360\tab Kiselev VY, Yiu A, Hemberg M. scmap: projection of single-cell RNA-seq data across data sets. {\i Nature Methods} 15:359-362 (2018). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1038/nmeth.4644"}}{\fldrslt{\ul
 doi:10.1038/nmeth.4644
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 14.\tx360\tab Lin Z, et al.\u160 ?Evolutionary-scale prediction of atomic-level protein structure with a language model (ESM-2). {\i Science} 379:1123-1130 (2023). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1126/science.ade2574"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 16.\tx360\tab Lin Z, et al.\u160 ?Evolutionary-scale prediction of atomic-level protein structure with a language model (ESM-2). {\i Science} 379:1123-1130 (2023). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1126/science.ade2574"}}{\fldrslt{\ul
 doi:10.1126/science.ade2574
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 15.\tx360\tab Lotfollahi M, et al.\u160 ?Mapping single-cell data to reference atlases by transfer learning (scArches). {\i Nature Biotechnology} 40:121-130 (2022). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1038/s41587-021-01001-7"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 17.\tx360\tab Lotfollahi M, et al.\u160 ?Mapping single-cell data to reference atlases by transfer learning (scArches). {\i Nature Biotechnology} 40:121-130 (2022). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1038/s41587-021-01001-7"}}{\fldrslt{\ul
 doi:10.1038/s41587-021-01001-7
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 16.\tx360\tab Ma F, Pellegrini M. ACTINN: automated identification of cell types in single cell RNA sequencing. {\i Bioinformatics} 36(2):533-538 (2020). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1093/bioinformatics/btz592"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 18.\tx360\tab Ma F, Pellegrini M. ACTINN: automated identification of cell types in single cell RNA sequencing. {\i Bioinformatics} 36(2):533-538 (2020). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1093/bioinformatics/btz592"}}{\fldrslt{\ul
 doi:10.1093/bioinformatics/btz592
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 17.\tx360\tab Miller JA, Gouwens NW, Tasic B, et al.\u160 ?Common cell type nomenclature for the mammalian brain. {\i eLife} 9:e59928 (2020). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.7554/eLife.59928"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 19.\tx360\tab Miller JA, Gouwens NW, Tasic B, et al.\u160 ?Common cell type nomenclature for the mammalian brain. {\i eLife} 9:e59928 (2020). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.7554/eLife.59928"}}{\fldrslt{\ul
 doi:10.7554/eLife.59928
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 18.\tx360\tab Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis (2024). {\field{\*\fldinst{HYPERLINK "https://openproblems.bio"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 20.\tx360\tab Open Problems for Single-Cell Analysis Consortium. Open Problems: a living benchmark for single-cell analysis (2024). {\field{\*\fldinst{HYPERLINK "https://openproblems.bio"}}{\fldrslt{\ul
 openproblems.bio
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 19.\tx360\tab Pedregosa F, et al.\u160 ?Scikit-learn: machine learning in Python. {\i JMLR} 12:2825-2830 (2011). {\field{\*\fldinst{HYPERLINK "https://www.jmlr.org/papers/v12/pedregosa11a.html"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 21.\tx360\tab Pedregosa F, et al.\u160 ?Scikit-learn: machine learning in Python. {\i JMLR} 12:2825-2830 (2011). {\field{\*\fldinst{HYPERLINK "https://www.jmlr.org/papers/v12/pedregosa11a.html"}}{\fldrslt{\ul
 jmlr.org/papers/v12/pedregosa11a.html
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 20.\tx360\tab Rosen Y, et al.\u160 ?Universal cell embedding provides a foundation model for cell biology (UCE). {\i Nature} (2026). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1038/s41586-026-10689-z"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 22.\tx360\tab Rosen Y, et al.\u160 ?Universal cell embedding provides a foundation model for cell biology (UCE). {\i Nature} (2026). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1038/s41586-026-10689-z"}}{\fldrslt{\ul
 doi:10.1038/s41586-026-10689-z
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 21.\tx360\tab Sarkar S, Li Z, Molla G, et al.\u160 ?Organism-scale annotation with Pan-human Azimuth. {\i bioRxiv} (2026). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.64898/2026.07.16.738997"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 23.\tx360\tab Sarkar S, Li Z, Molla G, et al.\u160 ?Organism-scale annotation with Pan-human Azimuth. {\i bioRxiv} (2026). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.64898/2026.07.16.738997"}}{\fldrslt{\ul
 doi:10.64898/2026.07.16.738997
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 22.\tx360\tab Sikkema L, et al.\u160 ?An integrated cell atlas of the lung in health and disease (HLCA). {\i Nature Medicine} 29:1563-1577 (2023). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1038/s41591-023-02327-2"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 24.\tx360\tab Sikkema L, et al.\u160 ?An integrated cell atlas of the lung in health and disease (HLCA). {\i Nature Medicine} 29:1563-1577 (2023). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1038/s41591-023-02327-2"}}{\fldrslt{\ul
 doi:10.1038/s41591-023-02327-2
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 23.\tx360\tab Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. {\i bioRxiv} (2026). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.64898/2026.02.11.705358"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 25.\tx360\tab Souza H, Mehta P. Parameter-free representations outperform single-cell foundation models on downstream benchmarks. {\i bioRxiv} (2026). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.64898/2026.02.11.705358"}}{\fldrslt{\ul
 doi:10.64898/2026.02.11.705358
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 24.\tx360\tab Travaglini KJ, Nabhan AN, Penland L, et al.\u160 ?A molecular cell atlas of the human lung from single-cell RNA sequencing. {\i Nature} 587(7835):619-625 (2020). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1038/s41586-020-2922-4"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 26.\tx360\tab Travaglini KJ, Nabhan AN, Penland L, et al.\u160 ?A molecular cell atlas of the human lung from single-cell RNA sequencing. {\i Nature} 587(7835):619-625 (2020). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1038/s41586-020-2922-4"}}{\fldrslt{\ul
 doi:10.1038/s41586-020-2922-4
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 25.\tx360\tab Xu C, et al.\u160 ?Probabilistic harmonization and annotation of single-cell transcriptomics data with deep generative models (scANVI). {\i Molecular Systems Biology} 17:e9620 (2021). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.15252/msb.20209620"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 27.\tx360\tab Xu C, et al.\u160 ?Probabilistic harmonization and annotation of single-cell transcriptomics data with deep generative models (scANVI). {\i Molecular Systems Biology} 17:e9620 (2021). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.15252/msb.20209620"}}{\fldrslt{\ul
 doi:10.15252/msb.20209620
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 26.\tx360\tab Yampolskaya M, Herriges MJ, Ikonomou L, Kotton DN, Mehta P. scTOP: physics-inspired order parameters for cellular identification and visualization. {\i Development} 150(21):dev201873 (2023). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1242/dev.201873"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 28.\tx360\tab Yampolskaya M, Herriges MJ, Ikonomou L, Kotton DN, Mehta P. scTOP: physics-inspired order parameters for cellular identification and visualization. {\i Development} 150(21):dev201873 (2023). {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1242/dev.201873"}}{\fldrslt{\ul
 doi:10.1242/dev.201873
 }}}
 .\par}
-{\pard \ql \f0 \sa0 \li360 \fi-360 27.\tx360\tab Munroe R. Standards. {\i xkcd} 927. {\field{\*\fldinst{HYPERLINK "https://xkcd.com/927/"}}{\fldrslt{\ul
+{\pard \ql \f0 \sa0 \li360 \fi-360 29.\tx360\tab Munroe R. Standards. {\i xkcd} 927. {\field{\*\fldinst{HYPERLINK "https://xkcd.com/927/"}}{\fldrslt{\ul
 xkcd.com/927
 }}}
 .\sa180\par}

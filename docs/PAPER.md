@@ -42,9 +42,12 @@ operations in single-cell RNA-seq. The method landscape is large,
 but published comparisons ([Abdelaal 2019], [Fu 2024]) emphasize accuracy and rarely
 report the axis that decides what a working scientist actually runs on their own machine:
 **wall-clock time and memory on commodity hardware**, without a GPU. Foundation models
-(scGPT, Geneformer, scPRINT) push accuracy in some settings but need GPUs and minutes-to-
-hours, and — as we and others find — their *zero-shot* label predictions underperform a
-small model trained on curated reference labels.
+(scGPT, Geneformer, scPRINT) push accuracy in some settings but need GPUs and minutes-to-hours,
+and used *zero-shot* they underperform far simpler alternatives: scPRINT's zero-shot labels
+score 0.201 ontology concordance on the lung split against 0.917 for a reference-trained model
+on the same cells (§3.6), and an independent evaluation places Geneformer's and scGPT's
+zero-shot embeddings behind scVI, Harmony and plain highly-variable-gene selection on
+clustering and batch correction [Kedzierska 2025].
 
 We ask a practical question: **for a given annotation job on commodity hardware, which
 method should you actually run, and what does the surrounding workflow look like?** The leading
@@ -1424,6 +1427,7 @@ Figure 1 — and Tables S1–S3, the method and dataset descriptions and per-dat
 [repo]: https://github.com/iandriver/actinn-jax-benchmark
 [Abdelaal 2019]: https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1795-z
 [Fu 2024]: https://academic.oup.com/bib/article/25/5/bbae392/7730135
+[Kedzierska 2025]: https://doi.org/10.1186/s13059-025-03574-x
 [Ma & Pellegrini 2020]: https://doi.org/10.1093/bioinformatics/btz592
 [xkcd 927]: https://xkcd.com/927/
 [Sarkar et al. 2026]: https://doi.org/10.64898/2026.07.16.738997

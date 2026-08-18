@@ -66,6 +66,14 @@ datasets:
       cite the atlas paper unless a specific released object is being referenced.
   pbmc:
     cite: 10x Genomics 2016
+  brain_intra:
+    cite: Jorstad 2023
+    note: Allen human middle temporal gyrus; labelled with the study's own Subclass column.
+  brain_cluster:
+    cite: Jorstad 2023
+    note: >
+      Same nuclei as brain_intra at the study's Cluster level, whose members are the cell
+      sets of the CCN201908210 taxonomy (see Miller 2020 for the nomenclature).
 
 entries:
   Miller 2020:
@@ -147,6 +155,14 @@ entries:
   Sarkar et al. 2026:
     text: "Sarkar S, Li Z, Molla G, et al. Organism-scale annotation with Pan-human Azimuth. *bioRxiv* (2026)."
     doi: 10.64898/2026.07.16.738997
+    status: verified
+  Kedzierska 2025:
+    text: "Kedzierska KZ, Crawford L, Amini AP, Lu AX. Zero-shot evaluation reveals limitations of single-cell foundation models. *Genome Biology* 26:101 (2025)."
+    doi: 10.1186/s13059-025-03574-x
+    status: verified
+  Jorstad 2023:
+    text: "Jorstad NL, Song JHT, Exposito-Alonso D, et al. Comparative transcriptomics reveals human-specific cortical features. *Science* 382(6667):eade9516 (2023)."
+    doi: 10.1126/science.ade9516
     status: verified
   Kalfon 2025:
     text: "Kalfon J, Samaran J, Peyré G, Cantini L. scPRINT: pre-training on 50 million cells allows robust gene network predictions. *Nature Communications* 16:3607 (2025)."
