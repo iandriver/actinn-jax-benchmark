@@ -194,6 +194,11 @@ classifiers lose, helped by the fact that cluster-level labels are themselves th
 clustering the same expression space. One split is a signal, not a characterization, but it is
 the one split in this panel at the resolution a cortical taxonomy actually works at.
 
+A foundation model run zero-shot scored **0.201** ontology concordance against 0.917 for a
+reference-trained model on the same cells, taking ~280× longer. Open Problems reproduces that
+independently: its zero-shot entries sit at the bottom of the leaderboard, and actinn-jax
+places 3rd of 17 on accuracy there, 1st among methods that complete every dataset.
+
 Prediction is where the annotation budget is actually spent, and it is small: sub-second for
 every CPU method tested, and flat in reference size for all of them, since a cached model's
 inference does not depend on how many cells trained it. What makes chaining stages practical
@@ -306,7 +311,7 @@ evaluated in the Cell Ontology because the three references answer in different 
 cells on which the references agree is not, and tracks how finely the query's own annotation
 is resolved.
 
-## Abstention is tunable; zero-shot labels are not competitive
+## Abstention flags the cells a reference does not cover
 
 Withholding 9 of 36 cell types entirely and sweeping a confidence threshold over the eight
 methods that return a per-cell confidence, five trade coverage for accuracy across the range
@@ -318,10 +323,6 @@ tied (0.969 accuracy on 66% of cells with 73% of novel cells flagged, against 0.
 with 71%) — but cost does, at 0.54 s of predict time against 17.2 s. This is a second and
 complementary route to the same end as reference agreement: a calibrated threshold within one
 reference, or concurrence across several with no calibration at all.
-
-Separately, a foundation model run zero-shot scored **0.201** ontology concordance against
-0.917 for a reference-trained model on the same cells, taking ~280× longer — reproduced
-independently on Open Problems, where zero-shot entries sit at the bottom of the leaderboard.
 
 # Discussion
 

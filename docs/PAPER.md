@@ -7,7 +7,7 @@
 hand-entered.*
 
 > **Status:** all results are final. Every method in §3.1 runs the same eight splits on
-> the same reference/query partitions. §3.7 adds an independent external validation on the community **Open
+> the same reference/query partitions. §3.3 adds an independent external validation on the community **Open
 > Problems** `label_projection` benchmark, including a **controlled same-hardware** run
 > (every method on one AWS instance). Supporting detail lives in the repository's
 > documentation.
@@ -45,7 +45,7 @@ report the axis that decides what a working scientist actually runs on their own
 (scGPT, Geneformer, scPRINT) push accuracy in some settings but need GPUs and minutes-to-hours,
 and used *zero-shot* they underperform far simpler alternatives: scPRINT's zero-shot labels
 score 0.201 ontology concordance on the lung split against 0.917 for a reference-trained model
-on the same cells (§3.6), and an independent evaluation places Geneformer's and scGPT's
+on the same cells (§3.2), and an independent evaluation places Geneformer's and scGPT's
 zero-shot embeddings behind scVI, Harmony and plain highly-variable-gene selection on
 clustering and batch correction [Kedzierska 2025].
 
@@ -66,7 +66,7 @@ the baselines most likely to beat a small MLP — a carefully tuned linear pipel
 ProtoCloud — and each of them does beat it somewhere; our own classical tier is left untuned
 while the linear baseline is tuned, which is the unfavorable direction (§5). Metrics are
 fixed across all methods and reported in full. And the **external validation is not ours to
-design**: Open Problems `label_projection` (§3.7) sets the datasets, the metrics and
+design**: Open Problems `label_projection` (§3.3) sets the datasets, the metrics and
 the ranking, and we did not choose any of them. Where results run against this method's
 interests — ProtoCloud overtaking actinn-jax at atlas scale, a memory advantage that stays a
 fixed factor instead of growing with the data, a better-resourced broad annotator, a
@@ -78,11 +78,11 @@ to include the baselines most likely to beat it, and they do. What earns it a pl
 narrower: the original ACTINN no longer installs or runs on current Python and ML
 environments, and the
 reimplementation's flat, sub-second, memory-bounded inference over a cached reference is what
-makes the multi-stage workflow of §3.4 practical on a laptop. A field already full of working
+makes the multi-stage workflow of §3.5 practical on a laptop. A field already full of working
 methods ([xkcd 927]) is a good reason to be specific about what a new entry is *for* — here,
 a cost profile that lets several models be chained — rather than to claim it supersedes what
 exists. Where a better-resourced model already exists, the productive move is to build on it
-(§3.4).
+(§3.5).
 
 **Contributions.**
 
@@ -96,7 +96,7 @@ exists. Where a better-resourced model already exists, the productive move is to
  as measured (§3.1, §5). The sweep is also what sets actinn-jax's minibatch policy: at
  ACTINN's fixed batch of 128, a 47k-cell reference costs ~24k tiny update steps, so
  actinn-jax scales the batch with the reference above ~12.8k cells and keeps 128 below it.
- Measured fit and predict curves are in §3.3.
+ Measured fit and predict curves are in §3.4.
 3. **Demonstrated end-to-end workflows** for jobs where cost is the binding constraint,
  all CPU: annotate an unknown human dataset from a **bundled census-wide ~800-type
  reference** with a calibrated abstain and no training; **tissue-aware refinement** (halves
@@ -139,7 +139,7 @@ the original's TensorFlow-1.x graph/session code. Key engineering:
  from the slot where CELLxGENE files conventionally store them.
 - **Optional reference-fit standardization**: z-score each selected gene by the reference's
  frozen mean and standard deviation and apply that to the query — a cheap domain alignment
- (§3.7). Off by default; when on, the scaler is saved alongside the model and travels with
+ (§3.3). Off by default; when on, the scaler is saved alongside the model and travels with
  it, and models saved without it still load.
 
 The reimplementation reproduces the original's accuracy to within repeat noise and, unlike
@@ -186,14 +186,14 @@ what can be measured rather than excusing them from measurement:
  panel, trained on 9.7M curated cells, with abstention *learned rather than thresholded* —
  the model is trained to answer `Unassigned`, instead of having a probability cutoff applied
  to its output afterwards. It is the closest published counterpart to this paper's broad
- pass, and the teacher we distill in §3.4.
+ pass, and the teacher we distill in §3.5.
 
 Neither predicts into the dataset's label strings, so **exact-match accuracy against those
 strings is a vocabulary artifact, not an accuracy signal** — `regulatory T cell` → `Treg cell`
 and `non-classical monocyte` → `CD16 monocyte` are correct answers that score zero. Both are
 therefore scored **ontology-only** (§2.4) and reported in their own block in §3.1, on the
 three datasets where reference and query both carry Cell Ontology ids. They appear again in
-§3.6 (foundation-model zero-shot) and §3.4 (Azimuth as broad pass, and as distillation
+§3.2 (foundation-model zero-shot) and §3.5 (Azimuth as broad pass, and as distillation
 teacher).
 
 **scPred** is not included: it is unmaintained, and no longer installs against current
@@ -225,7 +225,7 @@ contributes to accuracy and macro-F1 but to no ontology-scored result.
 
 The brain set is single nuclei from the Allen Institute's human **middle temporal gyrus**
 taxonomy [Jorstad 2023], the same query used in the multi-reference agreement experiment of
-§3.4. It enters twice, at two levels of that taxonomy: **`Subclass`** (24 types, ~300 cells
+§3.5. It enters twice, at two levels of that taxonomy: **`Subclass`** (24 types, ~300 cells
 each), the standard annotation level, and **`Cluster`** (151 types, ~100 cells each), whose
 members are the cell sets `CCN201908210` enumerates. Only the 10x 3′ v3 nuclei are kept
 (141,782 of 156,285); the remaining Smart-seq v4 nuclei would put a full-length protocol on
@@ -236,7 +236,7 @@ intratelencephalic subclasses (`L2/3 IT`, `L4 IT`, `L5 IT`, `L6 IT`, `L6 IT Car3
 term and merges `Lamp5`/`Lamp5_Lhx6` and `Sst`/`Sst Chodl`, leaving **18 terms for the 24
 subclasses** and none for the 151 clusters, so an ontology-aware score would credit a method
 for confusing cortical layers. Brain therefore contributes accuracy and macro-F1 and no
-ontology-scored result, as blood+gut does for a different reason. §3.4 returns to this gap.
+ontology-scored result, as blood+gut does for a different reason. §3.5 returns to this gap.
 
 The set spans the three generalization regimes (within-dataset, across datasets, across
 studies), more than an order of magnitude in cell-type count (8→151), five tissues (lung,
@@ -287,12 +287,12 @@ another.
 pretrained tiers and for actinn-jax; Apple MPS for the deep and foundation tiers. No discrete
 GPU, no cloud — the regime the benchmark is about. Math-library threads are left uncapped, so
 wall-clock is what a practitioner sees; an optional thread cap exists for stricter
-reproducibility. §3.7 repeats the comparison on one cloud CPU instance, where methods
+reproducibility. §3.3 repeats the comparison on one cloud CPU instance, where methods
 compete for cores; §2.10 explains how that is handled.
 
 ### 2.6 Building a broad reference
 
-The bundled broad-pass references (§3.4) are built once, offline, by a three-stage pipeline
+The bundled broad-pass references (§3.5) are built once, offline, by a three-stage pipeline
 driven by one command in the [benchmark repository][repo].
 
 **Sampling.** Every primary cell for one organism in the CELLxGENE Census [CZI Census 2025]
@@ -319,7 +319,7 @@ fine classifier per group, and the grouping comes from either:
  dropped as uninformative; the same Ward clustering is applied to those vectors.
  Free, deterministic, and species-independent — which is what
  makes the pan-mouse reference possible, since the distillation teacher is human-only and
- scPRINT's mouse support is untested here. §3.4 scores this route against no hierarchy
+ scPRINT's mouse support is untested here. §3.5 scores this route against no hierarchy
  and against a random grouping.
 
 **Training and calibration.** A 4,000-gene panel of **highly variable genes (HVGs)** — the
@@ -404,12 +404,12 @@ the query fixed, so accuracy, fit time, predict time and peak memory become func
 reference size alone.
 
 Each sweep answers a different question. **Cost against size and
-cardinality** (§3.3, Figure 2) covers six reference sizes to 24k cells and separately varies
+cardinality** (§3.4, Figure 2) covers six reference sizes to 24k cells and separately varies
 the number of cell types, and asks whether inference cost grows with either — the property the
 multi-stage workflow depends on. **Accuracy and memory to atlas scale** covers five sizes
-to 49k cells on lung and four to 47k on the HLiCA liver atlas (§3.3, Figure 3), and asks
+to 49k cells on lung and four to 47k on the HLiCA liver atlas (§3.4, Figure 3), and asks
 whether the ranking at laptop size survives at atlas size. A third sweep runs the other way,
-holding the reference fixed and growing the *query* to a whole 525k-cell atlas (§3.3,
+holding the reference fixed and growing the *query* to a whole 525k-cell atlas (§3.4,
 Figure 4), which is the axis a reused reference is actually pointed along. Sizes are set by capping cells per
 type, which is why they are not round numbers. The lung sweep's top point is the whole atlas
 once the query is held out; the liver atlas is far larger (525k cells), so its sweep stops at
@@ -427,11 +427,11 @@ baselines (linear-anova-pca, scTOP, SVM, CellTypist) so the same-hardware compar
 more than the leaderboard's own set.
 
 **Where each number is measured.** The paper reports two environments. The in-house panel
-(§3.1–§3.5) runs on the Apple Silicon laptop described in §2.5. The Open Problems results
-(§3.7) run on AWS `r7i.8xlarge` instances (32 vCPU, 247 GB) through OP's own Nextflow
+(§3.1–§3.6) runs on the Apple Silicon laptop described in §2.5. The Open Problems results
+(§3.3) run on AWS `r7i.8xlarge` instances (32 vCPU, 247 GB) through OP's own Nextflow
 pipeline, two tasks at a time.
 
-**Accuracy** in Table 9 comes from a single AWS run covering all eleven methods, so every
+**Accuracy** in Table 6 comes from a single AWS run covering all eleven methods, so every
 score is one harness, one machine, one invocation.
 
 **Cost** is reported as a ratio to actinn-jax rather than in seconds, because wall-clock on a
@@ -459,14 +459,21 @@ methods, all selectable without test labels:
 
 ## 3. Results
 
-### 3.1 Accuracy and cost
+Sections 3.1–3.3 measure methods: eleven trained annotators over eight splits, two pretrained
+annotators on the splits where that comparison is possible, and an independent run of
+actinn-jax through the Open Problems label-projection benchmark. §3.4 measures how those costs
+move with reference size, query size and label cardinality. §3.5 builds references from public
+corpora and hands a query from a broad pass to a tissue-specific one. §3.6 covers what a
+confidence threshold does when a query contains types the reference does not.
+
+### 3.1 Accuracy and cost across the panel
 
 Accuracy is the mean over the **five shared-vocabulary datasets** (lung_cross
 excluded — its exact-match accuracy is a vocabulary artifact, see the † note below; means over all
 six are ~0.08 lower for every method, and reorder only scArches and actinn-jax, by 0.0004);
 macro-F1 is the mean over all six non-brain datasets, ontology concordance the mean over the
 four of those that carry Cell Ontology ids; cost is the mean per query (Table 3). The two brain
-splits are excluded from these aggregates and reported per dataset in Table 5, because the
+splits are excluded from these aggregates and reported per dataset in Table 4, because the
 columns below come from one measurement pass on an idle machine and brain was run afterwards.
 Adding brain at subclass level raises every method by 0.025–0.043 and reorders nothing. Adding
 both brain splits gives
@@ -491,7 +498,7 @@ accuracies over eight of linear-anova-pca 0.857, scANVI 0.855, scArches 0.853, C
 **Table 3.** Accuracy and cost together, ordered by accuracy. Accuracy is the mean over the five
 shared-vocabulary datasets, macro-F1 is the mean over all six non-brain datasets, ontology
 concordance the mean over the four of those carrying Cell Ontology ids, and cost is the mean
-per query. The two brain splits are reported per dataset in Table 5 instead (see above). Bold marks the best value in a column.
+per query. The two brain splits are reported per dataset in Table 4 instead (see above). Bold marks the best value in a column.
 
 *In Table 3, scANVI does most of its work in one train+predict pass, attributed to predict.
 
@@ -506,31 +513,8 @@ a cells × genes matrix while actinn-jax stays sparse; that ~1.8× ratio widens 
 scale (6.1 vs 13.2 GB at 49k cells, §4). The two profiles suit different jobs: one-shot
 labeling, versus a reference **trained once and reused**, where a cached model pays fit once
 while the linear pipeline refits scaler/PCA/classifier for every query. ProtoCloud's 222 s CPU
-fit buys nothing at this reference size — and buys the top accuracy at atlas scale (§3.3).
+fit buys nothing at this reference size — and buys the top accuracy at atlas scale (§3.4).
 
-**Pretrained annotators, scored ontology-only.** The two methods with fixed label vocabularies
-(§2.2, §2.4) cannot appear in Table 3, since they do not predict the dataset's label
-strings. They are scored by ontology concordance on the three datasets where reference and query
-both carry CL ids and share a vocabulary, with actinn-jax on the same splits for reference:
-
-| | lung_intra | liver_intra | liver_cross | predict (s) |
-|---|---:|---:|---:|---:|
-| actinn-jax (reference-trained) | **0.917** | **0.846** | **0.731** | 0.27–0.37 |
-| Pan-human Azimuth (pretrained) | 0.700 | 0.521 | 0.408 | 2.2–3.4 |
-| scPRINT (zero-shot) | 0.201 | — | — | 62.3 |
-
-**Table 4.** Pretrained annotators, scored by ontology concordance only, on the three datasets
-where reference and query both carry Cell Ontology ids and share a vocabulary — with reference-trained actinn-jax on
-the same splits for scale. The two sides were trained on different information; see the text
-below.
-
-**The two sides of this table were given different information.** actinn-jax is trained on a
-reference drawn from the same data and scored in its own vocabulary; Pan-human Azimuth has
-never seen these datasets and answers in a different one, and is mapped into the query's
-vocabulary through the ontology. The gap between a curated supervised annotator and a
-zero-shot foundation head is the comparison the table supports — 0.700 against 0.201 on lung —
-and §3.4 uses Azimuth as a broad pass in its own right and as a distillation teacher. Peak memory is
-indistinguishable between actinn-jax and Azimuth (1.65–2.1 GB on every dataset).
 
 Those four are the tuned **linear pipeline (0.839)**, scANVI (0.833), scArches (0.832) and
 actinn-jax (0.831) — led by the linear pipeline rather than by a deep model. CellTypist
@@ -539,7 +523,7 @@ ontology-aware concordance (0.811), marginally ahead of scANVI's 0.809 — a gap
 repeat noise, so read it as a tie rather than a lead. ProtoCloud (0.790) and scTOP
 (0.739) sit below that cluster on these subsampled references: both need conditions these
 splits do not provide — ProtoCloud is data-hungry and becomes the strongest method once given
-a real atlas (§3.3), while scTOP is built for small,
+a real atlas (§3.4), while scTOP is built for small,
 low-cardinality problems. Per dataset (accuracy):
 
 | dataset | actinn-jax | best method (acc) |
@@ -553,7 +537,7 @@ low-cardinality problems. Per dataset (accuracy):
 | brain, subclass (24 types) | 0.986 | ProtoCloud 0.991 |
 | brain, cluster (151 types)‡ | 0.741 | SingleR 0.845 |
 
-**Table 5.** Per-dataset accuracy: actinn-jax against whichever method leads that dataset.
+**Table 4.** Per-dataset accuracy: actinn-jax against whichever method leads that dataset.
 † on lung_cross the exact-match score is a vocabulary artifact, so ontology concordance is the
 meaningful column. ‡ the two brain rows are the same nuclei scored at two resolutions of the
 same taxonomy; see below.
@@ -603,8 +587,6 @@ meaningful accuracy signal.** The other five datasets use a single shared label 
 for reference and query (a split of one atlas, or HLiCA's harmonized annotations), so their
 exact scores are unaffected.
 
-### 3.2 The accuracy × speed frontier
-
 ![accuracy and cost across every split](figures/fig_cost_accuracy_ranges.png)
 
 **Figure 1.** Eleven methods over seven splits (lung_cross excluded, see the † note above).
@@ -627,7 +609,7 @@ sitting inside it. The deep methods buy little on accuracy — scANVI and scArch
 and third by gap, 0.003 and 0.004 behind the linear pipeline, which is inside their own rerun
 noise — and pay 15× its total time for that. **actinn-jax** sits mid-panel: mean gap 0.031 at
 17.9 s, leading the cross-study liver split. What separates it is not on this plot at all but
-on the scaling axes of §3.3 — predict time flat in reference size, and ~2× lower peak memory
+on the scaling axes of §3.4 — predict time flat in reference size, and ~2× lower peak memory
 that holds to atlas scale.
 
 Every method's spread across splits is larger than the distance between the leading methods:
@@ -635,7 +617,132 @@ scmap-cluster spans 0.035 to 0.451, SingleR 0.000 to 0.191, actinn-jax 0.000 to 
 over a panel of datasets, including the one in Table 3, summarizes that spread with a single
 number.
 
-### 3.3 Scaling
+### 3.2 Pretrained annotators and zero-shot foundation models
+
+The two methods with fixed label vocabularies (§2.2, §2.4) cannot appear in Table 3, since
+they do not predict the dataset's label strings. They are scored by ontology concordance on
+the three datasets where reference and query both carry CL ids and share a vocabulary, with
+actinn-jax on the same splits for reference:
+
+| | lung_intra | liver_intra | liver_cross | predict (s) |
+|---|---:|---:|---:|---:|
+| actinn-jax (reference-trained) | **0.917** | **0.846** | **0.731** | 0.27–0.37 |
+| Pan-human Azimuth (pretrained) | 0.700 | 0.521 | 0.408 | 2.2–3.4 |
+| scPRINT (zero-shot) | 0.201 | — | — | 62.3 |
+
+**Table 5.** Pretrained annotators, scored by ontology concordance only, on the three datasets
+where reference and query both carry Cell Ontology ids and share a vocabulary — with reference-trained actinn-jax on
+the same splits for scale. The two sides were trained on different information; see the text
+below.
+
+**The two sides of this table were given different information.** actinn-jax is trained on a
+reference drawn from the same data and scored in its own vocabulary; Pan-human Azimuth has
+never seen these datasets and answers in a different one, and is mapped into the query's
+vocabulary through the ontology. The gap between a curated supervised annotator and a
+zero-shot foundation head is the comparison the table supports — 0.700 against 0.201 on lung —
+and §3.5 uses Azimuth as a broad pass in its own right and as a distillation teacher. Peak memory is
+indistinguishable between actinn-jax and Azimuth (1.65–2.1 GB on every dataset).
+
+**scPRINT, run zero-shot.** The foundation model is run as a zero-shot predictor with no
+training on the reference, as a reference point for the "just use a foundation model"
+alternative. On the lung dataset it
+scored **exact-match accuracy 0.029 / ontology concordance 0.201, taking 62 s for 2,694 query
+cells** — against actinn-jax's 0.894 in 0.23 s — so as a *label* predictor it is both slow
+(**~280×** actinn-jax) and weak. It is reported on lung alone because its fixed vocabulary
+cannot score the other datasets: the liver and blood+gut sets contain Cell Ontology terms
+absent from its label set, and it declines them rather than guessing. That is an inherent
+property of a zero-shot label head rather than a defect, but it does mean the raw predictions
+are not a drop-in annotator. It is why the two-stage workflow uses scPRINT's **embeddings** —
+its learned structure — to shape a small trained model, and never its zero-shot labels.
+
+### 3.3 External validation: Open Problems `label_projection`
+
+Our in-house benchmark is neutral but self-run. For an **independent** check, we ran
+actinn-jax through the community-standard [Open Problems](https://openproblems.bio/benchmarks/label_projection)
+label-projection task — their 6 datasets, splits, and metrics — and slotted it into their
+published v2.0.0 leaderboard.
+
+**Placement.** On a benchmark we did not design and cannot tune, **actinn-jax places 3rd of
+17 on mean accuracy (0.837), 1st among all methods that complete every dataset**, beats its
+PCA-space `mlp` sibling, and posts the best accuracy of any completing method on the hardest
+dataset (tabula_sapiens, 160 types: 0.394 vs mlp 0.342). It is upper-mid on macro-F1 and
+**not the top method overall** — scANVI+scArches surgery and xgboost [Chen & Guestrin 2016] score higher on the
+datasets they finish, though both **fail to complete tabula_sapiens**, which is why they
+rank above actinn-jax only on a mean over the 5 easier datasets. The foundation models again
+land at the bottom (scgpt_zeroshot 0.639, uce 0.131 ≈ the random-labels control),
+reproducing §3.2 externally.
+
+Means over the six datasets, every method through the same pipeline on one instance:
+
+| method | mean acc | macro-F1 | cost | peak mem |
+|--------------------|------:|------:|------:|--------:|
+| mlp | 0.843 | 0.662 | 1.98× | 19.9 GB |
+| **actinn-jax** | 0.836 | 0.663 | 1.00× | 21.0 GB |
+| **linear-anova-pca** | 0.828 | 0.647 | 2.67× | 20.1 GB |
+| **SVM (SGD)** | 0.816 | 0.652 | 6.07× | 20.1 GB |
+| logistic_regression | 0.813 | **0.689** | **0.18×** | 20.0 GB |
+| **CellTypist** | 0.810 | 0.643 | 7.62× | 20.1 GB |
+| knn | 0.793 | 0.648 | **0.07×** | 19.5 GB |
+| xgboost | 0.791 | 0.614 | 5.48× | 80.7 GB |
+| cellmapper_linear | 0.776 | 0.553 | 0.35× | 31.5 GB |
+| naive_bayes | 0.738 | 0.613 | 0.19× | 19.5 GB |
+| **scTOP** | 0.581 | 0.462 | **0.16×** | 20.4 GB |
+
+**Table 6.** All eleven methods on the six Open Problems datasets, ordered by accuracy. Bold
+marks the five components we contributed. *cost* is per-dataset wall-clock relative to
+actinn-jax (§2.10), for which 1.00× is roughly two minutes.
+
+actinn-jax **matches its `mlp` sibling on accuracy at half the cost**, and **beats xgboost on
+accuracy at 5.5× less runtime and 4× less memory** (21 vs 81 GB). Everything cheaper — knn,
+logistic_regression, naive_bayes, scTOP — is less accurate, and the one heavyweight is slower
+and heavier. Nothing here beats it on accuracy and cost together.
+
+**The tuned linear pipeline loses its §3.1 advantage on both axes.** It places third on
+accuracy (0.828, behind `mlp` and actinn-jax), and where it fits 7× *faster* than actinn-jax
+on the in-house panel it costs **2.7× more** here. The input budget explains the reversal: OP
+hands every method 1,000 HVGs, and an ANOVA→PCA→logistic pipeline pays for the decomposition
+on every query while a gene-space MLP amortizes it into one fit. CellTypist (7.6×) and the
+SGD-SVM (6.1×) shift the same way. Neither a cost ranking nor an accuracy ranking survives a
+change of feature budget — which is why we report both panels rather than picking
+one.
+
+`logistic_regression` places fifth on accuracy but first on macro-F1 (0.689), at the
+second-lowest cost. Across datasets spanning 13 to 160 cell types, accuracy
+and macro-F1 do not order the panel the same way.
+
+**scTOP collapses on two of the six and is weak on a third.** Its mean (0.581) is not a
+uniformly weak result but 0.042 on tabula_sapiens, 0.124 on gtex_v9 and 0.495 on
+immune_cell_atlas against 0.90–0.99 on the other three. Open Problems hands every method 1,000
+HVGs, and scTOP's rank projection needs genes expressed in an appreciable fraction of cells;
+after its expression filter only **106 of 1,000** genes survive on gtex_v9 and 210 on
+tabula_sapiens, against 306–405 where it works. At that point some test cells retain no
+counts at all — 185 of 11,508 on gtex_v9 — and cannot be placed; they are scored as wrong
+rather than dropped, so 0.124 is a floor. This is the same limitation §3.1 reports from the
+other direction: scTOP is built for small, low-cardinality problems, and a fixed 1,000-HVG
+budget over 53 and 160 types is neither.
+
+**Three cheap ablations, and their limits.** (i) *Input standardization* — z-scoring
+genes to the reference's frozen mean/std, a CPU-only domain-alignment inspired by scArches
+reference surgery — lifts mean accuracy +0.2 and macro-F1 +1.2 pt (largest on batch-shifted
+datasets: gtex macro-F1 +7.9). It is **off by default** because it
+shifts the softmax calibration that the two-stage abstain thresholds are tuned against.
+(ii) *Gene budget* — OP feeds every method 1000 HVGs, which starves a gene-space MLP more
+than it starves the others.
+Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and there
+**matches scANVI+scArches's full-config leaderboard accuracy** (immune 0.891 ≈ 0.892) on CPU
+in minutes — the gap to the top method was largely a gene-budget artifact, not the VAE. But
+more genes is **not** a universal win: it *regresses* tabula_sapiens by ~10 pt (its
+284-cell test batch across 160 fine types overfits reference-specific genes) and saturates
+hypomap. The budget is **selectable without test labels**: held-out *reference*
+cross-validation rises for the datasets that benefit and is the one signal that *drops* for
+tabula_sapiens, and a trivial query-cells-per-class check independently flags it, so the
+budget can be set deterministically per dataset (Supplementary Figures S12 and S13). (iii) *Negative control* — a
+CPU-only, UCE-style protein-embedding featurization (expression-weighted mean of ESM2 gene
+embeddings) does **not** help and hurts the hardest case: the pooling discards the per-gene
+detail that separates fine types, so the value of a foundation model like UCE stays locked
+in its GPU transformer, not a portable averaging trick.
+
+### 3.4 Scaling: reference size, query size, memory
 
 ![scaling](figures/fig_scaling.png)
 
@@ -768,14 +875,12 @@ runs per point on a shared laptop: *A* and *B* report the fastest run, since con
 only add time, and *C* the largest peak, since resident-set size understates a run that the OS
 has partly evicted. Per-run values are in `results_query_scaling.csv`.
 
-
-
-### 3.4 The broad→focused annotation workflow
+### 3.5 Building references, and the broad→focused workflow
 
 What actinn-jax is built around is not a single classifier but a **two-pass workflow** that
 matches how annotation is actually done: get a broad call fast, then sharpen it where it
 matters. Because every stage is a cached `ReferenceModel` with sub-second, memory-bounded
-inference (§3.1, §3.3), the whole workflow runs on a laptop.
+inference (§3.1, §3.4), the whole workflow runs on a laptop.
 
 ![the broad pass and the focused pass on one query](figures/fig_workflow_umap_ondata.png)
 
@@ -788,12 +893,12 @@ reference. *Right of center:* the 36-type liver reference re-annotates the same 
 **0.73**, now tracking the clusters. *Right:* the study's own labels on the shared palette.
 Both models are leakage-free for this query: the focused reference is trained only on the six
 non-withheld studies. Abstention is off in all panels, so the numbers measure labeling
-rather than coverage; §3.5 covers abstain separately.
+rather than coverage; §3.6 covers abstain separately.
 
 **The broad pass — census-scale.** A ~800-type human reference built from the
 CELLxGENE census gives any query a first-pass annotation across the whole body, with a
 **calibrated abstain threshold** so out-of-reference cells are flagged rather than
-force-labeled (§3.5). This is the orientation
+force-labeled (§3.6). This is the orientation
 pass — broad coverage, deliberately not fine-grained.
 
 **The broad pass can be built from a model instead of from labels.** The census route above needs a
@@ -811,7 +916,7 @@ three atlases plus a census-wide sample. On
 | Pan-human Azimuth | 382 | **0.408** | 1,076–1,563 |
 | **distilled (`panhuman_distill_v1`)** | 324 | 0.406 | **8,937–10,021** |
 
-**Table 6.** Three broad-pass entry points on 3,396 withheld cross-study liver cells: the
+**Table 7.** Three broad-pass entry points on 3,396 withheld cross-study liver cells: the
 census-built reference, the Pan-human Azimuth teacher, and the model distilled from that
 teacher. All three are scored on identical cells through one script (below), with every call
 mapped to a Cell Ontology id at prediction time: scoring a cached prediction dump instead
@@ -832,7 +937,7 @@ Azimuth does not, so read the distilled model as *comparable to* the one it dist
 than better. And it does **not** inherit
 that model's trained abstention: its confidence separates right from wrong poorly (keeping the 90.5% of
 cells it calls with probability at least 0.5 moves concordance only 0.406 → 0.427), so the calibrated broad-pass abstain
-of §3.5 belongs to the census-built reference until this one is recalibrated.
+of §3.6 belongs to the census-built reference until this one is recalibrated.
 
 **The focused pass — tissue-specific.** For the tissue the broad pass identifies, a small
 focused reference re-annotates at full resolution. Holding out a whole HLiCA
@@ -905,11 +1010,11 @@ datasets were excluded from the reference entirely and used as the test set — 
 | all cells | 0.638 | 100% | 9,712 |
 | confidence ≥ 0.5 | **0.718** | 71% | |
 
-**Table 7.** `broad_mouse_v1` on 12,646 held-out mouse cells (137 truth types, 41 tissues, none
+**Table 8.** `broad_mouse_v1` on 12,646 held-out mouse cells (137 truth types, 41 tissues, none
 of it in the reference), with and without abstain.
 
 Its abstain calibration is also better behaved than the human census model's: at the same
-`p ≥ 0.5` threshold it still answers for **71%** of cells (Table 7), against **38%** for
+`p ≥ 0.5` threshold it still answers for **71%** of cells (Table 8), against **38%** for
 `broad_human_v1` on its own held-out atlas, because mouse census carries fewer near-duplicate
 subtypes than human's ~800-way vocabulary. Coverage at a fixed threshold is the part that
 compares across the two; the accuracies come from different queries. Two limits apply. The ablation above was run
@@ -951,7 +1056,7 @@ withheld cross-study liver query and on the 65,662-cell Krasnow lung atlas:
 | brain | none agree | 1% | 0.117 | 0.106 | 0.568 |
 | brain | *whole query* | 100% | *0.792* | *0.981* | *0.987* |
 
-**Table 8.** Ontology concordance within each agreement tier, three broad references on
+**Table 9.** Ontology concordance within each agreement tier, three broad references on
 identical cells, in three tissues: withheld cross-study liver (3,396 cells, 34 truth types),
 the Krasnow lung atlas (65,662, 46) and the Allen human middle temporal gyrus (156,285, 18).
 
@@ -1018,7 +1123,7 @@ accessions are deliberately taxonomy-scoped rather than shared. The two systems 
 different questions, and a workflow that compares annotations across references needs both: CL
 to decide whether two calls are compatible, CCN to say what each call actually was.
 
-### 3.5 Rejection / abstain
+### 3.6 Abstention and novel cell types
 
 Holding out 9 of 36 cell types entirely from the HLiCA liver reference (so 1,350 query
 cells are genuinely out-of-distribution), we sweep a confidence threshold over every method
@@ -1052,7 +1157,7 @@ here, flagging 46% of novel cells at the threshold where actinn-jax flags 73%. T
 worth drawing is therefore not that actinn-jax abstains better than the deep methods but that
 it abstains as well for 0.54 s of predict time against scArches's 17.2 s and scANVI's 66.7 s
 (Table 3) — the same accuracy-at-a-fraction-of-the-cost pattern §3.1 reports, applied to the
-mechanism the workflow of §3.4 routes on.
+mechanism the workflow of §3.5 routes on.
 
 ![the abstain trade-off](figures/fig_abstain.png)
 
@@ -1062,121 +1167,6 @@ five usable methods lie along one band, which is the basis for calling their abs
 tied. *Right:* the share of held-out-type cells flagged as the threshold rises. The three
 methods Figure 7 shows failing appear here as curves that go nowhere along one axis or the
 other.
-
-
-### 3.6 Foundation-model zero-shot (scPRINT)
-
-scPRINT is run separately as a zero-shot predictor (no training on the reference), as a
-reference point for the "just use a foundation model" alternative. On the lung dataset it
-scored **exact-match accuracy 0.029 / ontology concordance 0.201, taking 62 s for 2,694 query
-cells** — against actinn-jax's 0.894 in 0.23 s — so as a *label* predictor it is both slow
-(**~280×** actinn-jax) and weak. It is reported on lung alone because its fixed vocabulary
-cannot score the other datasets: the liver and blood+gut sets contain Cell Ontology terms
-absent from its label set, and it declines them rather than guessing. That is an inherent
-property of a zero-shot label head rather than a defect, but it does mean the raw predictions
-are not a drop-in annotator. It is why the two-stage workflow uses scPRINT's **embeddings** —
-its learned structure — to shape a small trained model, and never its zero-shot labels.
-
-### 3.7 External validation: Open Problems `label_projection`
-
-Our in-house benchmark is neutral but self-run. For an **independent** check, we ran
-actinn-jax through the community-standard [Open Problems](https://openproblems.bio/benchmarks/label_projection)
-label-projection task — their 6 datasets, splits, and metrics — and slotted it into their
-published v2.0.0 leaderboard.
-
-**Placement.** On a benchmark we did not design and cannot tune, **actinn-jax places 3rd of
-17 on mean accuracy (0.837), 1st among all methods that complete every dataset**, beats its
-PCA-space `mlp` sibling, and posts the best accuracy of any completing method on the hardest
-dataset (tabula_sapiens, 160 types: 0.394 vs mlp 0.342). It is upper-mid on macro-F1 and
-**not the top method overall** — scANVI+scArches surgery and xgboost [Chen & Guestrin 2016] score higher on the
-datasets they finish, though both **fail to complete tabula_sapiens**, which is why they
-rank above actinn-jax only on a mean over the 5 easier datasets. The foundation models again
-land at the bottom (scgpt_zeroshot 0.639, uce 0.131 ≈ the random-labels control),
-reproducing §3.6 externally.
-
-Means over the six datasets, every method through the same pipeline on one instance:
-
-| method | mean acc | macro-F1 | cost | peak mem |
-|--------------------|------:|------:|------:|--------:|
-| mlp | 0.843 | 0.662 | 1.98× | 19.9 GB |
-| **actinn-jax** | 0.836 | 0.663 | 1.00× | 21.0 GB |
-| **linear-anova-pca** | 0.828 | 0.647 | 2.67× | 20.1 GB |
-| **SVM (SGD)** | 0.816 | 0.652 | 6.07× | 20.1 GB |
-| logistic_regression | 0.813 | **0.689** | **0.18×** | 20.0 GB |
-| **CellTypist** | 0.810 | 0.643 | 7.62× | 20.1 GB |
-| knn | 0.793 | 0.648 | **0.07×** | 19.5 GB |
-| xgboost | 0.791 | 0.614 | 5.48× | 80.7 GB |
-| cellmapper_linear | 0.776 | 0.553 | 0.35× | 31.5 GB |
-| naive_bayes | 0.738 | 0.613 | 0.19× | 19.5 GB |
-| **scTOP** | 0.581 | 0.462 | **0.16×** | 20.4 GB |
-
-**Table 9.** All eleven methods on the six Open Problems datasets, ordered by accuracy. Bold
-marks the five components we contributed. *cost* is per-dataset wall-clock relative to
-actinn-jax (§2.10), for which 1.00× is roughly two minutes.
-
-actinn-jax **matches its `mlp` sibling on accuracy at half the cost**, and **beats xgboost on
-accuracy at 5.5× less runtime and 4× less memory** (21 vs 81 GB). Everything cheaper — knn,
-logistic_regression, naive_bayes, scTOP — is less accurate, and the one heavyweight is slower
-and heavier. Nothing here beats it on accuracy and cost together.
-
-**The tuned linear pipeline loses its §3.1 advantage on both axes.** It places third on
-accuracy (0.828, behind `mlp` and actinn-jax), and where it fits 7× *faster* than actinn-jax
-on the in-house panel it costs **2.7× more** here. The input budget explains the reversal: OP
-hands every method 1,000 HVGs, and an ANOVA→PCA→logistic pipeline pays for the decomposition
-on every query while a gene-space MLP amortizes it into one fit. CellTypist (7.6×) and the
-SGD-SVM (6.1×) shift the same way. Neither a cost ranking nor an accuracy ranking survives a
-change of feature budget — which is why we report both panels rather than picking
-one.
-
-`logistic_regression` places fifth on accuracy but first on macro-F1 (0.689), at the
-second-lowest cost. Across datasets spanning 13 to 160 cell types, accuracy
-and macro-F1 do not order the panel the same way.
-
-**scTOP collapses on two of the six and is weak on a third.** Its mean (0.581) is not a
-uniformly weak result but 0.042 on tabula_sapiens, 0.124 on gtex_v9 and 0.495 on
-immune_cell_atlas against 0.90–0.99 on the other three. Open Problems hands every method 1,000
-HVGs, and scTOP's rank projection needs genes expressed in an appreciable fraction of cells;
-after its expression filter only **106 of 1,000** genes survive on gtex_v9 and 210 on
-tabula_sapiens, against 306–405 where it works. At that point some test cells retain no
-counts at all — 185 of 11,508 on gtex_v9 — and cannot be placed; they are scored as wrong
-rather than dropped, so 0.124 is a floor. This is the same limitation §3.1 reports from the
-other direction: scTOP is built for small, low-cardinality problems, and a fixed 1,000-HVG
-budget over 53 and 160 types is neither.
-
-**Three cheap ablations, and their limits.** (i) *Input standardization* — z-scoring
-genes to the reference's frozen mean/std, a CPU-only domain-alignment inspired by scArches
-reference surgery — lifts mean accuracy +0.2 and macro-F1 +1.2 pt (largest on batch-shifted
-datasets: gtex macro-F1 +7.9). It is **off by default** because it
-shifts the softmax calibration that the two-stage abstain thresholds are tuned against.
-(ii) *Gene budget* — OP feeds every method 1000 HVGs, which starves a gene-space MLP more
-than it starves the others.
-Widening to ~5000 HVGs lifts accuracy on 4 of 6 datasets (immune/gtex +3 pt) and there
-**matches scANVI+scArches's full-config leaderboard accuracy** (immune 0.891 ≈ 0.892) on CPU
-in minutes — the gap to the top method was largely a gene-budget artifact, not the VAE. But
-more genes is **not** a universal win: it *regresses* tabula_sapiens by ~10 pt (its
-284-cell test batch across 160 fine types overfits reference-specific genes) and saturates
-hypomap (Figure 9). The budget is
-**selectable without test labels**: held-out *reference* cross-validation rises for the
-datasets that benefit and is the one signal that *drops* for tabula_sapiens, and a trivial
-query-cells-per-class check independently flags it (Figure 10) —
-so the budget can be set deterministically per dataset. (iii) *Negative control* — a
-CPU-only, UCE-style protein-embedding featurization (expression-weighted mean of ESM2 gene
-embeddings) does **not** help and hurts the hardest case: the pooling discards the per-gene
-detail that separates fine types, so the value of a foundation model like UCE stays locked
-in its GPU transformer, not a portable averaging trick.
-
-![gene budget curve](figures/gene_budget_curve.png)
-
-**Figure 9.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open
-Problems datasets. More genes help most datasets but regress the fine-grained,
-domain-shifted tabula_sapiens.
-
-![gene budget signals](figures/gene_budget_signals.png)
-
-**Figure 10.** Label-free signals for setting the gene budget without test labels. Held-out
-reference cross-validation and query-cells-per-class both single out tabula_sapiens, the one
-dataset where more genes cost real accuracy — about 10 points. hypomap drifts down as well,
-but from a saturated 0.998, and neither signal flags it.
 
 ## 4. Discussion
 
@@ -1190,7 +1180,7 @@ matrix. actinn-jax's place in that picture rests on a cost profile with two prop
 matter for repeated use rather than for a single labeling run.
 
 *Footprint.* Inference is **sub-second** — flat in reference size, and rising 3.2× with
-cardinality while staying under a third of a second (§3.3) — so a query costs the same
+cardinality while staying under a third of a second (§3.4) — so a query costs the same
 against a 1k-cell reference and a 49k-cell
 one. Peak memory is unremarkable on small references (2.4 GB mean — seven of the ten other
 methods are lighter), but it is the lowest of those we carried to **atlas scale**:
@@ -1201,7 +1191,7 @@ with the train-once/map-many cache, a reused reference pays fit once and then on
 predict cost, where the linear pipeline refits scaler/PCA/classifier for every query.
 
 *Those two properties are what the workflows are built on.* The practical gains come not from
-the flat classifier but from the **broad→focused** pipeline (§3.4): a census-scale broad model
+the flat classifier but from the **broad→focused** pipeline (§3.5): a census-scale broad model
 with a calibrated abstain routes a query to a small focused reference that re-annotates at
 full resolution (cross-study liver 0.23/0.58 → 0.72/0.86), with zonation as a further stage.
 The pipeline is only usable because each hop is cheap — a flat sub-second call against a
@@ -1228,7 +1218,7 @@ reference alone** — and neither peeks at test labels.
 *Foundation models.* Their **zero-shot labels** are the weakest option in both benchmarks
 (scPRINT, scGPT, UCE ≈ random); their **embeddings/structure** are where the value lies, and
 our two-stage hierarchy uses exactly that. A cheap CPU shortcut to a foundation-model
-representation (protein-embedding pooling) did *not* transfer (§3.7), underscoring that the
+representation (protein-embedding pooling) did *not* transfer (§3.3), underscoring that the
 value is in the trained transformer, not a portable trick. The concurrent **Pan-human
 Azimuth** effort reaches the same conclusion from a far larger curated corpus. Their
 7M-parameter supervised hierarchical MLP over a 5,055-gene panel yields cleaner annotations
@@ -1243,7 +1233,7 @@ from a group with no stake in our conclusion.
 a prototype-based, self-explaining VAE with built-in uncertainty and gene-level attribution,
 a strictly richer model than ours — does not sit a fixed distance above or below us. Where it
 lands depends on how much reference data it is given: below the top cluster on the subsampled
-matrix, ahead on lung, and the strongest method of all at atlas scale (§3.1, §3.3), at ~8× actinn-jax's CPU fit time (176 vs 22 s mean).
+matrix, ahead on lung, and the strongest method of all at atlas scale (§3.1, §3.4), at ~8× actinn-jax's CPU fit time (176 vs 22 s mean).
 The richer model pays off where it has the data to
 support it, and not before — which is an argument for matching model capacity to reference
 size, not for preferring small models everywhere. Second, and more broadly,
@@ -1256,10 +1246,10 @@ geometric: the biologically realized cell manifold is well approximated by a **l
 subspace**, so once noise is suppressed performance *saturates* and extra expressivity buys
 little. That is a principled account of why a four-layer MLP over normalized gene space stays
 competitive, and it matches our own finding that the residual gap to heavier methods was mostly
-**the size of the input each method was given rather than the class of model** (§3.7). They
+**the size of the input each method was given rather than the class of model** (§3.3). They
 further find that simple methods hold
 up *best* out-of-distribution — on novel cell types and unseen organisms. That matters for the
-abstain mechanism of §3.5, which is only useful if low confidence tracks genuine novelty
+abstain mechanism of §3.6, which is only useful if low confidence tracks genuine novelty
 rather than model noise. A method that degrades gradually on unfamiliar data still assigns
 lower confidence to the cells it is getting wrong, so a threshold separates them; a method
 that degrades abruptly can be confidently wrong, and no threshold helps.
@@ -1285,7 +1275,7 @@ percentage point of its observed accuracy — running at ~1,000 cells/s on a lap
 our census-built reference and we make no claim to improve on its annotations. What we do
 with it instead is **use it**: distilling its labels and its hierarchy into actinn-jax
 produces a broad-pass model of comparable accuracy at six to nine times its throughput, built
-without a GPU and without labeled data (§3.4). A curated pan-human model is the right thing
+without a GPU and without labeled data (§3.5). A curated pan-human model is the right thing
 to start from; a small fast model is the right thing to iterate with.
 
 What no fixed typology can do is the **hand-off**: it cannot
@@ -1298,7 +1288,7 @@ sets no pretrained model carries, screen what none of them claims — at a cost 
 every stage on a laptop. The distillation recipe is not specific to this teacher or to
 humans: it needs a pretrained annotator whose typology can be read off its outputs, so
 extending the same entry point to other organisms is a matter of finding one (or building
-the broad-pass reference from a labeled census slice, as §3.4's census route does).
+the broad-pass reference from a labeled census slice, as §3.5's census route does).
 
 **What the speed is for.** Annotation is almost never the result; it is the step before the
 biology, and it is usually run more than once — the labels change when a reference is
@@ -1317,7 +1307,7 @@ scientist can run, inspect, and run again.
 - Single hardware family for the in-house panel (Apple Silicon); no discrete-GPU numbers
  there. The deep and foundation methods are written for CUDA and we would expect them to be
  faster on it, but we did not measure that — it is outside the "runs-on-a-laptop" question,
- and every timing here should be read as this hardware's. The §3.7 controlled run covers the **CPU tier** on one cloud
+ and every timing here should be read as this hardware's. The §3.3 controlled run covers the **CPU tier** on one cloud
  box; the GPU/R methods there are reported from OP's own cloud-CI trace (indicative). A
  same-hardware GPU-tier run to fold those into a single controlled table is the natural
  extension.
@@ -1325,12 +1315,12 @@ scientist can run, inspect, and run again.
  Measured `%cpu` on the OP harness spans 49% to 2338% across methods — some are
  single-threaded, some saturate 23 cores — so the same method timed at two concurrency
  settings differs by up to 12×, and any wall-clock ranking taken at high concurrency
- silently ranks threading and scheduler contention alongside algorithm. Table 9 therefore
+ silently ranks threading and scheduler contention alongside algorithm. Table 6 therefore
  reports cost as a ratio within a run, anchored by a method common to both (§2.10) — the
  anchor itself moved 165 s → 87 s between them, which is the size of the effect.
 - **The cross-method comparison is human only**; eight splits per benchmark; GPU foundation
  models beyond scPRINT/UCE (scGPT, Geneformer, popV) not run locally. The bundled references
- now cover mouse (§3.4), but no *method comparison* was run on mouse data — the pan-mouse
+ now cover mouse (§3.5), but no *method comparison* was run on mouse data — the pan-mouse
  result establishes that the reference-building route works on a second organism, not that
  actinn-jax's standing against other methods carries over to it.
 - **actinn-jax's standing is worse at very fine granularity.** On the 151-type brain cluster
@@ -1343,7 +1333,7 @@ scientist can run, inspect, and run again.
 - **The distilled broad-pass reference inherits a vocabulary, not a calibration.** Pan-human
  Azimuth's abstention is trained (and its ECE measured at 0.0044); the distilled student
  learns hard labels only, so it carries none of that — its confidence barely separates right
- from wrong (§3.4). Recalibrating it, or distilling from soft targets, is the obvious next
+ from wrong (§3.5). Recalibrating it, or distilling from soft targets, is the obvious next
  step and would need a loss change in the package. Its evaluation is also two withheld
  *atlases*, not withheld tissue: the census-wide corpus spans 376 tissues, so nothing here
  measures behavior on biology the corpus never saw.
@@ -1377,7 +1367,7 @@ scientist can run, inspect, and run again.
  in this setting should be measured, not extrapolated.
 - **The main matrix uses subsampled references, and its ranking does not survive atlas scale.**
  Carried to 49k lung and 47k liver reference cells, ProtoCloud moves from the weakest method
- to the strongest and scTOP crosses from the lightest to heavier than actinn-jax (§3.3,
+ to the strongest and scTOP crosses from the lightest to heavier than actinn-jax (§3.4,
  Figure 3). The accuracy ordering of Table 3 describes laptop-sized references, which is the
  regime this paper is about; at atlas scale the ordering is the one in Figure 3.
 - **Annotation only.** Cross-species transfer and disease-state prediction — the tasks where
@@ -1416,10 +1406,11 @@ condition of that licence and travels inside each model's build record.
 
 **Additional documentation.** The [benchmark repository][repo] carries detailed notes for each result — tuned linear pipeline and sctop baselines; protocloud comparison; scaling and memory to atlas size; survey of cell-type annotation methods; rebuilding the broad reference; distilling pan-human azimuth; and 9 more.
 
-**Supplementary material** (separate document) contains Figures S1–S11 — confusion matrices
+**Supplementary material** (separate document) contains Figures S1–S13 — confusion matrices
 with ontology-equivalent errors outlined, per-class recall across eleven methods on four
-splits, the cost and scaling studies, the abstain sweeps, and the per-split view behind
-Figure 1 — and Tables S1–S3, the method and dataset descriptions and per-dataset accuracy.
+splits, the cost and scaling studies, the abstain sweeps, the per-split view behind Figure 1,
+and the gene-budget curves for §3.3 — and Tables S1–S3, the method and dataset descriptions
+and per-dataset accuracy.
 
 [repo]: https://github.com/iandriver/actinn-jax-benchmark
 [Abdelaal 2019]: https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1795-z

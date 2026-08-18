@@ -10,7 +10,7 @@ abstract: |
 
 
 *Supplement to "A benchmark of cell-type annotation methods for single-cell data". Figures and tables referenced from
-the main text as Supplementary Figure S1–S11 and Supplementary Table S1–S3.*
+the main text as Supplementary Figure S1–S13 and Supplementary Table S1–S3.*
 
 # Supplementary figures
 
@@ -183,3 +183,18 @@ end (pbmc 0.87–0.94, cross-dataset lung 0.33–0.38†), which is why Figure 1
 error bars are invisible because most methods are deterministic given a fixed split; the ones
 that show are scANVI and scArches, whose repeats differ by up to 0.056 and 0.020.
 † cross-dataset lung exact-match accuracy is a label-vocabulary artefact (§3.1).
+
+# Gene budget on the Open Problems panel
+
+![gene budget curve](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/gene_budget_curve.png)
+
+**Figure S12.** actinn-jax accuracy and macro-F1 against input gene budget across all six Open Problems
+datasets. More genes help most datasets but regress the fine-grained,
+domain-shifted tabula_sapiens.
+
+![gene budget signals](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/gene_budget_signals.png)
+
+**Figure S13.** Label-free signals for setting the gene budget without test labels. Held-out
+reference cross-validation and query-cells-per-class both single out tabula_sapiens, the one
+dataset where more genes cost real accuracy — about 10 points. hypomap drifts down as well,
+but from a saturated 0.998, and neither signal flags it.
