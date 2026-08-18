@@ -210,7 +210,7 @@ for that tissue then re-annotates the same cells at full resolution. On withheld
 liver cells the broad pass scores **0.23 exact / 0.58 ontology** and the focused reference
 reaches **0.72 / 0.86**.
 
-The two passes hand off; they do not combine. Substituting a stronger broad model lifts the
+The two passes hand off. Substituting a stronger broad model lifts the
 broad call but changes nothing downstream, and using it to narrow the focused pass's classes
 makes the result **worse** (0.731 → 0.708), because a wrong mask discards the correct class
 outright. Once the focused reference covers the tissue, the broad model's value is routing,
@@ -285,7 +285,7 @@ choosing the deepest agreeing call lets one reference's confident, lineage-compa
 wrong specificity override two correct coarser calls. Running several references does not
 produce a better annotation; it tells you which annotations to trust.
 
-What counts as agreement is the ontology's judgment rather than ours, and the comparison was
+Agreement is defined by the Cell Ontology, and the comparison was
 possible only because all three references carry Cell Ontology terms. The Common Cell type
 Nomenclature [\[Miller 2020\]](https://doi.org/10.7554/eLife.59928) answers the same problem differently, giving each taxonomy's cell
 sets stable accessions and a curated alias layer rather than a shared coordinate system. The
@@ -331,26 +331,22 @@ ordering is stable across reference size or feature budget. Reporting accuracy a
 under-determines the choice of method, and reporting it from a single reference size can
 invert the recommendation.
 
-The consequence we think matters most is not a ranking but a change in what an annotation
-pipeline can afford to do. When a reference call costs a fraction of a second, the pipeline
-stops being one classification and becomes a sequence of cheap ones: route the query to a
-tissue, re-annotate against a reference matched to it, resolve states below the label, and ask
-several independent references where they agree. Each step is unremarkable alone; together
-they are what a user actually wants, and their feasibility is a cost property rather than an
-accuracy property.
+What a sub-second call changes is what an annotation pipeline can afford to do. It can be a
+sequence of cheap calls rather than one classification: route the query to a tissue,
+re-annotate against a reference matched to it, resolve states below the label, and run several
+independent references to see where they agree. None of those steps needs a more accurate
+classifier than the ones benchmarked here; each needs a cheaper one.
 
-The agreement result is the clearest case, and also the most honest about its limits. It buys
-no better label — the consensus call loses to the best single reference — but it identifies,
-with no ground truth at all, the fraction of a query on which independent references concur
-and on which every one of them is markedly more often right. That is available to anyone
-willing to run three annotators instead of one, which is only a reasonable thing to ask when
-each takes under a second.
+The agreement result buys no better label — the consensus call loses to the best single
+reference — but it identifies, with no ground truth, the fraction of a query on which
+independent references concur and on which every one of them is markedly more often right.
+Obtaining it costs three annotation runs instead of one, or a few seconds.
 
-We are explicit about what is not ours. ProtoCloud provides uncertainty, attribution and a
-retraining-based refinement path, and becomes the most accurate method at atlas scale. A
-purpose-built pan-human annotator is better resourced than our census-built reference, and our
-distilled model matches rather than improves on it; we claim not better annotations but
-cheaper ones that preserve its vocabulary and structure. What remains distinct is the hand-off
+Several pieces of this come from elsewhere. ProtoCloud provides uncertainty, attribution and a
+retraining-based refinement path, and is the most accurate method at atlas scale. A
+purpose-built pan-human annotator is better resourced than our census-built reference, and the
+distilled model matches it rather than improving on it, at six to nine times the throughput
+and in the same vocabulary. What remains distinct is the hand-off
 no fixed typology performs — re-annotation into a user's own label set, resolution below a
 typology's leaves, and screening for what none of them claims — at a cost that keeps every
 stage on the machine already on the desk.

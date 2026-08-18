@@ -494,10 +494,9 @@ per query. The two brain splits are reported per dataset in Table 5 instead (see
 *In Table 3, scANVI does most of its work in one train+predict pass, attributed to predict.
 
 The top four methods span **0.008 in accuracy, ~205× in predict time** (0.33 s to 67 s) and
-2.5× in memory. That accuracy span is not a ranking and should not be read as one: the
-stochastic methods move further than 0.008 between identical reruns on their own — scANVI by
-up to 0.056 across its three repeats — so which of the top four places second and which places
-third is decided by seeds, not by method. The cost column is what separates them, and scANVI
+2.5× in memory. The stochastic methods move further than 0.008 between identical reruns on
+their own — scANVI by up to 0.056 across its three repeats — so a rerun with different seeds
+reorders second, third and fourth place. The cost column is what separates them, and scANVI
 is **123× slower than actinn-jax** at accuracy that is tied within that noise. The linear
 pipeline is both the most accurate and the fastest to fit, and pays for it in memory — 4386 vs
 2391 MB — because ANOVA/PCA densify
@@ -520,14 +519,15 @@ both carry CL ids and share a vocabulary, with actinn-jax on the same splits for
 
 **Table 4.** Pretrained annotators, scored by ontology concordance only, on the three datasets
 where reference and query both carry Cell Ontology ids and share a vocabulary — with reference-trained actinn-jax on
-the same splits for scale. Not a like-for-like comparison; see the text below.
+the same splits for scale. The two sides were trained on different information; see the text
+below.
 
-**This is not a like-for-like comparison and should not be read as one.** actinn-jax is trained
-on a reference drawn from the same data and scored in its own vocabulary; Pan-human Azimuth has
-never seen these datasets and answers in a different one. A reference-trained model *should*
-win. What the block does establish is the distance between a curated supervised annotator and a
-zero-shot foundation head — 0.700 against 0.201 on lung — and it sets up §3.4, where Azimuth
-serves as a broad pass in its own right and as a distillation teacher. Peak memory is
+**The two sides of this table were given different information.** actinn-jax is trained on a
+reference drawn from the same data and scored in its own vocabulary; Pan-human Azimuth has
+never seen these datasets and answers in a different one, and is mapped into the query's
+vocabulary through the ontology. The gap between a curated supervised annotator and a
+zero-shot foundation head is the comparison the table supports — 0.700 against 0.201 on lung —
+and §3.4 uses Azimuth as a broad pass in its own right and as a distillation teacher. Peak memory is
 indistinguishable between actinn-jax and Azimuth (1.65–2.1 GB on every dataset).
 
 Those four are the tuned **linear pipeline (0.839)**, scANVI (0.833), scArches (0.832) and
@@ -708,8 +708,8 @@ the linear pipeline holds essentially flat at ~4,200, losing 6% (Figure 4B). The
 4.2× at 50k cells and 3.1× at the full atlas. It is the cheaper method whose per-cell cost
 drifts upward here, which is the opposite of what a flat-inference argument predicts, so the
 claim this axis supports is a three- to fourfold constant factor rather than flatness. The
-flat-inference result in §3.1 is a *reference*-axis result and should not be read onto this
-one.
+flat-inference result in §3.1 holds along the reference axis, which is a different axis from
+this one.
 
 **This inverts the Table 3 ordering, and the two measurements do not overlap.** Every query in
 this sweep holds 50,000 cells or more; every query in Table 3 holds 13,550 or fewer, so no
@@ -839,11 +839,10 @@ exact-match **0.23** / ontology **0.58**, while a focused **38-type HLiCA liver*
 the *same cells* reaches **0.72 / 0.86**. Refinement is where fine-grained accuracy comes
 from; the broad model's job is to route to it, not to be right about subtypes itself.
 
-**The broad pass hands the query to the focused pass; the two do not combine.** The natural
-assumption is that a better broad call should also make the focused call better. It does not.
-On the leakage-free cross-study
-liver split, substituting the stronger **Pan-human Azimuth** for the broad pass lifts it
-(ontology 0.408 vs 0.338 for our own broad model) but changes nothing downstream. Using that
+**A better broad call does not make the focused call better.** On the leakage-free
+cross-study liver split, substituting the stronger **Pan-human Azimuth** for the broad pass
+raises the broad score (ontology 0.408 against 0.338) and leaves the focused score
+unchanged. Using that
 broad call to *narrow* the focused pass's classes — the zero-retrain masking actinn-jax provides — makes
 the result **worse**, 0.731 → 0.708: the broad call matches the true lineage on 85.8%
 of cells, and the 14% it misses cost more than the 86% it gets right can gain, since a wrong
@@ -911,8 +910,7 @@ Its abstain calibration is also better behaved than the human census model's: at
 `p ≥ 0.5` threshold it still answers for **71%** of cells (Table 7), against **38%** for
 `broad_human_v1` on its own held-out atlas, because mouse census carries fewer near-duplicate
 subtypes than human's ~800-way vocabulary. Coverage at a fixed threshold is the part that
-compares across the two — the accuracies come from different queries and should not be read
-head-to-head. Two limits apply. The ablation above was run
+compares across the two; the accuracies come from different queries. Two limits apply. The ablation above was run
 on **human** and applied to mouse; CL is species-neutral by construction, but nothing here
 shows it groups mouse types as well. And mouse census is shallow in *datasets* — 51 in total,
 one embryo atlas holding 11.4M of 18.4M cells — so tissue breadth is good while lab and
@@ -980,12 +978,11 @@ liver against the best single reference's 0.408, 0.828 on lung against 0.831, an
 brain against 0.987. That last gap is large because "most specific agreeing call" lets one
 reference's confident, lineage-compatible but wrong specificity override two correct coarser
 calls: on the 94% of brain cells where all three agree, the two strong references score 0.997
-and the consensus built from them scores 0.837. A better rule may exist; what the experiment
-establishes is that the *partition* carries the information and the label does not.
+and the consensus built from them scores 0.837. The partition separates reliable calls from unreliable ones on all three queries; the
+consensus label does not beat a single reference on any of them, under this rule.
 
-**What counts as agreement is the ontology's judgment, not ours.** The relation above is
-inherited wholesale from the Cell Ontology: two calls agree when CL says one subsumes the
-other. Where CL is coarse or incomplete, two references naming the same population can be
+**Agreement is defined by the Cell Ontology.** Two calls agree when CL says one subsumes the
+other, a relation this analysis inherits rather than sets. Where CL is coarse or incomplete, two references naming the same population can be
 scored as disagreeing; where it is deep, a pair of calls can agree at a resolution neither
 reference meant to assert. The comparison was
 possible at all only because Pan-human Azimuth publishes a CL term for every node of its
@@ -1380,7 +1377,7 @@ scientist can run, inspect, and run again.
  Carried to 49k lung and 47k liver reference cells, ProtoCloud moves from the weakest method
  to the strongest and scTOP crosses from the lightest to heavier than actinn-jax (§3.3,
  Figure 3). The accuracy ordering of Table 3 describes laptop-sized references, which is the
- regime this paper is about, but it should not be read as a ranking at atlas scale.
+ regime this paper is about; at atlas scale the ordering is the one in Figure 3.
 - **Annotation only.** Cross-species transfer and disease-state prediction — the tasks where
  Souza & Mehta find the largest foundation-model deficits, and where a fast method would be
  most attractive — are outside this benchmark's scope (human, within/cross-dataset
