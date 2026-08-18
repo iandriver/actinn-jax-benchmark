@@ -797,10 +797,8 @@ from subsampled references do not transfer to atlas scale, in either direction.
 atlas scale on two datasets. *A:* lung, 3k → 49k reference cells. *B:* the HLiCA liver atlas,
 2.7k → 47k, an independent replication of the same reversal. *C:* peak memory over both
 sweeps. Error bars on *A* and *B* are 95% binomial intervals on the query, which grows with
-the reference (1,035 to 16,398 cells on lung), so they narrow from left to right; each point
-is a single run, so they cover sampling of the query and not run-to-run variation. Peak memory
-is not a proportion and carries none. Fit time is not plotted: the 47k liver point was measured
-under CPU contention, so a cost axis there would report scheduling rather than scaling.
+the reference (1,035 to 16,398 cells on lung), so they narrow from left to right; each point is
+a single run.
 
 **Annotating an atlas costs less than building one.** The sweeps above grow the reference
 and hold the query fixed. The reverse case is the one a user meets most often -- a reference

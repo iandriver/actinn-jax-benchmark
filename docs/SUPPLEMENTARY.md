@@ -121,8 +121,7 @@ atlas scale on two datasets. *A:* lung, 3k → 49k reference cells. *B:* the HLi
 2.7k → 47k, an independent replication of the same reversal — a prototype VAE moves from worst
 to best as the reference grows. *C:* peak memory over both sweeps. Error bars on *A* and *B*
 are 95% binomial intervals on the query, which grows with the reference (1,035 to 16,398 cells
-on lung), so they narrow from left to right; each point is a single run, so they cover sampling
-of the query and not run-to-run variation.
+on lung), so they narrow from left to right; each point is a single run.
 
 ![fit and predict scaling](figures/fig_scaling.png)
 
