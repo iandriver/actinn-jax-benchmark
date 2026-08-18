@@ -114,11 +114,24 @@ repository.
 ## Accuracy is clustered; cost is not
 
 The top of the accuracy table is a four-way cluster spanning **0.008**, led by a tuned linear
-pipeline rather than by a deep model (Table 1). Those same four differ by **~205× in predict
+pipeline rather than by a deep model (Table 1; Figure 1 draws the whole panel at once). Those same four differ by **~205× in predict
 time** (0.33 s to 67 s) and **2.5× in peak memory**. Order within the cluster is not a result:
 the stochastic methods move by more than 0.008 between identical reruns, scANVI by up to
 0.056, so the four are best read as tied on accuracy and separated by cost. actinn-jax holds
 the best ontology-aware concordance (0.811), likewise a margin inside repeat noise.
+
+![accuracy and cost across every split](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_cost_accuracy_ranges.png)
+
+**Figure 1.** Eleven methods over seven splits. *A:* accuracy as the gap to whichever method
+leads that split — raw accuracy is dominated by split difficulty (0.94 on pbmc against 0.36 on
+cross-dataset lung), so a range over it would measure the datasets rather than the methods;
+`leads N` counts splits won. *B:* fit + predict on the same splits. Diamonds are means, dots
+the individual splits, lines run worst to best. Six methods sit within **0.035** of the
+per-split leader while spanning 3.4 s to 57 s. Every method's spread across splits is wider
+than the distance between the leading methods, which is the caution that belongs with any
+panel-mean ranking. Repeat-to-repeat variation is far smaller — five methods are exactly
+deterministic, and only scANVI (0.056) and scArches (0.020) move more than 0.009 — so the
+range drawn here is across datasets. Per-split detail: Supplementary Figure S11.
 
 | method | acc | macro-F1 | ontology | fit (s) | predict (s) | peak mem (MB) |
 |---|---:|---:|---:|---:|---:|---:|
@@ -165,7 +178,7 @@ annotating a whole 525,000-cell atlas takes **41 s** (Supplementary Figure S8).
 
 ## One query, two passes: routing and then resolution
 
-That budget buys a workflow rather than a call (Figure 1). A shipped ~800-type census
+That budget buys a workflow rather than a call (Figure 2). A shipped ~800-type census
 reference annotates any query without being told what tissue it is; resolving those calls
 through the reference's per-class tissue map identifies the tissue; a small focused reference
 for that tissue then re-annotates the same cells at full resolution. On withheld cross-study
@@ -180,7 +193,7 @@ not resolution.
 
 ![workflow](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_workflow_umap_ondata.png)
 
-**Figure 1.** The workflow on a withheld liver study (3,396 cells), same embedding
+**Figure 2.** The workflow on a withheld liver study (3,396 cells), same embedding
 throughout. The census reference spreads 144 of its 798 labels over the query (concordance
 0.34); resolving those calls to tissue gives **76% liver** against 4% for the next candidate,
 which selects the reference to load; the 36-type liver reference then re-annotates the same
@@ -219,7 +232,7 @@ concordance on two withheld datasets after 17 s of CPU.
 
 Three interchangeable entry points invite a question that is only affordable when calls are
 cheap: what if a user runs all of them? Scored on identical cells and compared in the Cell
-Ontology, they partition each query by agreement (Figure 2). We ran this on three tissues:
+Ontology, they partition each query by agreement (Figure 3). We ran this on three tissues:
 withheld cross-study **liver** (3,396 cells, 34 truth types), the Krasnow **lung** atlas
 (65,662 cells, 46 types), and the Allen human **middle temporal gyrus** (156,285 cells, 18
 types).
@@ -260,7 +273,7 @@ annotations across references wants both.
 
 ![reference agreement](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_consensus.png)
 
-**Figure 2.** Ontology concordance within each agreement tier for three broad references, on
+**Figure 3.** Ontology concordance within each agreement tier for three broad references, on
 withheld cross-study liver (*A*), the Krasnow lung atlas (*B*) and the Allen human middle
 temporal gyrus (*C*); dashed lines are the same models over the whole query. Agreement is
 evaluated in the Cell Ontology because the three references answer in different vocabularies
