@@ -27,6 +27,13 @@ frames = [main]
 sp = f"{REPO}/results/paper_scprint/results.csv"
 if os.path.exists(sp):
     df = pd.read_csv(sp); frames.append(df[df.get("accuracy").notna()] if "accuracy" in df else df)
+# Brain ran after the unified matrix was frozen, and its two splits carry a different label
+# key (Allen Subclass / Cluster, not cell_type), so they live in their own result files rather
+# than being folded into the unified CSV.
+for extra in ("results_brain_subclass_panel.csv", "results_brain_cluster_panel.csv"):
+    q = f"{REPO}/docs/{extra}"
+    if os.path.exists(q):
+        b = pd.read_csv(q); frames.append(b[b.accuracy.notna()])
 df = pd.concat(frames, ignore_index=True)
 df["method"] = df["method"].astype(str)
 
@@ -108,6 +115,124 @@ def pareto(dsname):
 
 for ds in ["liver_intra", "lung_intra"]:
     if ds in datasets: pareto(ds)
+
+
+# ---- Fig 1: every split at once, ranked, with the range each method spans ----
+# The single-dataset scatter this replaces could not take more datasets: five methods sit
+# inside a factor of three in time and 0.02 in accuracy, so their labels overplot no matter
+# how the placement is tuned. Names on the y-axis cannot collide. Accuracy is expressed as
+# distance from that split's own leader, because raw accuracy is dominated by how hard the
+# split is (pbmc 0.94, lung cross-dataset 0.36) and a range over raw accuracy would measure
+# the datasets rather than the methods.
+NAME = {"protocloud": "ProtoCloud", "sctop": "scTOP", "svm": "SVM", "knn": "kNN",
+        "celltypist": "CellTypist", "singler": "SingleR", "scanvi": "scANVI",
+        "scarches": "scArches"}
+
+
+def cost_accuracy_ranges(exclude=("lung_cross",)):
+    g = agg[agg.method.isin(COLOR) & ~agg.dataset.isin(exclude)].copy()
+    if g.empty or "fit_s" not in g:
+        return
+    g["t"] = g.fit_s.fillna(0) + g.predict_s.fillna(0)
+    g["gap"] = g.groupby("dataset").accuracy.transform("max") - g.accuracy
+    # Only methods that ran every split belong on a figure whose whole point is the range
+    # across splits -- scPRINT is scored ontology-only on one dataset and would otherwise
+    # appear as an empty row and inflate the method count in the title.
+    n_split = g.dataset.nunique()
+    full = g.groupby("method").dataset.nunique() == n_split
+    g = g[g.method.isin(full[full].index)]
+    order = g.groupby("method").gap.mean().sort_values(ascending=False).index.tolist()
+
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(12.2, 5.2), sharey=True,
+                                 gridspec_kw={"wspace": 0.04})
+    for i, meth in enumerate(order):
+        d_ = g[g.method == meth]
+        for ax, v in ((a1, d_.gap), (a2, d_.t)):
+            ax.plot([v.min(), v.max()], [i, i], color=c(meth), lw=2.6, alpha=0.5,
+                    solid_capstyle="round", zorder=2)
+            ax.scatter(v, [i] * len(v), s=30, color=c(meth), alpha=0.9,
+                       edgecolor="white", linewidth=0.6, zorder=3)
+            ax.scatter([v.mean()], [i], s=150, color=c(meth), marker="D", edgecolor="black",
+                       linewidth=1.6 if meth == "actinn-jax" else 0.7, zorder=4)
+        leads = int((d_.gap < 1e-9).sum())
+        if leads:
+            a1.annotate(f"leads {leads}", (0, i), xytext=(-6, 0), textcoords="offset points",
+                        ha="right", va="center", fontsize=8, color="#444444")
+    a1.set_yticks(range(len(order)))
+    a1.set_yticklabels([NAME.get(m, m) for m in order], fontsize=10)
+    for lbl, meth in zip(a1.get_yticklabels(), order):
+        if meth == "actinn-jax":
+            lbl.set_fontweight("bold"); lbl.set_color(c("actinn-jax"))
+    a1.axvline(0, color="0.35", lw=1.0, ls=(0, (4, 3)), zorder=1)
+    a1.set_xlim(-0.055, max(0.20, g.gap.max() * 1.05))
+    a2.set_xscale("log")
+    a1.set_xlabel("accuracy below the best method on the same split")
+    a2.set_xlabel("total time: fit + predict (s, log scale)")
+    a1.set_title("A   accuracy, as distance from that split's leader", fontsize=10.5, loc="left")
+    a2.set_title("B   cost, same splits", fontsize=10.5, loc="left")
+    for ax in (a1, a2):
+        ax.grid(axis="x", alpha=0.25, lw=0.6); ax.set_ylim(-0.7, len(order) - 0.3)
+        ax.spines["left"].set_visible(False); ax.tick_params(left=False)
+    fig.suptitle(f"{n_split} splits, {len(order)} methods: accuracy overlaps, cost spans three "
+                 "orders of magnitude", fontsize=12.5, y=0.985)
+    fig.text(0.5, -0.02, "diamond: mean over splits   ·   dots: one split each   ·   line: "
+             "worst to best split", ha="center", fontsize=8.6, color="#555555")
+    fig.tight_layout()
+    fig.savefig(f"{FIG}/fig_cost_accuracy_ranges.png", bbox_inches="tight"); plt.close(fig)
+
+
+TITLE = {"pbmc": "pbmc — 8 types", "liver_intra": "liver — 36 types",
+         "liver_cross": "liver cross-study — 34", "lung_intra": "lung — 46 types",
+         "lung_cross": "lung cross-dataset — 46†", "blood_gut_intra": "blood+gut — 86 types",
+         "brain_intra": "brain subclass — 24", "brain_cluster_intra": "brain cluster — 151"}
+PANELS = ["pbmc", "liver_intra", "lung_intra", "brain_intra", "blood_gut_intra",
+          "brain_cluster_intra", "liver_cross", "lung_cross"]
+
+
+def pareto_facets():
+    """The same data unnormalized, one panel per split -- the supplementary detail view."""
+    rep = df[df.method.isin(COLOR) & df.accuracy.notna()].copy()
+    rep["t"] = rep.fit_s.fillna(0) + rep.predict_s.fillna(0)
+    # Range over repeats, clamped: deterministic methods return the identical score three
+    # times and mean(x, x, x) can land a float epsilon below x, which errorbar rejects.
+    e = rep.groupby(["dataset", "method"]).agg(
+        acc=("accuracy", "mean"), alo=("accuracy", "min"), ahi=("accuracy", "max"),
+        t=("t", "mean"), tlo=("t", "min"), thi=("t", "max")).reset_index()
+    clip = lambda hi, lo: float(np.clip(hi - lo, 0, None))
+    panels = [p for p in PANELS if p in set(e.dataset)]
+    if not panels:
+        return
+    fig, axes = plt.subplots(2, 4, figsize=(15.5, 7.4), sharex=True)
+    for ax, ds in zip(axes.ravel(), panels):
+        for _, r in e[e.dataset == ds].iterrows():
+            big = r.method == "actinn-jax"
+            ax.errorbar(r.t, r.acc, xerr=[[clip(r.t, r.tlo)], [clip(r.thi, r.t)]],
+                        yerr=[[clip(r.acc, r.alo)], [clip(r.ahi, r.acc)]], fmt="o",
+                        ms=9 if big else 6, color=c(r.method), ecolor=c(r.method),
+                        elinewidth=1.3, alpha=0.95, mec="black",
+                        mew=1.5 if big else 0.5, zorder=3 if big else 2)
+        ax.set_xscale("log"); ax.grid(alpha=0.22, lw=0.6)
+        ax.set_title(TITLE.get(ds, ds), fontsize=10, loc="left")
+    for ax in axes.ravel()[len(panels):]:
+        ax.set_visible(False)
+    for ax in axes[:, 0]:
+        ax.set_ylabel("accuracy")
+    for ax in axes[1]:
+        ax.set_xlabel("fit + predict (s)")
+    handles = [plt.Line2D([], [], marker="o", ls="", color=c(m), mec="black",
+                          mew=1.4 if m == "actinn-jax" else 0.4,
+                          ms=9 if m == "actinn-jax" else 6, label=NAME.get(m, m))
+               for m in COLOR if m in set(e.method)]
+    fig.legend(handles=handles, loc="lower center", ncol=6, frameon=False, fontsize=9.4,
+               bbox_to_anchor=(0.5, -0.055))
+    fig.suptitle("Accuracy against cost on every split — bars are the range over three repeats",
+                 fontsize=13, y=0.99)
+    fig.tight_layout()
+    fig.savefig(f"{FIG}/fig_pareto_facets.png", bbox_inches="tight"); plt.close(fig)
+
+
+cost_accuracy_ranges()
+pareto_facets()
 
 
 # ---- Fig 3: speed + memory bars (mean across datasets) ----

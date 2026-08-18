@@ -1,7 +1,7 @@
 # Supplementary material
 
 *Supplement to "A benchmark of cell-type annotation methods for single-cell data". Figures and tables referenced from
-the main text as Supplementary Figure S1–S10 and Supplementary Table S1–S3.*
+the main text as Supplementary Figure S1–S11 and Supplementary Table S1–S3.*
 
 ## Supplementary figures
 
@@ -160,3 +160,16 @@ that do not each fail visibly and differently.
 rather than to themselves. *Left:* accuracy on kept cells against the fraction kept — the five
 usable methods lie along one band, which is the basis for calling their abstain quality tied.
 *Right:* the share of held-out-type cells flagged as the threshold rises.
+
+## Per-split accuracy and cost
+
+![accuracy against cost on every split](figures/fig_pareto_facets.png)
+
+**Figure S11.** The data behind Figure 1 without the gap-to-leader normalization: accuracy
+against fit + predict time on each of the eight splits, error bars the range over three
+repeats on both axes. Axis limits are per panel, so vertical position compares methods within
+a split and not across them — the splits differ by more than half an accuracy point end to
+end (pbmc 0.87–0.94, cross-dataset lung 0.33–0.38†), which is why Figure 1 normalizes. Most
+error bars are invisible because most methods are deterministic given a fixed split; the ones
+that show are scANVI and scArches, whose repeats differ by up to 0.056 and 0.020.
+† cross-dataset lung exact-match accuracy is a label-vocabulary artefact (§3.1).

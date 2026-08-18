@@ -609,24 +609,36 @@ exact scores are unaffected.
 
 ## The accuracy × speed frontier
 
-![Pareto](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_pareto_liver_intra.png)
+![accuracy and cost across every split](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_cost_accuracy_ranges.png)
 
-**Figure 1.** Accuracy against total wall time on liver_intra. The tuned linear pipeline holds
-the fast-frontier point; actinn-jax sits just inside it at this reference size, and what
-separates it is visible only on the scaling axes of Figures 2 and 3.
+**Figure 1.** Eleven methods over seven splits (lung_cross excluded, see the † note above).
+*A:* accuracy as the **gap to whichever method leads that split**. Raw accuracy is dominated by
+how hard a split is — 0.94 on pbmc against 0.36 on cross-dataset lung — so a range drawn over
+raw accuracy would measure the datasets rather than the methods; zero is that split's leader,
+and `leads N` counts the splits a method wins. *B:* fit + predict on the same splits, log
+scale. Diamonds are means over splits, small dots the individual splits, and the line runs from
+the method's worst split to its best. Ranges over the three repeats *within* a split are too
+small to draw here: only scANVI (0.056) and scArches (0.020) move more than 0.009, and five
+methods are exactly deterministic. Per-split detail, unnormalized and with those repeat ranges,
+is Supplementary Figure S11.
 
-The **tuned linear pipeline** holds the fast-frontier point: the highest accuracy in Table 3
-(0.839) at the lowest fit time of any method in the leading cluster (3.4 s), placing it above
-and to the left of actinn-jax, SVM and CellTypist. kNN is faster still, but 0.15 lower in
-accuracy on this panel; it holds a different corner of the frontier rather than sitting inside
-it. The deep methods buy little or nothing on accuracy on the two liver panels and on
-blood/gut, where they sit at or below the linear pipeline — they do lead it on lung and PBMC —
-and they pay 39–324× the predict time for it. actinn-jax
-sits just inside the frontier at this reference size; what separates it is not visible on a
-fixed-size plot but on the scaling axes of §3.3: predict time that stays flat as the
-reference grows, and ~2× lower peak memory that holds to atlas scale. The figure is drawn
-from the liver_intra panel alone, and is consistent with the panel-wide ranking of Tables 3
-and 5.
+Six methods sit within **0.035** of the per-split leader on average while spanning **3.4 s to
+57 s**, and the full panel spans **0.5 s to 178 s** — the paper's central observation, drawn
+once. The **tuned linear pipeline** is both closest to the leader (mean gap 0.014, leading two
+splits) and the cheapest of that group at 3.4 s; kNN and scTOP are faster still, at 0.5 s and
+2.2 s, but give up 0.08 and 0.10, so they hold a different corner of the frontier rather than
+sitting inside it. The deep methods buy little on accuracy — scANVI and scArches place second
+and third by gap, 0.003 and 0.004 behind the linear pipeline, which is inside their own rerun
+noise — and pay 15× its total time for that. **actinn-jax** sits mid-panel: mean gap 0.031 at
+17.9 s, leading the cross-study liver split. What separates it is not on this plot at all but
+on the scaling axes of §3.3 — predict time flat in reference size, and ~2× lower peak memory
+that holds to atlas scale.
+
+The ranges are the other half of the figure. Every method's spread across splits is larger than
+the distance between the leading methods, and it is asymmetric: scmap-cluster spans 0.035 to
+0.451, SingleR 0.000 to 0.191, actinn-jax 0.000 to 0.104. A mean rank over a panel of datasets
+is therefore a much weaker summary than it looks, which is the same caution Table 3's aggregate
+carries.
 
 ## Scaling
 
@@ -1402,10 +1414,10 @@ condition of that licence and travels inside each shipped model's build record.
 
 **Additional documentation.** The [benchmark repository][repo] carries detailed notes for each result — tuned linear pipeline and sctop baselines; protocloud comparison; scaling and memory to atlas size; survey of cell-type annotation methods; rebuilding the broad reference; distilling pan-human azimuth; and 9 more.
 
-**Supplementary material** (separate document) contains Figures S1–S10 — confusion matrices
+**Supplementary material** (separate document) contains Figures S1–S11 — confusion matrices
 with ontology-equivalent errors outlined, per-class recall across eleven methods on four
-splits, the cost and scaling studies, and the abstain sweeps — and Tables S1–S3, the method
-and dataset descriptions and per-dataset accuracy.
+splits, the cost and scaling studies, the abstain sweeps, and the per-split view behind
+Figure 1 — and Tables S1–S3, the method and dataset descriptions and per-dataset accuracy.
 
 
 
