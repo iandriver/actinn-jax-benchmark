@@ -62,10 +62,10 @@ ProtoCloud — and each of them does beat it somewhere; our own classical tier i
 while the linear baseline is tuned, which is the unfavorable direction (§5). Metrics are
 fixed across all methods and reported in full. And the **external validation is not ours to
 design**: Open Problems `label_projection` (§3.7) sets the datasets, the metrics and
-the ranking, and we did not choose any of them. Where results contradict our own earlier
-claims or our method's interests — ProtoCloud overtaking actinn-jax at atlas scale, a memory
-advantage that stays a fixed factor instead of growing with the data, a better-resourced broad
-annotator than our own — they are reported in those terms.
+the ranking, and we did not choose any of them. Where results run against this method's
+interests — ProtoCloud overtaking actinn-jax at atlas scale, a memory advantage that stays a
+fixed factor instead of growing with the data, a better-resourced broad annotator, a
+correlation method leading the finest-grained split — they are reported in those terms.
 
 **On adding another method to a crowded field.** We are not concluding that the new method
 wins. On accuracy it sits inside a four-way cluster it does not lead; the panel was assembled
@@ -254,9 +254,9 @@ carry CL ids — so not on `blood_gut_intra`, and not on the symbol-keyed `pbmc`
 
 Concordance depends on the ontology release, since ancestor sets change between them. All
 numbers here use the **Cell Ontology basic release of 2026-06-08** (sha256 73996c63…),
-resolved once and reused by every scoring pass. This is not a hypothetical concern:
-re-running lung_cross against a later-fetched release reproduced the splits exactly (14,390
-reference / 13,550 query cells) and still moved concordance by 0.003, with no model changing.
+resolved once and reused by every scoring pass. Scoring lung_cross against a later-fetched
+release reproduces the splits exactly (14,390 reference / 13,550 query cells) and still moves
+concordance by 0.003, with no model changing.
 That release, its checksum, and pinned versions for all six benchmark environments are
 recorded as lockfiles in the [benchmark repository][repo], which also carries a command that
 reports any drift from them.
@@ -741,13 +741,11 @@ query for either. A caller streaming from disk would pay less, and would pay it 
 ~2× memory band reported above is likewise a *reference*-axis result and does not carry to
 this one; only the reference axis separates these methods on memory.
 
-Two caveats on measurement, both of which caught us. Prediction in our linear adapter blocks
-the query into 50,000-cell chunks; unblocked it densifies 20,000 genes for the whole query at
-once, which needs roughly 126 GB at the full atlas and does not complete on a 51 GB machine.
-That is a property of a wrapper rather than of the recipe, and an earlier draft of this figure
-reported the resulting non-completion as if it characterised the method. Blocking leaves every
-prediction bit-identical, and is verified to. Second, these are laptop numbers, so each point
-is the fastest of three runs: a competing process can only add time, and stalls on this
+Two conditions of this measurement. Prediction in our linear adapter blocks the query into
+50,000-cell chunks. Unblocked, it densifies 20,000 genes for the whole query at once, which
+needs roughly 126 GB at the full atlas and does not complete on a 51 GB machine — a property of
+the wrapper rather than of the recipe. Blocking leaves every prediction bit-identical, and is
+verified to. Second, these are laptop numbers, so each point is the fastest of three runs: a competing process can only add time, and stalls on this
 machine are large and sporadic rather than small and Gaussian -- one repeat turned a 50 s fit
 into 975 s, and no mean over three runs would survive that. Peak memory takes the largest of
 three instead, since `ru_maxrss` counts resident pages and therefore reports *less* than a run
@@ -810,11 +808,10 @@ three atlases plus a census-wide sample. On
 
 **Table 6.** Three broad-pass entry points on 3,396 withheld cross-study liver cells: the
 census-built reference, the Pan-human Azimuth teacher, and the model distilled from that
-teacher. All three are scored on identical cells through one script (below). An earlier
-version of this table put the teacher at 0.380, which was an artefact of our own cache: the
-dump it was scored from carried a Cell Ontology id for only 90.5% of its calls, and an
-unmapped call scores as wrong. Run through the adapter directly it maps 99.9% and scores
-0.408, level with the student.
+teacher. All three are scored on identical cells through one script (below), with every call
+mapped to a Cell Ontology id at prediction time: scoring a cached prediction dump instead
+leaves 9.5% of Azimuth's calls unmapped, and an unmapped call scores as wrong, which costs it
+0.028 concordance it did not lose to the student.
 
 This makes the entry point as accurate as its teacher and ~6–9× faster, and more accurate
 than building it from the census directly, and it answers in a harmonized, ontology-mapped vocabulary rather than raw census

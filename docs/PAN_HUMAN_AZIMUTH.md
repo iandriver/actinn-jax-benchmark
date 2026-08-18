@@ -193,16 +193,16 @@ reference. Ontology-aware concordance throughout.
 | arm | ontology |
 |---|---:|
 | tier 1 only — `broad_human_v1` (ours) | 0.338 |
-| tier 1 only — Pan-human Azimuth | 0.380 |
+| tier 1 only — Pan-human Azimuth | 0.408 |
 | **tier 2 only — actinn-jax on the liver reference** | **0.731** |
 | tier 1 scopes tier 2 — PHA's coarse call masks tier-2 classes | 0.708 |
 | oracle scope — a *perfect* coarse call masks tier-2 classes | 0.759 |
 
 Three results, one of them against us:
 
-1. **Pan-human Azimuth is the better broad model** — 0.380 vs 0.338 for our shipped
+1. **Pan-human Azimuth is the better broad model** — 0.408 vs 0.338 for
    `broad_human_v1` on the same cells. Modest, but it is better resourced and it shows.
-2. **The hand-off is worth a lot, and that reproduces.** Either broad model scores ~0.34–0.38;
+2. **The hand-off is worth a lot, and that reproduces.** Either broad model scores ~0.34–0.41;
    the focused reference reaches **0.731**. Switching to a tissue-specific reference roughly
    doubles concordance, which is the §3.5 claim, here on a leakage-free split.
 3. **But the two stages do not stack.** Using tier 1's coarse call to narrow tier 2's classes

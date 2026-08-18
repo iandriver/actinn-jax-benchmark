@@ -119,8 +119,8 @@ Heavier methods get their own environment under [`envs/`](envs).
   scores the rebuilt model before you keep it.
 - **[docs/PANHUMAN_DISTILL.md](docs/PANHUMAN_DISTILL.md)** — distilling Pan-human Azimuth
   into an actinn-jax reference. On a withheld liver study the 324-class distilled model
-  scores 0.406 ontology concordance against 0.338 for the census-built reference and 0.380
-  for the teacher, at 3.4× the census-built model's speed — built with no GPU and no labels.
+  scores 0.406 ontology concordance against 0.338 for the census-built reference and 0.408
+  for its teacher, at 6–9× the teacher's throughput — built from unlabelled data, no GPU.
 
 Tier-1 (classical) complete; deep + foundation tiers next. See the full
 [benchmark plan](https://github.com/iandriver/actinn-jax/blob/main/BENCHMARK_PLAN.md).

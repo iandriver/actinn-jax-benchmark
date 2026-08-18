@@ -11,7 +11,7 @@ models trained on, **scores above the reference we ship and level with the teach
 |---|---:|---:|---:|
 | actinn-jax `broad_human_v1` (shipped) | 798 | 0.338 | 2,962 cells/s |
 | **actinn-jax distilled from Pan-human Azimuth** | 324 | **0.406** | **10,021 cells/s** |
-| Pan-human Azimuth (the teacher) | 47 | 0.380 | ~1,000–1,500 cells/s |
+| Pan-human Azimuth (the teacher) | 47 | 0.408 | ~1,000–1,500 cells/s |
 
 The distilled model is smaller (17 MB), 3.4× faster than the shipped reference, needs no
 GPU and no labels to build — and answers in a vocabulary with a published CL crosswalk
@@ -136,13 +136,13 @@ CL-annotated) — **not** part of any distillation corpus.
 |---|---:|---:|---:|---:|
 | actinn-jax `broad_human_v1` (shipped) | 798 | 0.338 | 1.15 s | 2,962 |
 | **actinn-jax distilled from PHA** | 324 | **0.406** | **0.34 s** | **10,021** |
-| Pan-human Azimuth (teacher) | 47 | 0.380 | — | — |
+| Pan-human Azimuth (teacher) | 47 | 0.408 | — | — |
 
 The distilled reference is **7 points better than the one we ship, at 3.4× its speed**, with
 less than half the classes. Fewer, better-harmonized, ontology-mapped classes beat more
 classes inherited from a fragmented vocabulary.
 
-**Do not read the 0.406 vs 0.380 as beating the teacher.** Both actinn-jax models draw on a
+**Do not read the 0.406 vs 0.408 as beating the teacher.** Both actinn-jax models draw on a
 census sample that may include cells from these same HLiCA studies, so liver exposure cannot
 be ruled out for either of them; the teacher has no such exposure. The comparison that is
 clean is **shipped vs distilled** — both census-derived, same possible exposure, 0.338 vs
