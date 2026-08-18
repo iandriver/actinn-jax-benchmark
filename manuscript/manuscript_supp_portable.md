@@ -10,7 +10,7 @@ abstract: |
 
 
 *Supplement to "A benchmark of cell-type annotation methods for single-cell data". Figures and tables referenced from
-the main text as Supplementary Figure S1–S9 and Supplementary Table S1–S3.*
+the main text as Supplementary Figure S1–S10 and Supplementary Table S1–S3.*
 
 # Supplementary figures
 
@@ -50,6 +50,16 @@ pairwise Spearman is 0.66, but the median best-minus-worst gap is 0.43 — the w
 disagreement of the three splits, and a reminder that a high rank correlation between methods
 still leaves large per-class differences.
 
+![per-class recall, brain clusters](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_perclass_brain_cluster_intra.png)
+
+**Figure S5.** Per-class recall on the 151-type brain cluster split, drawn as in Figure S2.
+This is the split where the panel's ranking inverts (§3.1): the two correlation methods,
+weakest almost everywhere else, sit among the leaders, and actinn-jax is tenth of eleven.
+Mean pairwise Spearman is 0.61 and the median best-minus-worst gap is 0.32, rising to 0.88.
+The disagreement is concentrated in the graded families — `L2/3 IT`, `Sst`, `Vip` — where
+neighbouring clusters differ by degree rather than by marker, and not in the rare classes:
+capping at 100 cells per cluster leaves 130 of the 151 classes tied at 25 test cells.
+
 # Supplementary tables
 
 | method | source | tier | engine | rejection | runtime |
@@ -83,10 +93,14 @@ components, tuned deliberately to be the strongest simple competitor we could bu
 | liver_cross | [Edgar 2026] | cross-**study** | liver (HLiCA) | 34 | Ensembl | train 6 studies → test withheld study |
 | blood_gut_intra | [Alegbe 2026] | within-dataset | blood + gut (IBDverse) | 86 | Ensembl | high cardinality; no CL ids |
 | pbmc | [10x Genomics 2016] | within-dataset | PBMC (pbmc3k) | 8 | symbols | small-n; scPRINT skips (symbols) |
+| brain_intra | [Jorstad 2023] | within-dataset | brain, MTG (Allen) | 24 | Ensembl | single nuclei; Allen subclasses |
+| brain_cluster | [Jorstad 2023] | within-dataset | brain, MTG (Allen) | 151 | Ensembl | same nuclei, CCN cell sets |
 
-**Table S2.** The six benchmark datasets. *split* separates within-dataset holdouts from
+**Table S2.** The eight benchmark splits over seven datasets. *split* separates within-dataset holdouts from
 cross-dataset and cross-study transfer; *genes* records whether the matrix is keyed by
-Ensembl ids or gene symbols.
+Ensembl ids or gene symbols. Brain is labelled with Allen's `Subclass` rather than with Cell
+Ontology terms, which collapse its 24 subclasses to 18 (§2.3), so it carries no ontology
+score.
 
 | dataset | actinn-jax | best method (acc) |
 |---|---|---|
@@ -96,6 +110,8 @@ Ensembl ids or gene symbols.
 | liver_cross (cross-study) | **0.686 exact / 0.731 ontology** | actinn-jax |
 | blood_gut (86 types) | 0.860 | linear-anova-pca 0.902 |
 | pbmc (8 types) | 0.913 | scArches 0.940 |
+| brain, subclass (24 types) | 0.986 | ProtoCloud 0.991 |
+| brain, cluster (151 types) | 0.741 | SingleR 0.845 |
 
 **Table S3.** Per-dataset accuracy: actinn-jax against whichever method leads that dataset.
 † on lung_cross the exact-match score is a vocabulary artifact, so ontology concordance is
@@ -109,7 +125,7 @@ cheap, not on the shape of the curve that makes it cheap.
 
 ![accuracy and memory against reference size](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_atlas_scaling.png)
 
-**Figure S5.** Accuracy and peak memory against reference size, four methods carried to full
+**Figure S6.** Accuracy and peak memory against reference size, four methods carried to full
 atlas scale on two datasets. *A:* lung, 3k → 49k reference cells. *B:* the HLiCA liver atlas,
 2.7k → 47k, an independent replication of the same reversal — a prototype VAE moves from worst
 to best as the reference grows. *C:* peak memory over both sweeps. Error bars on *A* and *B*
@@ -119,7 +135,7 @@ of the query and not run-to-run variation.
 
 ![fit and predict scaling](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_scaling.png)
 
-**Figure S6.** Fit and predict time against reference size and label cardinality, for the six
+**Figure S7.** Fit and predict time against reference size and label cardinality, for the six
 CPU methods. Fit grows on both axes for every trained method, steeply for CellTypist and the
 SVM. Predict is flat in reference size for all six, so that flatness is a property of cached
 inference generally rather than of any one method; cardinality is the axis that separates them,
@@ -129,7 +145,7 @@ one-time import cost and is not a scaling effect.
 
 ![annotating an atlas](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_query_scaling.png)
 
-**Figure S7.** Cost against query size with the reference fixed at 17,753 cells. *A:*
+**Figure S8.** Cost against query size with the reference fixed at 17,753 cells. *A:*
 wall-clock to annotate the query. *B:* throughput, which declines 31% for actinn-jax and holds
 flat for the linear pipeline, narrowing the advantage from 4.2× to 3.1×. *C:* peak memory,
 which does not distinguish them — on this axis it measures holding the query, not running the
@@ -141,7 +157,7 @@ run the OS has partly evicted.
 
 ![what a threshold does to each method](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_abstain_grid.png)
 
-**Figure S8.** What a confidence threshold does to each of the eight methods that return a
+**Figure S9.** What a confidence threshold does to each of the eight methods that return a
 per-cell confidence, with 9 of 36 cell types held out of the liver reference so 1,350 query
 cells are out-of-distribution. Every quantity is a fraction, so all three share one axis. The
 five that work share a shape — accuracy and novelty rising as coverage falls — and the three
@@ -149,7 +165,7 @@ that do not each fail visibly and differently.
 
 ![the abstain trade-off](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_abstain.png)
 
-**Figure S9.** The same sweep read as a trade-off, which is what compares methods to each other
+**Figure S10.** The same sweep read as a trade-off, which is what compares methods to each other
 rather than to themselves. *Left:* accuracy on kept cells against the fraction kept — the five
 usable methods lie along one band, which is the basis for calling their abstain quality tied.
 *Right:* the share of held-out-type cells flagged as the threshold rises.

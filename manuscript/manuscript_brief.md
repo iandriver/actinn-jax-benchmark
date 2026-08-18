@@ -5,7 +5,7 @@ author:
   - Ian Driver$^{\ast}$
 date: ""
 abstract: |
-  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** — classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model — across **six datasets** (8–86 cell types; within-dataset, cross-dataset and cross-study splits) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.5×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but what a low annotation cost makes possible. Using **actinn-jax**, a JAX reimplementation of ACTINN with a cached train-once/map-many reference, we show that sub-second reference calling turns annotation from a single decision into a **multi-pass workflow**: a shipped ~800-type reference routes a query to tissue and hands off to a focused reference (cross-study liver 0.23/0.58 to 0.72/0.86, exact/ontology); a pan-human annotator is distilled into an interchangeable entry point from raw counts alone, with no GPU and no labels, matching its teacher at six to nine times the throughput; and running three broad references over the same cells partitions it by agreement. Across liver, lung and brain every reference is far more accurate where all three concur than where they do not, though a consensus *label* beats none of them — the value is knowing which calls to trust, at the price of three sub-second calls and no labels. We release the reimplementation, the harness and the pre-trained references.
+  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** — classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model — across **eight splits of seven datasets** (8–151 cell types; within-dataset, cross-dataset and cross-study) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.5×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but what a low annotation cost makes possible. Using **actinn-jax**, a JAX reimplementation of ACTINN with a cached train-once/map-many reference, we show that sub-second reference calling turns annotation from a single decision into a **multi-pass workflow**: a shipped ~800-type reference routes a query to tissue and hands off to a focused reference (cross-study liver 0.23/0.58 to 0.72/0.86, exact/ontology); a pan-human annotator is distilled into an interchangeable entry point from raw counts alone, with no GPU and no labels, matching its teacher at six to nine times the throughput; and running three broad references over the same cells partitions it by agreement. Across liver, lung and brain every reference is far more accurate where all three concur than where they do not, though a consensus *label* beats none of them — the value is knowing which calls to trust, at the price of three sub-second calls and no labels. We release the reimplementation, the harness and the pre-trained references.
 geometry: margin=1in
 fontsize: 11pt
 linkcolor: RoyalBlue
@@ -97,10 +97,10 @@ graph/session code that no longer installs on current Python and ML environments
 sparse-aware; a fitted reference is cached and reused across queries; prediction is chunked
 for atlas-scale inputs. Accuracy matches the original within repeat noise.
 
-**Panel and datasets.** Thirteen methods (Supplementary Table S1) across six datasets
-(Supplementary Table S2): lung within-dataset and cross-dataset, liver within-dataset and
-cross-**study**, an 86-type blood+gut set, and PBMC — 8 to 86 cell types, spanning three
-generalization regimes.
+**Panel and datasets.** Thirteen methods (Supplementary Table S1) across eight splits of seven
+datasets (Supplementary Table S2): lung within-dataset and cross-dataset, liver within-dataset
+and cross-**study**, an 86-type blood+gut set, PBMC, and Allen middle temporal gyrus nuclei at
+two levels of one taxonomy — 8 to 151 cell types, spanning three generalization regimes.
 
 **Metrics.** Accuracy, macro-F1, and **ontology-aware concordance**, which credits a call that
 is the same node, an ancestor or a descendant of the truth in the Cell Ontology. The last is
@@ -161,21 +161,32 @@ the best ontology-aware concordance (0.811), likewise a margin inside repeat noi
 
 **Table 1.** Accuracy and cost. Accuracy is the mean over the five shared-vocabulary
 datasets, macro-F1 over all six, and ontology concordance over the four that carry Cell
-Ontology ids; bold marks the best value in a column. *scANVI does most of its work in one train+predict pass, attributed to predict.
+Ontology ids; bold marks the best value in a column. The two brain splits are held out of
+these means — they were measured after this pass — and reported per dataset instead;
+including both would move actinn-jax from fourth to fifth, behind CellTypist. *scANVI does most of its work in one train+predict pass, attributed to predict.
 Per-dataset scores: Supplementary Table S3.
 
 Neither ordering is stable. Carrying four methods from a 3k-cell reference to a full atlas
 reverses the accuracy ranking — a prototype VAE moves from worst to best — and the external
 Open Problems panel, whose 1,000-gene budget is narrower than ours, reverses the cost ranking,
-with the tuned linear pipeline costing 2.7× more than it does here (Supplementary Figure S5,
+with the tuned linear pipeline costing 2.7× more than it does here (Supplementary Figure S6,
 and the extended report).
+
+Granularity moves it too, and against us. The same Allen middle temporal gyrus nuclei scored at
+two levels of one taxonomy behave like two different benchmarks: at Allen's 24 subclasses ten
+of the eleven methods land within 0.017 of each other, and at the 151 cell sets the taxonomy
+enumerates the ranking inverts — SingleR, eighth overall, leads at **0.845**, while actinn-jax
+falls to tenth at **0.741**. Correlation-to-centroid methods gain exactly where the trained
+classifiers lose, helped by the fact that cluster-level labels are themselves the output of
+clustering the same expression space. One split is a signal, not a characterization, but it is
+the one split in this panel at the resolution a cortical taxonomy actually works at.
 
 Prediction is where the annotation budget is actually spent, and it is small: sub-second for
 every CPU method tested, and flat in reference size for all of them, since a cached model's
 inference does not depend on how many cells trained it. What makes chaining stages practical
 is therefore not a uniquely flat predict but the ratio — a sub-second call recurring against a
-fit of 19–123 s that is paid once (Supplementary Figure S6). With the reference held fixed,
-annotating a whole 525,000-cell atlas takes **41 s** (Supplementary Figure S7).
+fit of 19–123 s that is paid once (Supplementary Figure S7). With the reference held fixed,
+annotating a whole 525,000-cell atlas takes **41 s** (Supplementary Figure S8).
 
 ## One query, two passes: routing and then resolution
 

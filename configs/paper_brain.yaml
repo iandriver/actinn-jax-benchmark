@@ -1,0 +1,36 @@
+# Brain (Allen human MTG) added to the paper matrix: all eleven methods, repeats=3.
+# Its own config because the label is `Subclass`, not `cell_type` -- the driver applies one
+# label key to every dataset in a config, and Allen's subclass names are the level its
+# taxonomy (and the CCN cell sets built on it) treats as standard. The 18-term
+# `cell_type` column is coarser than the 24 subclasses, so it is carried in obs but not
+# scored on. Built by benchmark/explore/make_brain_dataset.py.
+#   .venv/bin/python -m benchmark.driver configs/paper_brain.yaml
+label: Subclass
+repeats: 3
+output: results/paper_brain
+ontology_obo: /tmp/cl-basic.obo
+save_predictions: true
+
+datasets:
+  # source: Allen Institute human MTG, Jorstad et al. 2023, doi:10.1126/science.ade9516
+  - name: brain_intra          # 24 Allen subclasses, 10x 3' v3 nuclei, ~300 cells/type
+    type: intra
+    path: /Volumes/IanSSD/allen_mtg/brain_intra.h5ad
+    test_frac: 0.25
+
+methods:
+  - name: actinn-jax
+  - name: linear-anova-pca
+  - name: svm
+  - name: knn
+  - name: celltypist
+  - name: singler
+  - name: scmap-cluster
+  - name: scanvi
+    python: .venv-scvi/bin/python
+  - name: scarches
+    python: .venv-scvi/bin/python
+  - name: sctop
+    python: .venv-protocloud/bin/python
+  - name: protocloud
+    python: .venv-protocloud/bin/python

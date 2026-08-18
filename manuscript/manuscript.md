@@ -5,7 +5,7 @@ author:
   - Ian Driver$^{\ast}$
 date: ""
 abstract: |
-  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** — classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model — across **six datasets** (8–86 cell types; within-dataset, cross-dataset and cross-study splits) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.5×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but what a low annotation cost makes possible. Using **actinn-jax**, a JAX reimplementation of ACTINN with a cached train-once/map-many reference, we show that sub-second reference calling turns annotation from a single decision into a **multi-pass workflow**: a shipped ~800-type reference routes a query to tissue and hands off to a focused reference (cross-study liver 0.23/0.58 to 0.72/0.86, exact/ontology); a pan-human annotator is distilled into an interchangeable entry point from raw counts alone, with no GPU and no labels, matching its teacher at six to nine times the throughput; and running three broad references over the same cells partitions it by agreement. Across liver, lung and brain every reference is far more accurate where all three concur than where they do not, though a consensus *label* beats none of them — the value is knowing which calls to trust, at the price of three sub-second calls and no labels. We release the reimplementation, the harness and the pre-trained references.
+  Cell-type annotation by reference mapping is among the most frequently repeated operations in single-cell analysis, yet published comparisons report accuracy far more often than the wall-clock time and memory that decide what a working scientist can actually run. We benchmarked **thirteen methods** — classical, regularized-linear, parameter-free, correlation, deep-probabilistic, prototype-VAE and foundation-model — across **eight splits of seven datasets** (8–151 cell types; within-dataset, cross-dataset and cross-study) on commodity hardware, and validated externally on Open Problems `label_projection`, whose datasets, metrics and ranking we did not choose. Accuracy among the leading methods is tightly clustered — the top four span **0.008** — while their inference cost differs by two orders of magnitude and their peak memory by 2.5×. No method leads everywhere, and neither ordering is stable: accuracy inverts as the reference grows from 3k cells to a full atlas, and cost rankings invert with the input feature budget. Because several methods are now both accurate and cheap, the useful question is not which is best but what a low annotation cost makes possible. Using **actinn-jax**, a JAX reimplementation of ACTINN with a cached train-once/map-many reference, we show that sub-second reference calling turns annotation from a single decision into a **multi-pass workflow**: a shipped ~800-type reference routes a query to tissue and hands off to a focused reference (cross-study liver 0.23/0.58 to 0.72/0.86, exact/ontology); a pan-human annotator is distilled into an interchangeable entry point from raw counts alone, with no GPU and no labels, matching its teacher at six to nine times the throughput; and running three broad references over the same cells partitions it by agreement. Across liver, lung and brain every reference is far more accurate where all three concur than where they do not, though a consensus *label* beats none of them — the value is knowing which calls to trust, at the price of three sub-second calls and no labels. We release the reimplementation, the harness and the pre-trained references.
 geometry: margin=1in
 fontsize: 11pt
 linkcolor: RoyalBlue
@@ -169,7 +169,7 @@ each has its own pinned environment (§2.5). Bold marks the methods added to thi
 components, tuned deliberately to be the strongest simple competitor we could build (§1).
 
 **Eleven of the thirteen are trained on each dataset's own reference** and run the full
-accuracy/cost matrix of §3.1 on all six datasets, so none is compared on a favorable subset.
+accuracy/cost matrix of §3.1 on all eight splits, so none is compared on a favorable subset.
 The remaining two are **pretrained annotators with fixed label vocabularies**, which changes
 what can be measured rather than excusing them from measurement:
 
@@ -205,19 +205,42 @@ releases of the harmony dependency it builds on.
 | liver_cross | [\[Edgar 2026\]](https://doi.org/10.64898/2026.06.30.735539) | cross-**study** | liver (HLiCA) | 34 | Ensembl | train 6 studies → test withheld study |
 | blood_gut_intra | [\[Alegbe 2026\]](https://doi.org/10.1038/s41586-026-10627-z) | within-dataset | blood + gut (IBDverse) | 86 | Ensembl | high cardinality; no CL ids |
 | pbmc | [\[10x Genomics 2016\]](https://www.10xgenomics.com/datasets/3-k-pbm-cs-from-a-healthy-donor-1-standard-1-1-0) | within-dataset | PBMC (pbmc3k) | 8 | symbols | small-n; scPRINT skips (symbols) |
+| brain_intra | [Jorstad 2023] | within-dataset | brain, MTG (Allen) | 24 | Ensembl | single nuclei; Allen subclasses |
+| brain_cluster | [Jorstad 2023] | within-dataset | brain, MTG (Allen) | 151 | Ensembl | same nuclei, CCN cell sets |
 
-**Table 2.** The six benchmark datasets. *split* separates within-dataset holdouts from
-cross-dataset and cross-study transfer; *genes* records whether the matrix is keyed by Ensembl
-ids or by gene symbols, since a method or reference built on one convention cannot read
-the other without remapping.
+**Table 2.** The eight benchmark splits, over seven datasets — brain appears twice because the
+same nuclei are scored at two levels of one taxonomy. *split* separates within-dataset
+holdouts from cross-dataset and cross-study transfer; *genes* records whether the matrix is
+keyed by Ensembl ids or by gene symbols, since a method or reference built on one convention
+cannot read the other without remapping.
 
 The blood+gut set is a subsample of **IBDverse** (Wellcome Sanger Institute; blood, terminal
 ileum and rectum from 421 individuals), included here because 86 fine-grained labels make it
 the high-cardinality stress case for the panel. It carries no Cell Ontology ids, so it
 contributes to accuracy and macro-F1 but to no ontology-scored result.
 
+The brain set is the Allen Institute's human **middle temporal gyrus** taxonomy [Jorstad
+2023] — the only neural data in the panel, assayed as single nuclei, and the query the
+multi-reference agreement experiment of §3.4 uses. It enters twice, at two levels of that one
+taxonomy, because the two turn out to measure different things: **`Subclass`** (24 types, ~300
+cells each), the level the field treats as standard, and **`Cluster`** (151 types, ~100 cells
+each), the level whose members are the cell sets the CCN taxonomy `CCN201908210` enumerates
+and the highest cardinality in the panel. Only the 10x 3′ v3 nuclei are kept (141,782 of
+156,285); the remaining Smart-seq v4 nuclei would put a full-length protocol on one side of a
+within-dataset split.
+
+Neither level is the CELLxGENE `cell_type` column, because the Cell Ontology cannot express
+the distinctions this taxonomy is built on: CL collapses the five intratelencephalic
+subclasses (`L2/3 IT`, `L4 IT`, `L5 IT`, `L6 IT`, `L6 IT Car3`) into one term, and likewise
+merges `Lamp5`/`Lamp5_Lhx6` and `Sst`/`Sst Chodl`, leaving **18 terms for 24 subclasses** and
+no terms at all for the 151 clusters. Scoring against the 18 would credit a method for
+confusing cortical layers, so brain contributes accuracy and macro-F1 and — like blood+gut,
+for a different reason — no ontology-scored result. That gap is the concrete form of the
+nomenclature problem §3.4 returns to.
+
 The set spans the three generalization regimes (within-dataset, across datasets, across
-studies), an order of magnitude in cell-type count (8→86), and both gene-ID conventions.
+studies), more than an order of magnitude in cell-type count (8→151), five tissues (lung,
+liver, blood, gut, brain), whole cells and single nuclei, and both gene-ID conventions.
 
 ## Metrics
 
@@ -441,8 +464,15 @@ methods, all selectable without test labels:
 Accuracy is the mean over the **five shared-vocabulary datasets** (lung_cross
 excluded — its exact-match accuracy is a vocabulary artifact, see the † note below; means over all
 six are ~0.08 lower for every method, and reorder only scArches and actinn-jax, by 0.0004);
-macro-F1 is the mean over all six, ontology concordance the mean over the four datasets that
-carry Cell Ontology ids; cost is the mean per query (Table 3):
+macro-F1 is the mean over all six non-brain datasets, ontology concordance the mean over the
+four of those that carry Cell Ontology ids; cost is the mean per query (Table 3). The two brain splits are held
+out of these aggregates and reported per dataset in Table 5 — the columns below come from one
+measurement pass on an idle machine, and brain was run afterwards — but holding them out is
+not free of consequence, so both directions are worth stating. Adding brain at subclass level
+raises every method by 0.025–0.043 and reorders nothing. Adding both brain splits gives
+accuracies over eight of linear-anova-pca 0.857, scANVI 0.855, scArches 0.853, CellTypist
+0.848, **actinn-jax 0.840**, SVM 0.837, ProtoCloud 0.817, SingleR 0.811, kNN 0.792, scTOP
+0.775, scmap-cluster 0.706 — which moves actinn-jax from fourth to fifth, behind CellTypist:
 
 | method | acc (5) | macro-F1 (6) | ontology (4) | fit (s) | **predict (s)** | peak mem (MB) |
 |----------|----:|----:|----:|----:|----:|----:|
@@ -459,8 +489,9 @@ carry Cell Ontology ids; cost is the mean per query (Table 3):
 | scmap-cluster | 0.646 | 0.550 | 0.771 | 0.3 | 9.30 | 8609 |
 
 **Table 3.** Accuracy and cost together, ordered by accuracy. Accuracy is the mean over the five
-shared-vocabulary datasets, macro-F1 is the mean over all six, ontology concordance the mean
-over the four datasets carrying Cell Ontology ids, and cost is the mean per query. Bold marks the best value in a column.
+shared-vocabulary datasets, macro-F1 is the mean over all six non-brain datasets, ontology
+concordance the mean over the four of those carrying Cell Ontology ids, and cost is the mean
+per query. The two brain splits are reported per dataset in Table 5 instead (see above). Bold marks the best value in a column.
 
 *In Table 3, scANVI does most of its work in one train+predict pass, attributed to predict.
 
@@ -519,18 +550,44 @@ low-cardinality problems. Per dataset (accuracy):
 | liver_cross (cross-study) | **0.686 exact / 0.731 ontology** | actinn-jax |
 | blood_gut (86 types) | 0.860 | linear-anova-pca 0.902 |
 | pbmc (8 types) | 0.913 | scArches 0.940 |
+| brain, subclass (24 types) | 0.986 | ProtoCloud 0.991 |
+| brain, cluster (151 types)‡ | 0.741 | SingleR 0.845 |
 
 **Table 5.** Per-dataset accuracy: actinn-jax against whichever method leads that dataset.
 † on lung_cross the exact-match score is a vocabulary artifact, so ontology concordance is the
-meaningful column.
+meaningful column. ‡ the two brain rows are the same nuclei scored at two resolutions of the
+same taxonomy; see below.
 
-No single method leads everywhere: the linear pipeline and ProtoCloud each take two datasets,
-actinn-jax and scArches one apiece. actinn-jax leads the cross-study liver split — the hardest
-generalization regime here, and the one closest to real reference mapping — and is second on
-within-dataset liver, while trailing on lung, on the 86-type blood+gut set (−4.2 pt to the
-linear pipeline), and on small-n pbmc. The spread across the leading methods on any one
-dataset is 1–4 points. scmap-cluster is the weakest on accuracy and macro-F1 throughout (0.23 macro-F1 on
-liver_cross), though not on ontology concordance.
+No single method leads everywhere: ProtoCloud takes three splits, the linear pipeline two,
+and actinn-jax, scArches and SingleR one apiece. actinn-jax leads the cross-study liver split —
+the hardest generalization regime here, and the one closest to real reference mapping — and is
+second on within-dataset liver, while trailing on lung, on the 86-type blood+gut set (−4.2 pt
+to the linear pipeline), and on small-n pbmc. Outside brain, the spread across the leading
+methods on any one dataset is 1–4 points, and scmap-cluster is the weakest on accuracy and
+macro-F1 throughout (0.23 macro-F1 on liver_cross), though not on ontology concordance.
+
+**The two brain splits are the same nuclei at two resolutions, and they behave like different
+problems.** At Allen's 24 subclasses the panel saturates: ten of the eleven methods fall inside
+0.017 of each other (0.974–0.991, with scmap-cluster alone below at 0.901), and no method
+moves more than 0.003 between repeats. That row records that cortical subclasses are separable, not that any
+method is better at finding them. At the 151 clusters the ranking **inverts**. SingleR leads at
+0.845, having placed eighth of eleven overall; scmap-cluster, last everywhere else at 0.646,
+reaches 0.810; and actinn-jax falls to 0.741, tenth. The two correlation methods gain exactly
+where the trained classifiers lose.
+
+Three things this is *not*. It is not a configuration artifact: every method ran at the same
+defaults as on the other six splits. It is not underfitting — raising actinn-jax's 50 training
+epochs to 150 and then 400 moves it 0.741 → 0.746 → 0.747, so eight times the training buys
+0.006. And it is not simply a thin reference: this split gives 72 reference nuclei per class
+against 89 on blood+gut, where actinn-jax scores 0.860. What is left is cardinality itself, and
+one property of the labels that deserves stating plainly — **cluster-level labels are the output
+of clustering this same expression space**, so scoring nearest-centroid methods against them
+measures them partly against their own inductive bias. Whether that is a flaw in the benchmark
+or a fact about fine-grained annotation depends on where the labels a user actually has come
+from, and for taxonomies like this one they come from exactly this procedure. Methods also
+disagree about *which* clusters are hard (Supplementary Figure S5): median best-minus-worst
+recall 0.32 per class, mean pairwise Spearman 0.61, concentrated in the graded `L2/3 IT`, `Sst`
+and `Vip` families rather than in the rare classes.
 
 **† lung_cross exact-match accuracy (~0.35 for every method) is a label-vocabulary artifact, not
 a transfer failure.** HLCA (reference) and Krasnow (query) were annotated independently and
@@ -891,7 +948,8 @@ are unknown, for the price of three sub-second calls.
 What does not replicate is how much of a query the agreeing set covers: 23% on liver, 48% on
 lung, 94% on brain. Brain explains the spread rather than extending it. That query's Cell
 Ontology annotation uses **18 terms for a region whose own taxonomy, `CCN201908210`, defines
-154 cell sets**, and 55% of its cells fall in one class, `L2/3-6 intratelencephalic projecting
+154 cell sets** — 151 of them present in this data, and the label set of the fine brain split
+in §3.1 — while 55% of its cells fall in one class, `L2/3-6 intratelencephalic projecting
 glutamatergic neuron`. Concordances near 0.98 and agreement at 94% are what a coarse truth
 vocabulary produces, not what an easy tissue produces. The partition reports the resolution of
 the annotation it is scored against, which is a property of the query rather than of the
@@ -927,6 +985,14 @@ those 23, eight match a CL term name or synonym by exact string (`L2/3 IT`, `L5 
 `L6 CT`, `L6 IT`, `Lamp5`, `OPC`, `Sst Chodl`); most of the rest are abbreviations such as
 `Astro`, `Oligo` and `Endo` whose expansions do exist in CL, so the true overlap is larger than
 a string test finds and is exactly as large as someone is willing to curate.
+
+The benchmark scores those cell sets directly: the 151-type brain split of §3.1 uses them as
+its label set, and there the missing ontology mapping stops being an inconvenience and becomes
+the condition of the problem. Calls at that resolution cannot be checked against an ontology at
+all, only against the taxonomy's own strings — which is also why that split is scored by exact
+match alone, and why the ranking it produces (correlation methods first, trained classifiers
+last) cannot be cross-checked against the ontology-aware column that reconciles vocabularies
+everywhere else in this paper.
 
 That is the substantive difference. CL supplies a *total* subsumption relation — every pair of
 terms is comparable, at whatever granularity CL happens to encode — which is what makes an
@@ -1247,11 +1313,17 @@ scientist can run, inspect, and run again.
  silently ranks threading and scheduler contention alongside algorithm. Table 9 therefore
  reports cost as a ratio within a run, anchored by a method common to both (§2.10) — the
  anchor itself moved 165 s → 87 s between them, which is the size of the effect.
-- **The cross-method comparison is human only**; six datasets per benchmark; GPU foundation
+- **The cross-method comparison is human only**; eight splits per benchmark; GPU foundation
  models beyond scPRINT/UCE (scGPT, Geneformer, popV) not run locally. The shipped references
  now cover mouse (§3.4), but no *method comparison* was run on mouse data — the pan-mouse
  result establishes that the reference-building route works on a second organism, not that
  actinn-jax's standing against other methods carries over to it.
+- **actinn-jax's standing is worse at very fine granularity.** On the 151-type brain cluster
+ split it places tenth of eleven (0.741 against SingleR's 0.845, §3.1), and the two
+ correlation methods that trail everywhere else lead there. The panel covers exactly one split
+ at that cardinality, so this is a signal rather than a characterization — but it runs opposite
+ to the 86-type blood+gut result, and a user annotating at cluster resolution should not read
+ the aggregate in Table 3 as covering that case.
 - actinn-jax needs more cells/type than linear methods to reach parity (§3.1); on very small
  references it trails.
 - **The distilled broad-pass reference inherits a vocabulary, not a calibration.** Pan-human
@@ -1330,9 +1402,10 @@ condition of that licence and travels inside each shipped model's build record.
 
 **Additional documentation.** The [benchmark repository][repo] carries detailed notes for each result — tuned linear pipeline and sctop baselines; protocloud comparison; scaling and memory to atlas size; survey of cell-type annotation methods; rebuilding the broad reference; distilling pan-human azimuth; and 9 more.
 
-**Supplementary material** (separate document) contains Figures S1–S4 — confusion matrices
-with ontology-equivalent errors outlined, and per-class recall across eleven methods on three
-splits — and Tables S1–S3, the method and dataset descriptions and per-dataset accuracy.
+**Supplementary material** (separate document) contains Figures S1–S10 — confusion matrices
+with ontology-equivalent errors outlined, per-class recall across eleven methods on four
+splits, the cost and scaling studies, and the abstain sweeps — and Tables S1–S3, the method
+and dataset descriptions and per-dataset accuracy.
 
 
 

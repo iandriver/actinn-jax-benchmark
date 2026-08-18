@@ -11,12 +11,15 @@ the best accuracy on the hardest dataset (tabula_sapiens, 160 types). Full table
 
 ## 📄 Comprehensive benchmark report — **[docs/PAPER.md](docs/PAPER.md)**
 
-10-method × 6-dataset neutral comparison of accuracy × speed × memory on commodity
-Apple-Silicon hardware. **Headline:** across six datasets **actinn-jax ties the most
-accurate methods (mean accuracy 0.752 vs. scANVI 0.756 / scArches 0.754) while predicting
-~195× faster (0.37 s vs. 73 s per query) and using 3.6× less memory than the original
-TensorFlow ACTINN — no method dominates it on both accuracy and speed.** Figures in
-[docs/figures/](docs/figures). Reproduce: `python -m benchmark.driver configs/paper.yaml`.
+13-method × 8-split neutral comparison of accuracy × speed × memory on commodity
+Apple-Silicon hardware. **Headline:** **actinn-jax ties the most accurate methods (mean
+accuracy 0.831 vs. linear-anova-pca 0.839 / scArches 0.833 / scANVI 0.832 — a span smaller
+than the stochastic methods' own rerun noise) while predicting 123× faster than scANVI
+(0.54 s vs. 66.7 s per query); no method dominates it on both accuracy and speed.** It does
+*not* hold that standing at cluster-level granularity: on the 151-type Allen brain split it
+places tenth of eleven. Figures in [docs/figures/](docs/figures). Reproduce:
+`python -m benchmark.driver configs/paper.yaml` (then `configs/paper_baselines.yaml`,
+`configs/paper_brain.yaml`, `configs/paper_brain_cluster.yaml`).
 
 ## ⭐ Headline: foundation-model-shaped, CPU-fast cell typing — **[docs/MODEL_FLOW.md](docs/MODEL_FLOW.md)**
 
