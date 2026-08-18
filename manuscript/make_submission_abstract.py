@@ -43,12 +43,17 @@ def extract(md):
 
 
 def plain(text):
+    # Unwrap first, strip markup second. The paper hard-wraps at ~95 columns, so `**multi-pass
+    # workflow**` can straddle a line break, and `.` does not match a newline -- stripping bold
+    # before unwrapping leaves those asterisks in the submitted text. Paragraph breaks survive
+    # the unwrap: a single \s+ pass over the whole abstract would run two paragraphs together.
+    text = "\n\n".join(re.sub(r"\s+", " ", para).strip()
+                       for para in re.split(r"\n\s*\n", text) if para.strip())
     text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)     # bold
     text = re.sub(r"(?<!\w)\*(.+?)\*(?!\w)", r"\1", text)   # italic
     text = text.replace("`", "")
     for a, b in SUBS:
         text = text.replace(a, b)
-    text = re.sub(r"\s+", " ", text).strip()
     left = sorted({c for c in text if ord(c) > 127})
     if left:
         raise SystemExit("unmapped non-ASCII, add it to SUBS: "
