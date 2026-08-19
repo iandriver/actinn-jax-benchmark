@@ -4,7 +4,8 @@ Writes two subsampled h5ads (counts in .X, Ensembl var_names, Subclass + Cluster
 cell_type + cell_type_ontology_term_id in obs) to IanSSD:
   - brain_intra.h5ad         : ~300 cells per Allen subclass (24 types)
   - brain_cluster_intra.h5ad : ~100 cells per Allen cluster (151 types)
-Both keep 10x 3' v3 nuclei only.
+  - brain_all10x.h5ad        : every 10x nucleus, for the atlas-scaling sweep to subsample
+All keep 10x 3' v3 nuclei only.
 
 Two choices worth stating, since both narrow the source:
 
@@ -30,6 +31,9 @@ OUT = "/Volumes/IanSSD/allen_mtg"
 # 100 per cluster keeps the fine split (~11k cells) the same size as lung_intra; the
 # smallest of the 151 clusters holds 34 nuclei, so no class is left below a usable test fold.
 LEVELS = {"brain_intra": ("Subclass", 300), "brain_cluster_intra": ("Cluster", 100)}
+# The scaling sweep needs the whole 10x set in one file so the driver can subsample it at
+# ascending caps; it reads backed, so the file's size costs nothing until a slice is taken.
+FULL = "brain_all10x.h5ad"
 KEEP = ["Subclass", "Cluster", "Neighborhood", "cell_type",
         "cell_type_ontology_term_id", "donor_id", "assay", "sex"]
 rng = np.random.default_rng(0)
@@ -61,4 +65,13 @@ for name, (key, per) in LEVELS.items():
     print(f"wrote {path}: {sub.shape}, {sub.obs[key].nunique()} {key} classes, "
           f"min class {sub.obs[key].value_counts().min()}, "
           f"X max {sub.X.max():.0f} (counts)", flush=True)
+sel = np.where(tenx)[0]
+full = a[sel].to_memory()
+full.X = full.raw.X.copy()
+full.raw = None
+full.obs = full.obs[KEEP].copy()
+for c in ("Subclass", "Cluster"):
+    full.obs[c] = full.obs[c].astype(str)
+full.write_h5ad(f"{OUT}/{FULL}")
+print(f"wrote {OUT}/{FULL}: {full.shape}, {full.obs.Subclass.nunique()} subclasses", flush=True)
 print("BRAIN_DATASET_DONE", flush=True)

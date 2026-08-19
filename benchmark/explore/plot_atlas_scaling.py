@@ -89,18 +89,24 @@ def mark_reversal(ax, d):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--lung", default="results/scaling_memory/results.csv")
-    ap.add_argument("--liver", default="results/scaling_memory_hlica/results.csv")
+    ap.add_argument("--lung", default="results/scaling_memory_rerun/results.csv")
+    ap.add_argument("--liver", nargs="+",
+                    default=["results/scaling_memory_hlica_small/results.csv",
+                             "results/scaling_memory_hlica_47k/results.csv"],
+                    help="the liver curve is two files: the small sizes and the 47k point")
+    ap.add_argument("--brain", default="results/scaling_memory_brain/results.csv")
     ap.add_argument("--out", default="docs/figures/fig_atlas_scaling.png")
     a = ap.parse_args()
 
-    lung, liver = pd.read_csv(a.lung), pd.read_csv(a.liver)
-    for tag, d in (("lung", lung), ("liver", liver)):
+    lung = pd.read_csv(a.lung)
+    liver = pd.concat([pd.read_csv(f) for f in a.liver], ignore_index=True)
+    brain = pd.read_csv(a.brain)
+    for tag, d in (("lung", lung), ("liver", liver), ("brain", brain)):
         p = d[d.method == "protocloud"].sort_values("n_ref")
         print(f"{tag}: ProtoCloud {p.accuracy.iloc[0]:.3f} at {p.n_ref.iloc[0]:,} "
               f"-> {p.accuracy.iloc[-1]:.3f} at {p.n_ref.iloc[-1]:,}")
 
-    fig, axes = plt.subplots(1, 3, figsize=(13.4, 4.15))
+    fig, axes = plt.subplots(1, 4, figsize=(17.4, 4.15))
 
     curve(axes[0], lung, "accuracy", binomial=True)
     mark_reversal(axes[0], lung)
@@ -113,17 +119,23 @@ def main():
     axes[1].set_title("B  HLiCA liver atlas: the same reversal", fontsize=10,
                       loc="left", pad=7)
 
-    # both sweeps on one memory axis; the point is the band, not either curve alone
-    curve(axes[2], lung, "peak_mem_mb", scale=1 / 1000)
-    for m in ORDER:
-        g = liver[liver.method == m].sort_values("n_ref")
-        axes[2].plot(g["n_ref"] / 1000, g["peak_mem_mb"] / 1000, lw=1.3, ls=":",
-                     color=STYLE[m]["color"], alpha=0.85)
-    axes[2].set_title("C  Peak memory stays within a bounded band", fontsize=10,
+    curve(axes[2], brain, "accuracy", binomial=True)
+    mark_reversal(axes[2], brain)
+    axes[2].set_title("C  Allen brain (MTG): and again on a third tissue", fontsize=10,
                       loc="left", pad=7)
-    axes[2].set_ylabel("peak memory (GB)", fontsize=8.8)
-    axes[2].text(0.97, 0.05, "solid: lung    dotted: liver", transform=axes[2].transAxes,
-                 ha="right", fontsize=6.9, color="#666")
+
+    # all three sweeps on one memory axis; the point is the band, not any one curve
+    curve(axes[3], lung, "peak_mem_mb", scale=1 / 1000)
+    for d_, ls in ((liver, ":"), (brain, (0, (4, 2)))):
+        for m in ORDER:
+            g = d_[d_.method == m].sort_values("n_ref")
+            axes[3].plot(g["n_ref"] / 1000, g["peak_mem_mb"] / 1000, lw=1.3, ls=ls,
+                         color=STYLE[m]["color"], alpha=0.85)
+    axes[3].set_title("D  Peak memory: the prototype VAE is the lightest", fontsize=10,
+                      loc="left", pad=7)
+    axes[3].set_ylabel("peak memory (GB)", fontsize=8.8)
+    axes[3].text(0.97, 0.05, "solid: lung   dotted: liver   dashed: brain",
+                 transform=axes[3].transAxes, ha="right", fontsize=6.9, color="#666")
 
     for ax in axes:
         ax.set_xlabel("reference cells (thousands, log scale)", fontsize=8.8)

@@ -1,0 +1,23 @@
+# The 47k-reference point of the HLiCA liver sweep, on its own. The cost columns of that
+# point in results/scaling_memory_hlica were measured while the machine was doing other
+# work -- actinn-jax fit 359 s against 58.8 s at 25k, scTOP predict 18.5 s against 2.5 s
+# for the same size on lung -- so they report scheduling as much as scaling. Same
+# reference/query construction as the sweep config, so this row drops straight in.
+#   .venv/bin/python -m benchmark.driver configs/scaling_memory_hlica_47k.yaml
+output: results/scaling_memory_hlica_47k
+label: cell_type
+repeats: 1
+ontology_obo: null
+datasets:
+  - name: hlica_2000
+    type: intra
+    path: /Volumes/IanSSD/hlica/all_cells.h5ad
+    subsample_per_label: 2000
+    test_frac: 0.25
+methods:
+  - name: actinn-jax
+  - name: sctop
+    python: .venv-protocloud/bin/python
+  - name: linear-anova-pca
+  - name: protocloud
+    python: .venv-protocloud/bin/python

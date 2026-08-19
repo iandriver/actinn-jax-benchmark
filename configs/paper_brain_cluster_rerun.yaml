@@ -1,0 +1,35 @@
+# Brain at the fine level: the 151 Allen MTG clusters, which are the cell sets the taxonomy
+# CCN201908210 enumerates. Companion to configs/paper_brain.yaml, which runs the same nuclei
+# at the 24-subclass level -- where every method scores above 0.97 and the panel saturates.
+# This is the level that discriminates, and the highest-cardinality split in the paper.
+# Built by benchmark/explore/make_brain_dataset.py.
+#   .venv/bin/python -m benchmark.driver configs/paper_brain_cluster.yaml
+label: Cluster
+repeats: 3
+output: results/paper_brain_cluster_rerun
+ontology_obo: /tmp/cl-basic.obo
+save_predictions: true
+
+datasets:
+  # source: Allen Institute human MTG, Jorstad et al. 2023, doi:10.1126/science.ade9516
+  - name: brain_cluster_intra  # 151 Allen clusters (CCN cell sets), ~100 cells/type
+    type: intra
+    path: /Volumes/IanSSD/allen_mtg/brain_cluster_intra.h5ad
+    test_frac: 0.25
+
+methods:
+  - name: actinn-jax
+  - name: linear-anova-pca
+  - name: svm
+  - name: knn
+  - name: celltypist
+  - name: singler
+  - name: scmap-cluster
+  - name: scanvi
+    python: .venv-scvi/bin/python
+  - name: scarches
+    python: .venv-scvi/bin/python
+  - name: sctop
+    python: .venv-protocloud/bin/python
+  - name: protocloud
+    python: .venv-protocloud/bin/python

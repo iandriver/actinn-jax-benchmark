@@ -11,7 +11,7 @@ abstract: |
 # Key Points
 
 - Among leading annotation methods, accuracy differences are small (top four within 0.008)
- while predict time differs by ~205× and peak memory by 2.5×.
+ while predict time differs by ~250× and peak memory by 2.4×.
 - Rankings are not stable: a prototype VAE moves from worst to best as the reference grows
  from 3k to 49k cells, and a tuned linear pipeline that fits faster than a gene-space MLP on
  one panel costs 2.7× more on another with a narrower feature budget.
@@ -114,11 +114,12 @@ repository.
 ## Accuracy is clustered; cost is not
 
 The top of the accuracy table is a four-way cluster spanning **0.008**, led by a tuned linear
-pipeline rather than by a deep model (Table 1; Figure 1 draws the whole panel at once). Those same four differ by **~205× in predict
-time** (0.33 s to 67 s) and **2.5× in peak memory**. Order within the cluster is not a result:
-the stochastic methods move by more than 0.008 between identical reruns, scANVI by up to
-0.056, so the four are best read as tied on accuracy and separated by cost. actinn-jax holds
-the best ontology-aware concordance (0.811), likewise a margin inside repeat noise.
+pipeline rather than by a deep model (Table 1; Figure 1 draws the whole panel at once). Those
+same four differ by **~250× in predict time** (0.24 s to 58.7 s) and **2.4× in peak memory**.
+Order within the cluster is not a result: the stochastic methods move by more than 0.008
+between identical reruns, scArches by up to 0.024, so the four are best read as tied on
+accuracy and separated by cost. actinn-jax and scANVI share the best ontology-aware
+concordance (0.811).
 
 ![accuracy and cost across every split](/Users/iandriver/Downloads/actinn-jax-benchmark/docs/figures/fig_cost_accuracy_ranges.png)
 
@@ -130,22 +131,22 @@ the individual splits, lines run worst to best. Six methods sit within **0.035**
 per-split leader while spanning 3.4 s to 57 s. Every method's spread across splits is wider
 than the distance between the leading methods, which is the caution that belongs with any
 panel-mean ranking. Repeat-to-repeat variation is far smaller — five methods are exactly
-deterministic, and only scANVI (0.056) and scArches (0.020) move more than 0.009 — so the
+deterministic, and only scArches (0.024), SVM (0.023) and scANVI (0.015) move more than 0.012 — so the
 range drawn here is across datasets. Per-split detail: Supplementary Figure S11.
 
 | method | acc | macro-F1 | ontology | fit (s) | predict (s) | peak mem (MB) |
 |---|---:|---:|---:|---:|---:|---:|
-| **linear-anova-pca** | **0.839** | 0.699 | 0.808 | **3.4** | **0.33** | 4386 |
-| scArches | 0.833 | **0.701** | 0.804 | 48.7 | 17.2 | 1773 |
-| scANVI | 0.832 | 0.698 | 0.808 | 0.0* | 66.7 | 2087 |
-| **actinn-jax** | 0.831 | 0.683 | **0.811** | 24.2 | **0.54** | 2391 |
-| CellTypist | 0.823 | 0.690 | 0.805 | 54.4 | **0.61** | 1569 |
-| SVM | 0.808 | 0.675 | 0.796 | 55.2 | **0.07** | 1419 |
-| ProtoCloud | 0.790 | 0.649 | 0.778 | 221.5 | 2.07 | 1907 |
-| SingleR | 0.770 | 0.652 | 0.750 | 0.3 | 48.2 | 3612 |
-| kNN | 0.770 | 0.623 | 0.768 | 0.4 | **0.19** | 1483 |
-| scTOP | 0.739 | 0.619 | 0.703 | 1.1 | 1.21 | 1926 |
-| scmap-cluster | 0.646 | 0.550 | 0.771 | 0.3 | 9.30 | 8609 |
+| **linear-anova-pca** | **0.839** | 0.699 | 0.808 | **2.5** | **0.31** | 4341 |
+| scANVI | 0.836 | **0.703** | **0.811** | 0.0* | 58.7 | 2079 |
+| scArches | 0.831 | 0.698 | 0.807 | 37.9 | 11.9 | 1774 |
+| **actinn-jax** | 0.831 | 0.683 | **0.811** | 10.3 | **0.24** | 2407 |
+| CellTypist | 0.823 | 0.690 | 0.805 | 44.0 | **0.52** | 1569 |
+| SVM | 0.806 | 0.675 | 0.794 | 40.5 | **0.06** | 1416 |
+| **ProtoCloud** | 0.790 | 0.649 | 0.778 | 118.6 | 1.32 | 1888 |
+| SingleR | 0.770 | 0.652 | 0.750 | 0.2 | 34.7 | 3623 |
+| kNN | 0.769 | 0.622 | 0.768 | 0.3 | **0.14** | 1489 |
+| **scTOP** | 0.739 | 0.619 | 0.703 | 0.9 | 0.98 | 1927 |
+| scmap-cluster | 0.646 | 0.550 | 0.771 | 0.2 | 7.33 | 8637 |
 
 **Table 1.** Accuracy and cost. Accuracy is the mean over the five shared-vocabulary
 datasets, macro-F1 over all six, and ontology concordance over the four that carry Cell
@@ -179,7 +180,7 @@ every CPU method tested, and flat in reference size for all of them, since a cac
 inference does not depend on how many cells trained it. What makes chaining stages practical
 is therefore not a uniquely flat predict but the ratio — a sub-second call recurring against a
 fit of 19–123 s that is paid once (Supplementary Figure S7). With the reference held fixed,
-annotating a whole 525,000-cell atlas takes **41 s** (Supplementary Figure S8).
+annotating a whole 525,000-cell atlas takes **31 s** (Supplementary Figure S8).
 
 ## One query, two passes: routing and then resolution
 
@@ -295,7 +296,7 @@ instead of a curve, scTOP's projection score keeps only 6% of the query at p ≥
 ProtoCloud's ambiguity flag is flat until 0.9 (Supplementary Figures S8–S9). Among the five
 that work, abstain quality does not separate them — actinn-jax and scArches are effectively
 tied (0.969 accuracy on 66% of cells with 73% of novel cells flagged, against 0.983 on 61%
-with 71%) — but cost does, at 0.54 s of predict time against 17.2 s. This is a second and
+with 71%) — but cost does, at 0.24 s of predict time against 11.9 s. This is a second and
 complementary route to the same end as reference agreement: a calibrated threshold within one
 reference, or concurrence across several with no calibration at all.
 

@@ -475,25 +475,25 @@ macro-F1 is the mean over all six non-brain datasets, ontology concordance the m
 four of those that carry Cell Ontology ids; cost is the mean per query (Table 3). The two brain
 splits are excluded from these aggregates and reported per dataset in Table 4, because the
 columns below come from one measurement pass on an idle machine and brain was run afterwards.
-Adding brain at subclass level raises every method by 0.025–0.043 and reorders nothing. Adding
-both brain splits gives
-accuracies over eight of linear-anova-pca 0.857, scANVI 0.855, scArches 0.853, CellTypist
-0.848, **actinn-jax 0.840**, SVM 0.837, ProtoCloud 0.817, SingleR 0.811, kNN 0.792, scTOP
-0.775, scmap-cluster 0.706 — which moves actinn-jax from fourth to fifth, behind CellTypist:
+Adding brain at subclass level raises every method by 0.024–0.043 and reorders nothing. Adding
+both brain splits gives accuracies over eight of scANVI 0.857, linear-anova-pca 0.857,
+scArches 0.853, CellTypist 0.848, **actinn-jax 0.840**, SVM 0.835, ProtoCloud 0.817, SingleR
+0.811, kNN 0.792, scTOP 0.775, scmap-cluster 0.706 — which moves actinn-jax from fourth to
+fifth, behind CellTypist:
 
 | method | acc (5) | macro-F1 (6) | ontology (4) | fit (s) | **predict (s)** | peak mem (MB) |
 |----------|----:|----:|----:|----:|----:|----:|
-| **linear-anova-pca** | **0.839** | 0.699 | 0.808 | **3.4** | **0.33** | 4386 |
-| scArches | 0.833 | **0.701** | 0.804 | 48.7 | 17.2 | 1773 |
-| scANVI | 0.832 | 0.698 | 0.808 | 0.0* | 66.7 | 2087 |
-| **actinn-jax** | 0.831 | 0.683 | **0.811** | 24.2 | **0.54** | 2391 |
-| CellTypist | 0.823 | 0.690 | 0.805 | 54.4 | **0.61** | 1569 |
-| SVM | 0.808 | 0.675 | 0.796 | 55.2 | **0.07** | 1419 |
-| ProtoCloud | 0.790 | 0.649 | 0.778 | 221.5 | 2.07 | 1907 |
-| SingleR | 0.770 | 0.652 | 0.750 | 0.3 | 48.2 | 3612 |
-| kNN | 0.770 | 0.623 | 0.768 | 0.4 | **0.19** | 1483 |
-| scTOP | 0.739 | 0.619 | 0.703 | 1.1 | 1.21 | 1926 |
-| scmap-cluster | 0.646 | 0.550 | 0.771 | 0.3 | 9.30 | 8609 |
+| **linear-anova-pca** | **0.839** | 0.699 | 0.808 | **2.5** | **0.31** | 4341 |
+| scANVI | 0.836 | **0.703** | **0.811** | 0.0* | 58.7 | 2079 |
+| scArches | 0.831 | 0.698 | 0.807 | 37.9 | 11.9 | 1774 |
+| **actinn-jax** | 0.831 | 0.683 | **0.811** | 10.3 | **0.24** | 2407 |
+| CellTypist | 0.823 | 0.690 | 0.805 | 44.0 | **0.52** | 1569 |
+| SVM | 0.806 | 0.675 | 0.794 | 40.5 | **0.06** | 1416 |
+| **ProtoCloud** | 0.790 | 0.649 | 0.778 | 118.6 | 1.32 | 1888 |
+| SingleR | 0.770 | 0.652 | 0.750 | 0.2 | 34.7 | 3623 |
+| kNN | 0.769 | 0.622 | 0.768 | 0.3 | **0.14** | 1489 |
+| **scTOP** | 0.739 | 0.619 | 0.703 | 0.9 | 0.98 | 1927 |
+| scmap-cluster | 0.646 | 0.550 | 0.771 | 0.2 | 7.33 | 8637 |
 
 **Table 3.** Accuracy and cost together, ordered by accuracy. Accuracy is the mean over the five
 shared-vocabulary datasets, macro-F1 is the mean over all six non-brain datasets, ontology
@@ -502,25 +502,24 @@ per query. The two brain splits are reported per dataset in Table 4 instead (see
 
 *In Table 3, scANVI does most of its work in one train+predict pass, attributed to predict.
 
-The top four methods span **0.008 in accuracy, ~205× in predict time** (0.33 s to 67 s) and
-2.5× in memory. The stochastic methods move further than 0.008 between identical reruns on
-their own — scANVI by up to 0.056 across its three repeats — so a rerun with different seeds
-reorders second, third and fourth place. The cost column is what separates them, and scANVI
-is **123× slower than actinn-jax** at accuracy that is tied within that noise. The linear
-pipeline is both the most accurate and the fastest to fit, and pays for it in memory — 4386 vs
-2391 MB — because ANOVA/PCA densify
-a cells × genes matrix while actinn-jax stays sparse; that ~1.8× ratio widens to ~2× at atlas
-scale (6.1 vs 13.2 GB at 49k cells, §4). The two profiles suit different jobs: one-shot
-labeling, versus a reference **trained once and reused**, where a cached model pays fit once
-while the linear pipeline refits scaler/PCA/classifier for every query. ProtoCloud's 222 s CPU
-fit buys nothing at this reference size — and buys the top accuracy at atlas scale (§3.4).
+The top four methods span **0.008 in accuracy, ~250× in predict time** (0.24 s to 58.7 s) and
+2.4× in memory. The stochastic methods move further than 0.008 between identical reruns on
+their own — scArches by up to 0.024 and SVM by 0.023 across three repeats — so a rerun with
+different seeds reorders second, third and fourth place. The cost column is what separates
+them, and scANVI is **250× slower than actinn-jax** at accuracy that is tied within that noise.
+The linear pipeline is both the most accurate and the fastest to fit, and pays for it in memory
+— 4341 vs 2407 MB — because ANOVA/PCA densify a cells × genes matrix while actinn-jax stays
+sparse; that 1.8× ratio holds at atlas scale (8.8 vs 16.6 GB at 49k cells, §4). The two
+profiles suit different jobs: one-shot labeling, versus a reference **trained once and reused**,
+where a cached model pays fit once while the linear pipeline refits scaler/PCA/classifier for
+every query. ProtoCloud's 119 s CPU fit buys nothing at this reference size — and buys the top
+accuracy at atlas scale (§3.4).
 
 
-Those four are the tuned **linear pipeline (0.839)**, scANVI (0.833), scArches (0.832) and
+Those four are the tuned **linear pipeline (0.839)**, scANVI (0.836), scArches (0.831) and
 actinn-jax (0.831) — led by the linear pipeline rather than by a deep model. CellTypist
-(0.823) sits just outside them. actinn-jax has the best
-ontology-aware concordance (0.811), marginally ahead of scANVI's 0.809 — a gap well inside
-repeat noise, so read it as a tie rather than a lead. ProtoCloud (0.790) and scTOP
+(0.823) sits just outside them. actinn-jax and scANVI share the best
+ontology-aware concordance at 0.811. ProtoCloud (0.790) and scTOP
 (0.739) sit below that cluster on these subsampled references: both need conditions these
 splits do not provide — ProtoCloud is data-hungry and becomes the strongest method once given
 a real atlas (§3.4), while scTOP is built for small,
@@ -533,7 +532,7 @@ low-cardinality problems. Per dataset (accuracy):
 | liver_intra (36 types) | 0.802 | linear-anova-pca 0.804 |
 | liver_cross (cross-study) | **0.686 exact / 0.731 ontology** | actinn-jax |
 | blood_gut (86 types) | 0.860 | linear-anova-pca 0.902 |
-| pbmc (8 types) | 0.913 | scArches 0.940 |
+| pbmc (8 types) | 0.913 | scArches 0.929 |
 | brain, subclass (24 types) | 0.986 | ProtoCloud 0.991 |
 | brain, cluster (151 types)‡ | 0.741 | SingleR 0.845 |
 
@@ -596,21 +595,19 @@ raw accuracy would measure the datasets rather than the methods; zero is that sp
 and `leads N` counts the splits a method wins. *B:* fit + predict on the same splits, log
 scale. Diamonds are means over splits, small dots the individual splits, and the line runs from
 the method's worst split to its best. Ranges over the three repeats *within* a split are too
-small to draw here: only scANVI (0.056) and scArches (0.020) move more than 0.009, and five
-methods are exactly deterministic. Per-split detail, unnormalized and with those repeat ranges,
+small to draw here: only scArches (0.024), SVM (0.023) and scANVI (0.015) move more than
+0.012, and six of the eleven are exactly deterministic. Per-split detail, unnormalized and with those repeat ranges,
 is Supplementary Figure S11.
 
-Six methods sit within **0.035** of the per-split leader on average while spanning **3.4 s to
-57 s**, and the full panel spans **0.5 s to 178 s**. The **tuned linear pipeline** is both
-closest to the leader (mean gap 0.014, leading two
-splits) and the cheapest of that group at 3.4 s; kNN and scTOP are faster still, at 0.5 s and
-2.2 s, but give up 0.08 and 0.10, so they hold a different corner of the frontier rather than
-sitting inside it. The deep methods buy little on accuracy — scANVI and scArches place second
-and third by gap, 0.003 and 0.004 behind the linear pipeline, which is inside their own rerun
-noise — and pay 15× its total time for that. **actinn-jax** sits mid-panel: mean gap 0.031 at
-17.9 s, leading the cross-study liver split. What separates it is not on this plot at all but
-on the scaling axes of §3.4 — predict time flat in reference size, and ~2× lower peak memory
-that holds to atlas scale.
+Six methods sit within **0.035** of the per-split leader on average while spanning **2.5 s to
+51 s**, and the full panel spans **0.4 s to 111 s**. scANVI and the **tuned linear pipeline**
+are the closest to the leader — mean gap 0.012 and 0.013, with the linear pipeline leading two
+splits — and one of them costs 47 s against the other's 2.5 s. kNN and scTOP are cheaper still,
+at 0.4 s and 1.8 s, and give up 0.078 and 0.094, so they hold a different corner of the
+frontier rather than sitting inside it. **actinn-jax** sits mid-panel: mean gap 0.030 at 10.0 s,
+leading the cross-study liver split. What separates it is not on this plot but on the scaling
+axes of §3.4 — predict time flat in reference size, and a bounded memory margin over the linear
+pipeline that holds to atlas scale.
 
 Every method's spread across splits is larger than the distance between the leading methods:
 scmap-cluster spans 0.035 to 0.451, SingleR 0.000 to 0.191, actinn-jax 0.000 to 0.104. A mean
@@ -750,28 +747,28 @@ in its GPU transformer, not a portable averaging trick.
 CPU methods. Fit grows with both axes for every trained method, steeply for CellTypist and the
 SVM. Predict is flat in reference size for all six, so that flatness is a property of cached
 inference generally rather than of any one method; the axis that separates them is cardinality,
-where actinn-jax rises 3.2× from 5 to 86 types against the tuned linear pipeline's 11.9×, the
-two meeting at ~0.30 s. SVM and kNN predict faster than either throughout. scTOP's
+where actinn-jax rises 3.1× from 5 to 86 types against the tuned linear pipeline's 11.0×, the
+two meeting at ~0.23 s. SVM and kNN predict faster than either throughout. scTOP's
 smallest-reference point carries one-time import cost and is not a scaling effect.
 
 Fit time grows with reference size and with #cell types for all trained methods —
-actinn-jax's fit goes 3 s → 17 s → 29 s as the reference grows 965 → 14.8k → 24k cells, below
-CellTypist (7 s → 68 s → 123 s) and SVM (4 s → 54 s → 89 s) at every size in the sweep, and
-above the tuned linear pipeline (2 s → 10 s → 19 s); kNN does no work at fit time beyond
+actinn-jax's fit goes 2 s → 16 s → 22 s as the reference grows 965 → 14.8k → 24k cells, below
+CellTypist (7 s → 71 s → 109 s) and SVM (4 s → 46 s → 75 s) at every size in the sweep, and
+above the tuned linear pipeline (1 s → 7 s → 12 s); kNN does no work at fit time beyond
 storing the reference, so all of its cost lands on predict, where it is also the least accurate
 method here.
 
 On the other axis, **predict stays sub-second for every method across the whole sweep**, and
 the first thing to say is that flatness in reference size does not distinguish anything: all
-six move by 1.2–1.9× while the reference grows twenty-five-fold, because a cached model's
+six move by 1.1–2.5× while the reference grows twenty-five-fold, because a cached model's
 inference does not depend on how many cells trained it. Cardinality is where they part.
-actinn-jax rises 3.2× from 5 to 86 types (0.09 → 0.30 s); the tuned linear pipeline starts
-three and a half times cheaper and rises 11.9× (0.03 → 0.31 s), so the two arrive at the same
-place; scTOP rises 11.0×. Neither of the two cheapest is ours — SVM (0.015–0.076 s) and kNN
-(0.021–0.263 s) predict faster than actinn-jax everywhere, and pay for it in accuracy (Table 3).
+actinn-jax rises 3.1× from 5 to 86 types (0.074 → 0.228 s); the tuned linear pipeline starts
+three times cheaper and rises 11.0× (0.022 → 0.244 s), so the two arrive at the same place;
+scTOP rises 10.5×. Neither of the two cheapest is ours — SVM (0.016–0.055 s) and kNN
+(0.018–0.100 s) predict faster than actinn-jax everywhere, and pay for it in accuracy (Table 3).
 
 What the cached reference buys is therefore not a uniquely flat predict but the right *ratio*:
-a sub-second call recurring against a fit of 19–123 s that is paid once. That is the regime
+a sub-second call recurring against a fit of 12–109 s that is paid once. That is the regime
 that matters when one reference serves many queries, and it is what makes chaining several
 annotation stages practical; it would be as true of the linear pipeline if it cached its
 scaler, PCA and classifier rather than refitting them per query. (This sweep's own
@@ -805,46 +802,44 @@ and hold the query fixed. The reverse case is the one a user meets most often --
 built once, then pointed at everything -- and it is where a flat inference profile should
 pay. Holding the reference at 17,753 cells drawn from seven HLiCA studies and growing the
 query from 50k cells to the entire 524,699-cell atlas, actinn-jax annotates the whole atlas
-in **41 s** (Figure 4A). Accuracy on the withheld eighth study is 0.720 and does not move
+in **31 s** (Figure 4A). Accuracy on the withheld eighth study is 0.720 and does not move
 across the range, as it should not: the subsets are nested.
 
-The tuned linear pipeline stays three to four times slower throughout, annotating the same
-atlas in 126 s, but the gap narrows as the query grows and the reason is ours rather than
-theirs: actinn-jax gives up 31% of its rate across the range, 18,400 → 12,800 cells/s, while
-the linear pipeline holds essentially flat at ~4,200, losing 6% (Figure 4B). The advantage is
-4.2× at 50k cells and 3.1× at the full atlas. It is the cheaper method whose per-cell cost
-drifts upward here, which is the opposite of what a flat-inference argument predicts, so the
-claim this axis supports is a three- to fourfold constant factor rather than flatness. The
+The tuned linear pipeline stays about twice as slow throughout, annotating the same atlas in
+67 s, and the gap narrows as the query grows: actinn-jax gives up 21% of its rate across the
+range, 21,400 → 16,800 cells/s, against the linear pipeline's 10%, 8,700 → 7,900 (Figure 4B).
+The advantage is 2.4× at 50k cells and 2.1× at the full atlas. It is the cheaper method whose
+per-cell cost drifts upward, which is the opposite of what a flat-inference argument predicts,
+so the claim this axis supports is a roughly twofold constant factor rather than flatness. The
 flat-inference result in §3.1 holds along the reference axis, which is a different axis from
 this one.
 
-**This inverts the Table 3 ordering, and the two measurements do not overlap.** Every query in
-this sweep holds 50,000 cells or more; every query in Table 3 holds 13,550 or fewer, so no
-query size is measured in both, and the crossover falls in the untested gap between them.
+**Which of the two is cheaper depends on how many cells are annotated at once.** The two
+measurements do not overlap — every query in this sweep holds at least 50,000 cells, every
+query in Table 3 at most 13,550 — but across both the ordering turns over once, with query
+size, at around 2,500 cells:
 
-Within Table 3's range the ordering is mixed rather than uniform. The linear pipeline predicts
-faster on six of the eight splits, by 1.3× to 3.1×, and actinn-jax is faster on liver_cross
-(0.217 s against 0.267 s for 3,396 cells) and level on the brain cluster split (0.363 against
-0.372 for 3,618). Query size does not order those outcomes — actinn-jax wins at 3,396 cells and
-loses at 13,550 — because the two methods' per-cell costs depend on the gene panel each dataset
-selects. Table 3's 0.54 s against 0.33 s is a mean over that mixture, not a result that holds
-per dataset.
+| query cells | 657 | 1,332 | 2,563 | 2,694 | 3,396 | 13,550 | 50,000 | 524,699 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| actinn-jax (s) | 0.083 | 0.141 | 0.232 | **0.183** | **0.204** | **0.566** | **2.34** | **31.3** |
+| linear pipeline (s) | **0.049** | **0.095** | 0.223 | 0.209 | 0.258 | 1.049 | 5.72 | 66.8 |
 
-Part of the small-query gap is one-time cost. Calling `predict` repeatedly on one liver_intra
-model and query settles from 0.24–0.30 s on the first call to 0.12–0.13 s by the third (two
-runs, `predict_overhead_probe.py`), so roughly 0.12–0.17 s is compilation and warm-up — about
-half the first call at 1,332 cells, and near a tenth of it at 13,550. The harness times the
-first call, which is what a one-shot annotation costs, but it means Table 3 charges actinn-jax
-a fixed cost that the linear pipeline does not pay.
+Below the crossover the linear pipeline is 1.5–1.7× faster; above it actinn-jax is, by 1.2×
+at 2,694 cells, 1.9× at 13,550 and 2.1–2.4× across the atlas sweep. Part of the small-query
+end is one-time cost: calling `predict` repeatedly on one liver_intra model and query settles
+from 0.24–0.30 s on the first call to 0.12–0.13 s by the third (`predict_overhead_probe.py`),
+so roughly 0.12–0.17 s is compilation and warm-up — about half the first call at 1,332 cells
+and a tenth of it at 13,550. The harness times the first call, which is what a one-shot
+annotation costs.
 
-At atlas scale a different mechanism dominates and the ordering stops being mixed. actinn-jax
-climbs from 4,100–15,700 cells/s on the Table 3 queries to 12,800–18,400 here, while the linear
-pipeline falls from 9,700–13,000 to ~4,200, because its dense feature block leaves cache:
-20,000 genes over 1,332 cells is 107 MB, and the same 20,000 genes over a 50,000-cell block is
-4 GB and bounded by memory bandwidth. Which method is cheaper therefore depends on how many
-cells are annotated at once — which a benchmark reporting one query size cannot show.
+The large-query end has a different mechanism. actinn-jax's throughput rises with the query,
+from 7,900 cells/s at 657 cells to 24,000 at 13,550, settling at 16,800–21,500 across the atlas
+sweep; the linear pipeline holds 11,500–14,000 on the small queries and falls to 7,900–8,700 at
+atlas scale, because its dense feature block leaves cache: 20,000 genes over 1,332 cells is
+107 MB, and the same 20,000 genes over a 50,000-cell block is 4 GB and bounded by memory
+bandwidth. A benchmark reporting one query size cannot show any of this.
 
-**Peak memory does not separate them at all.** Both land at 26–28 GB on the full atlas
+**Peak memory does not separate them at all.** Both land at 33.2 GB on the full atlas
 (Figure 4C), because on this axis peak memory measures holding the query rather than running
 the method: at the largest size, prediction added nothing measurable on top of the resident
 query for either. A caller streaming from disk would pay less, and would pay it equally. The
@@ -866,9 +861,9 @@ the spread is inspectable rather than summarised away.
 
 **Figure 4.** Cost against query size — 50,000 to 524,699 cells — with the reference fixed at
 17,753 cells. Table 3's queries are all smaller than the leftmost point here (657 to 13,550
-cells), so the two do not overlap. *A:* wall-clock to annotate the query. *B:* throughput, which declines 31% for actinn-jax and holds flat for
-the linear pipeline, narrowing the advantage from 4.2× to 3.1×. *C:* peak memory, which does
-not distinguish them -- on this axis it measures holding the query, not running the method. Three
+cells), so the two do not overlap. *A:* wall-clock to annotate the query. *B:* throughput, which declines 21% for actinn-jax and
+10% for the linear pipeline, narrowing the advantage from 2.4× to 2.1×. *C:* peak memory, which
+does not distinguish them — on this axis it measures holding the query, not running the method. Three
 runs per point on a shared laptop: *A* and *B* report the fastest run, since contention can
 only add time, and *C* the largest peak, since resident-set size understates a run that the OS
 has partly evicted. Per-run values are in `results_query_scaling.csv`.
@@ -1153,7 +1148,7 @@ kNN reaches the highest novelty detection (83%) by keeping only 36% of the query
 different operating regime rather than a better one, and the linear pipeline is the weakest
 here, flagging 46% of novel cells at the threshold where actinn-jax flags 73%. The distinction
 worth drawing is therefore not that actinn-jax abstains better than the deep methods but that
-it abstains as well for 0.54 s of predict time against scArches's 17.2 s and scANVI's 66.7 s
+it abstains as well for 0.24 s of predict time against scArches's 11.9 s and scANVI's 58.7 s
 (Table 3) — the same accuracy-at-a-fraction-of-the-cost pattern §3.1 reports, applied to the
 mechanism the workflow of §3.5 routes on.
 
@@ -1169,24 +1164,26 @@ other.
 ## 4. Discussion
 
 **Method choice is now dominated by cost, not accuracy.** The four leading methods are
-separated by 0.008 in mean accuracy and by ~205× in predict time (§3.1), so for most
+separated by 0.008 in mean accuracy and by ~250× in predict time (§3.1), so for most
 annotation jobs the decision is made on the cost axes. On laptop-sized references the tuned
-linear pipeline is the best of them on accuracy-per-second (0.839, fitting in 3.0 s); at
+linear pipeline is the best of them on accuracy-per-second (0.839, fitting in 2.5 s); at
 atlas scale ProtoCloud is the most accurate by a clear margin (0.976 vs 0.936 at 49k lung
-cells; 0.905 vs 0.824 at 47k liver cells), having been below the cluster on the subsampled
-matrix. actinn-jax's place in that picture rests on a cost profile with two properties that
-matter for repeated use rather than for a single labeling run.
+cells; 0.905 vs 0.824 at 47k liver cells; 0.998 vs 0.992 at 46k brain cells), having been
+below the cluster on the subsampled matrix. actinn-jax's place in that picture rests on a cost
+profile with two properties that matter for repeated use rather than for a single labeling run.
 
-*Footprint.* Inference is **sub-second** — flat in reference size, and rising 3.2× with
-cardinality while staying under a third of a second (§3.4) — so a query costs the same
-against a 1k-cell reference and a 49k-cell
-one. Peak memory is unremarkable on small references (2.4 GB mean — seven of the ten other
-methods are lighter), but it is the lowest of those we carried to **atlas scale**:
-~2× below the linear pipeline (6.1 vs 13.2 GB at 49k lung cells; 6.5 vs 12.6 GB at 47k liver
-cells), and below scTOP above ~25k cells, where scTOP's rank processing densifies and crosses
-over (9.3 vs 6.5 GB at 47k). The advantage is bounded at ~2–3× rather than widening. Combined
-with the train-once/map-many cache, a reused reference pays fit once and then only the flat
-predict cost, where the linear pipeline refits scaler/PCA/classifier for every query.
+*Footprint.* Inference is **sub-second** — flat in reference size, and rising 3.1× with
+cardinality while staying under a quarter of a second (§3.4) — so a query costs the same
+against a 1k-cell reference and a 49k-cell one. Peak memory is unremarkable: 2.4 GB mean on
+small references, where seven of the ten other methods are lighter, and at **atlas scale** it
+is the third of four we carried there — ProtoCloud is the lightest on all three tissues
+(7.3 GB at 49k lung, 8.6 at 47k liver, 9.1 at 46k brain), then scTOP (7.5 / 9.3 / 10.6), then
+actinn-jax (8.8 / 9.6 / 14.5), with the linear pipeline last (16.6 / 17.0 / 20.9). What
+actinn-jax has on that axis is a **1.4–1.9× margin over the linear pipeline**, bounded rather
+than widening, and a profile that stays flat where the linear pipeline's densified feature
+block grows. Combined with the train-once/map-many cache, a reused reference pays fit once and
+then only the flat predict cost, where the linear pipeline refits scaler/PCA/classifier for
+every query.
 
 *Those two properties are what the workflows are built on.* The practical gains come not from
 the flat classifier but from the **broad→focused** pipeline (§3.5): a census-scale broad model

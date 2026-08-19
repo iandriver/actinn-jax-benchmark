@@ -1,0 +1,41 @@
+# Atlas-scale memory/time scaling on a third tissue: Allen human MTG nuclei, 24 subclasses,
+# 10x 3' v3 only. Caps chosen so the reference sizes span the same range as the lung and
+# liver sweeps (2.4k -> 61k cells), which is what makes the three curves comparable.
+# Source file written by benchmark/explore/make_brain_dataset.py.
+output: results/scaling_memory_brain
+label: Subclass
+repeats: 1
+ontology_obo: null
+datasets:
+  - name: brain_100
+    type: intra
+    path: /Volumes/IanSSD/allen_mtg/brain_all10x.h5ad
+    subsample_per_label: 100
+    test_frac: 0.25
+  - name: brain_300
+    type: intra
+    path: /Volumes/IanSSD/allen_mtg/brain_all10x.h5ad
+    subsample_per_label: 300
+    test_frac: 0.25
+  - name: brain_1000
+    type: intra
+    path: /Volumes/IanSSD/allen_mtg/brain_all10x.h5ad
+    subsample_per_label: 1000
+    test_frac: 0.25
+  - name: brain_2000
+    type: intra
+    path: /Volumes/IanSSD/allen_mtg/brain_all10x.h5ad
+    subsample_per_label: 2000
+    test_frac: 0.25
+  - name: brain_4000
+    type: intra
+    path: /Volumes/IanSSD/allen_mtg/brain_all10x.h5ad
+    subsample_per_label: 4000
+    test_frac: 0.25
+methods:
+  - name: actinn-jax
+  - name: sctop
+    python: .venv-protocloud/bin/python
+  - name: linear-anova-pca
+  - name: protocloud
+    python: .venv-protocloud/bin/python

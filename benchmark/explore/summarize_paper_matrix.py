@@ -17,7 +17,8 @@ import os
 
 import pandas as pd
 
-RUNS = ["results/paper", "results/paper_baselines", "results/paper_brain"]
+RUNS = ["results/paper_rerun", "results/paper_brain_rerun",
+        "results/paper_brain_cluster_rerun"]
 # Accuracy aggregate excludes lung_cross: its exact-match score is a vocabulary artefact.
 NO_ACC = {"lung_cross"}
 DROP = {"actinn-orig"}          # benchmarked, then cut from the paper panel

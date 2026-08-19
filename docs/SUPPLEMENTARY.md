@@ -100,7 +100,7 @@ score.
 | liver_intra (36 types) | 0.802 | linear-anova-pca 0.804 |
 | liver_cross (cross-study) | **0.686 exact / 0.731 ontology** | actinn-jax |
 | blood_gut (86 types) | 0.860 | linear-anova-pca 0.902 |
-| pbmc (8 types) | 0.913 | scArches 0.940 |
+| pbmc (8 types) | 0.913 | scArches 0.929 |
 | brain, subclass (24 types) | 0.986 | ProtoCloud 0.991 |
 | brain, cluster (151 types) | 0.741 | SingleR 0.845 |
 
@@ -116,10 +116,10 @@ cheap, not on the shape of the curve that makes it cheap.
 
 ![accuracy and memory against reference size](figures/fig_atlas_scaling.png)
 
-**Figure S6.** Accuracy and peak memory against reference size, four methods carried to full
-atlas scale on two datasets. *A:* lung, 3k → 49k reference cells. *B:* the HLiCA liver atlas,
-2.7k → 47k, an independent replication of the same reversal — a prototype VAE moves from worst
-to best as the reference grows. *C:* peak memory over both sweeps. Error bars on *A* and *B*
+**Figure S6.** Accuracy and peak memory against reference size, four methods carried to atlas
+scale on three tissues. *A:* lung, 3.1k → 49k reference cells. *B:* the HLiCA liver atlas,
+2.7k → 47k. *C:* Allen brain (MTG), 1.8k → 46k. In each one a prototype VAE moves from worst to
+best as the reference grows. *D:* peak memory over all three sweeps. Error bars on *A* and *B*
 are 95% binomial intervals on the query, which grows with the reference (1,035 to 16,398 cells
 on lung), so they narrow from left to right; each point is a single run.
 
@@ -129,7 +129,7 @@ on lung), so they narrow from left to right; each point is a single run.
 CPU methods. Fit grows on both axes for every trained method, steeply for CellTypist and the
 SVM. Predict is flat in reference size for all six, so that flatness is a property of cached
 inference generally rather than of any one method; cardinality is the axis that separates them,
-where actinn-jax rises 3.2× from 5 to 86 types against the tuned linear pipeline's 11.9×. SVM
+where actinn-jax rises 3.1× from 5 to 86 types against the tuned linear pipeline's 11.0×. SVM
 and kNN predict faster than either throughout. scTOP's smallest-reference point carries
 one-time import cost and is not a scaling effect.
 
@@ -137,8 +137,8 @@ one-time import cost and is not a scaling effect.
 
 **Figure S8.** Cost against query size — 50,000 to 524,699 cells — with the reference fixed at
 17,753 cells; every query in the main accuracy panel is smaller than the leftmost point here.
-*A:* wall-clock to annotate the query. *B:* throughput, which declines 31% for actinn-jax and holds
-flat for the linear pipeline, narrowing the advantage from 4.2× to 3.1×. *C:* peak memory,
+*A:* wall-clock to annotate the query. *B:* throughput, which declines 21% for actinn-jax and
+10% for the linear pipeline, narrowing the advantage from 2.4× to 2.1×. *C:* peak memory,
 which does not distinguish them — on this axis it measures holding the query, not running the
 method. Three runs per point on a shared laptop: *A* and *B* report the fastest run, since
 contention can only add time, and *C* the largest peak, since resident-set size understates a
@@ -171,7 +171,7 @@ repeats on both axes. Axis limits are per panel, so vertical position compares m
 a split and not across them — the splits differ by more than half an accuracy point end to
 end (pbmc 0.87–0.94, cross-dataset lung 0.33–0.38†), which is why Figure 1 normalizes. Most
 error bars are invisible because most methods are deterministic given a fixed split; the ones
-that show are scANVI and scArches, whose repeats differ by up to 0.056 and 0.020.
+that show are scArches, SVM and scANVI, whose repeats differ by up to 0.024, 0.023 and 0.015.
 † cross-dataset lung exact-match accuracy is a label-vocabulary artefact (§3.1).
 
 ## Gene budget on the Open Problems panel
