@@ -159,31 +159,61 @@ Three commands. Stage 2 of the normal reference build — the scPRINT embedding 
 entirely**, because the hierarchy comes from the teacher:
 
 ```bash
+# Keep every path off /tmp. The census pull is hours and 881 MB; losing it to a reboot
+# means paying for it twice, which has already happened once.
+WORK=/Volumes/IanSSD/actinn_ref_build
+
 # 1. breadth: the same census pull the shipped reference uses (5.3 h, network-bound)
-ACTINN_REF_WORK=/tmp/actinn_ref_build PER_TYPE=60 CENSUS_VERSION=2025-11-08 \
+ACTINN_REF_WORK=$WORK PER_TYPE=60 CENSUS_VERSION=2025-11-08 \
   .venv-scprint/bin/python benchmark/explore/fetch_census_wide.py
 
 # 2. teacher labels the corpus (no GPU; 73 s for 51k cells)
-.venv-panhuman/bin/python benchmark/explore/distill_dump.py --cap 600
+ACTINN_REF_WORK=$WORK .venv-panhuman/bin/python benchmark/explore/distill_dump.py \
+  --cap 600 --out $WORK/distill
 
 # 3. student (CPU; 33 s to train, ~4 min including both scoring arms)
-.venv/bin/python benchmark/explore/distill_train.py --out /tmp/panhuman_distill_census
+.venv/bin/python benchmark/explore/distill_train.py \
+  --dump $WORK/distill --obo $WORK/cl-basic.obo --out $WORK/panhuman_distill_census
 
 # 4. how does it compare to what we ship, on a query neither trained on?
 .venv/bin/python benchmark/explore/distill_compare_broad.py \
   --query /Volumes/IanSSD/hlica/liver_query_xstudy.h5ad \
-  --student /tmp/panhuman_distill_census \
-  --teacher-parquet /tmp/panhuman_tier1_liver_cross.parquet
+  --student $WORK/panhuman_distill_census \
+  --teacher-parquet $WORK/panhuman_tier1_liver_cross.parquet
 ```
 
 `distill_dump.py` picks the census pull up automatically once it exists (the `census` entry
 in `CORPORA`, skipped silently when absent); `--only census` restricts the run to it. Total
 compute after the pull: **under 10 minutes**, all CPU.
 
+`--cap 600` is not the script default (400) and is what reproduces the lung arm's 18,551
+cells; `PER_TYPE=60` likewise (default 40) for the census arm's 51,346. With both set and
+the census pinned to `2025-11-08`, the corpus reproduces the shipped model exactly — 867
+types, 376 tissues, 408 teacher fine labels — and the rebuild reproduces every metric in
+the results table above to four decimals.
+
 One trap worth naming: the census pull must carry `feature_name`. Pan-human Azimuth keys
 its 5,055-gene panel on **symbols**, while census data is Ensembl-keyed, so a pull without
 the symbol column produces a corpus the teacher cannot score. `fetch_census_wide.py` now
 requests it — caught before the 5-hour pull rather than after.
+
+### Rebuilding under actinn-jax's small-reference schedule
+
+actinn-jax [#1](https://github.com/iandriver/actinn-jax/pull/1) scales the training
+schedule for references under 5,000 cells, which raises the question of whether this
+reference should be rebuilt. Measured on a full rebuild: **no.**
+
+A coarse group holding a single class gets no classifier, so this model's 140 groups are
+only **9 trained arms**, six of them at or above the pivot. Those six and the coarse model
+come out bit-identical; the four below it retrain (Perivascular 3,550 cells, Glial 1,033,
+Muscle 877, Embryonic 235), which is 6.7% of the corpus. In-corpus fidelity is unchanged at
+0.7569, and on withheld liver 21 of 5,391 predictions move — 4 better, 7 worse, McNemar
+p = 0.55. Fit goes 28.3 s → 36.1 s.
+
+The gain is real where arms are genuinely small: on the three-atlas corpus (29,205 cells,
+6 arms, 4 below the pivot) 3.7% of predictions move, 58 better to 33 worse, p = 0.011,
+lifting withheld-liver fidelity 0.5145 → 0.5192. So the schedule matters for a hierarchy
+built from a small corpus, and not for this one.
 
 ## Licensing and attribution
 

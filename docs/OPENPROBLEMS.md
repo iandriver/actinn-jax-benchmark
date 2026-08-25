@@ -317,6 +317,56 @@ cleanly-separated reference, gene budget past ~1000–3000 is **pure wasted comp
 signal to gain, and the small F1 dip is a fixed rare-class reassignment, not a worsening
 trend. (`benchmark/explore/gene_budget.py hypomap out.csv 1000_op,2000,3000,5000,7500,10000`)
 
+## Aside: the smoke-test resource caught a defaults bug
+
+Every component in `openproblems_component/` is developed against OP's `resources_test`
+copy of `cxg_immune_cell_atlas` — **437 training cells, 163 test cells, 31 classes**, the
+task's own top-1000 HVG mask. It exists as a pre-flight check that a component runs at all,
+not as a measurement. It turned out to measure something anyway.
+
+Scored against ground truth on that split, actinn-jax at its defaults sat near the
+majority-vote control while every convex baseline was fine:
+
+| method | accuracy |
+|---|---|
+| celltypist | 0.503 |
+| svm_sgd | 0.491 |
+| linear_anova_pca | 0.485 |
+| sctop | 0.393 |
+| **actinn-jax (defaults)** | **0.086** |
+
+The model was not the problem — the schedule was. Holding everything else fixed and only
+training longer walks it back up:
+
+| actinn-jax setting | accuracy | macro-F1 |
+|---|---|---|
+| `num_epochs=50` (the default) | 0.086 | 0.035 |
+| `num_epochs=200` | 0.264 | 0.108 |
+| `num_epochs=500` | 0.307 | 0.138 |
+| `num_epochs=500, batch_size=32` | 0.405 | 0.239 |
+| `num_epochs=500, batch_size=32, lr=1e-3` | 0.399 | 0.248 |
+
+**Cause.** `auto_batch_size` clamped the minibatch to a floor of 128 and `num_epochs` was a
+fixed 50, so the number of gradient steps a reference receives was proportional to its cell
+count. 437 cells at batch 128 is three steps per epoch — **~170 updates for the entire
+fit**, and the network barely leaves its initialisation. Accuracy on this split tracks total
+gradient steps almost monotonically, which is the signature. Nothing warned: no error, no
+convergence check, just bad labels.
+
+**Fix** ([iandriver/actinn-jax#1](https://github.com/iandriver/actinn-jax/pull/1)):
+`num_epochs` now defaults to `'auto'` alongside `batch_size`, both pivoting on a
+5,000-cell threshold. Below it the batch shrinks toward 32 and the epoch count rises as
+1/n; at 437 cells `'auto'` resolves to batch 32 / 573 epochs — the configuration of the
+best row above. Below ~1,500 total steps it now warns instead of failing silently.
+
+**This does not move anything on this page.** At or above 5,000 cells the auto rules return
+exactly the historical schedule (50 epochs; batch 128 up to 12.8k cells, then n/100 capped
+at 1024), verified bit-identical in both weights and stdout. The smallest training set among
+the six leaderboard datasets is dkd at **33,898** cells and the largest is tabula_sapiens at
+**482,868** — the entire leaderboard sits far above the pivot, so every number above stands
+unchanged. The bug only ever bit references of a few hundred cells, which is a regime this
+benchmark never enters and the smoke test always does.
+
 ## Reading the result
 
 1. **actinn-jax vs. its direct sibling `mlp`.** Both are multilayer perceptrons; the only
