@@ -1,129 +1,165 @@
 # actinn-jax-benchmark
 
-## 🏆 Objective external placement — **[Open Problems `label_projection`](docs/OPENPROBLEMS.md)**
+A comparison of methods for labelling cells in single-cell data by mapping them onto an
+already-labelled reference. It measures accuracy, runtime and memory together, on a
+laptop, because those are the numbers that decide what you can actually run.
 
-Run through the community-standard [Open Problems](https://openproblems.bio/benchmarks/label_projection)
-benchmark (their 6 datasets, splits, and metrics; scored against their published v2.0.0
-leaderboard): **actinn-jax places 3rd of 17 on accuracy — and 1st among every method that
-completes all 6 datasets** — beating its PCA-space `mlp` sibling on both metrics and posting
-the best accuracy on the hardest dataset (tabula_sapiens, 160 types). Full table:
-**[docs/OPENPROBLEMS.md](docs/OPENPROBLEMS.md)**.
+[actinn-jax](https://github.com/iandriver/actinn-jax) is one of the methods tested here.
+This repository is where its claims get checked.
 
-## 📄 Comprehensive benchmark report — **[docs/PAPER.md](docs/PAPER.md)**
+## What we found
 
-13-method × 8-split neutral comparison of accuracy × speed × memory on commodity
-Apple-Silicon hardware. **Headline:** **actinn-jax ties the most accurate methods (mean
-accuracy 0.831 vs. linear-anova-pca 0.839 / scArches 0.833 / scANVI 0.832 — a span smaller
-than the stochastic methods' own rerun noise) while predicting 123× faster than scANVI
-(0.54 s vs. 66.7 s per query); no method dominates it on both accuracy and speed.** It does
-*not* hold that standing at cluster-level granularity: on the 151-type Allen brain split it
-places tenth of eleven. Figures in [docs/figures/](docs/figures). Reproduce:
-`python -m benchmark.driver configs/paper.yaml` (then `configs/paper_baselines.yaml`,
-`configs/paper_brain.yaml`, `configs/paper_brain_cluster.yaml`).
+Thirteen methods across eight splits of seven datasets, 8 to 151 cell types.
 
-## ⭐ Headline: foundation-model-shaped, CPU-fast cell typing — **[docs/MODEL_FLOW.md](docs/MODEL_FLOW.md)**
+Accuracy barely separates the top methods. actinn-jax averages 0.831, against 0.839 for a
+tuned linear pipeline, 0.833 for scArches and 0.832 for scANVI. That spread is smaller
+than the run-to-run noise of the methods that use random initialisation, so treating it as
+a ranking would be reading noise.
 
-A two-stage flow that uses the **scPRINT** foundation model *once, offline, on a GPU*
-to **discover cell-type structure**, then trains a small **[actinn-jax](https://github.com/iandriver/actinn-jax)**
-classifier that annotates new data in **milliseconds on a CPU**.
+Cost separates them by two orders of magnitude. actinn-jax predicts a query in 0.54
+seconds where scANVI takes 66.7, about 123 times faster. No method in the panel beats it
+on both accuracy and speed.
 
-- **scPRINT-discovered coarse→fine hierarchy beats a flat classifier on all 3 datasets**
-  (lung 46 types, blood+gut 86, multi-organ Tabula Sapiens 83/8 organs), ties an expert
-  biological hierarchy, and beats a random-grouping control.
-- scPRINT's discovered groups **recover biological lineage** (ARI **0.54**), not organ
-  (0.02) — it groups by cell-type identity, which is the point.
-- **Inference is pure CPU, <1 s** for thousands of cells, in ~2 GB RAM — vs scPRINT as a
-  predictor (~1 s/cell on CPU, and weak zero-shot). **Use its embeddings, not its labels.**
-- The GPU step is cached: committed [`data/embeddings/`](data/embeddings) (7–16 MB each)
-  let you reproduce the structure with **no GPU** — `python benchmark/explore/discover_hierarchy.py blood_gut --bio Lineage`.
+It does not win everywhere. On the Allen brain split, which asks for 151 cluster-level
+labels, actinn-jax places tenth of eleven. Fine-grained taxonomies are its weak point and
+the report says so.
 
-- **Depth, not just breadth:** the same fast CPU model resolves *within*-cell-type
-  structure — **hepatocyte zonation** (portal/mid/central) at ~0.99 within-1-zone,
-  generalizing across donors and even across independent datasets (GSE158723↔GSE136103).
-  See **[docs/ZONATION.md](docs/ZONATION.md)**.
+The full report is [docs/PAPER.md](docs/PAPER.md). Figures are in
+[docs/figures/](docs/figures).
 
-Read the mini-paper: **[docs/MODEL_FLOW.md](docs/MODEL_FLOW.md)** · two-stage details in
-[docs/TWO_STAGE.md](docs/TWO_STAGE.md) · zonation in [docs/ZONATION.md](docs/ZONATION.md).
+## Checked against an outside benchmark
 
----
+Running our method through [Open Problems](https://openproblems.bio/benchmarks/label_projection),
+using their datasets, their splits and their metrics, and scoring against their published
+v2.0.0 leaderboard: actinn-jax places 3rd of 17 on accuracy, and 1st among the methods
+that complete all six datasets. It beats the PCA-space `mlp` that is closest to it in
+design, and posts the best accuracy on the hardest dataset, tabula_sapiens, with 160 cell
+types.
 
-The rest of this repo is a **neutral benchmark** of reference-based single-cell
-cell-type annotation methods, comparing **accuracy × runtime × memory** on commodity
-hardware (Apple Silicon, CPU-first).
-[actinn-jax](https://github.com/iandriver/actinn-jax) is one method among many.
+Details in [docs/OPENPROBLEMS.md](docs/OPENPROBLEMS.md).
 
-## Why
+## The two-stage idea
 
-The most rigorous recent accuracy benchmark
-([Huang et al. 2024, *Brief. Bioinform.*](https://academic.oup.com/bib/article/25/5/bbae392/7730135))
-reports **no runtime or memory**; the classic one that did
+Foundation models are good at understanding cell-type structure and slow at labelling
+cells. So use them for the first job only.
+
+Run [scPRINT](https://github.com/cantinilab/scPRINT) once, offline, on a GPU, to work out
+how cell types group together. Train a small actinn-jax classifier on that grouping. From
+then on, labelling new data takes milliseconds on a CPU.
+
+What we measured:
+
+- The scPRINT-derived grouping beats a flat classifier on all three datasets we tried
+  (lung with 46 types, blood and gut with 86, Tabula Sapiens with 83 across 8 organs). It
+  matches a hierarchy an expert wrote by hand, and beats a random grouping.
+- The groups it finds track biological lineage (ARI 0.54), not which organ the cells came
+  from (0.02). Grouping by cell identity is the point.
+- Labelling is CPU-only and takes under a second for thousands of cells in about 2 GB of
+  RAM. Using scPRINT itself as the labeller takes roughly a second per cell on CPU, and
+  its zero-shot labels are weak. Use its embeddings, not its predictions.
+- The GPU step is cached. The embeddings are committed in
+  [data/embeddings/](data/embeddings) at 7 to 16 MB each, so you can reproduce the
+  structure with no GPU:
+  `python benchmark/explore/discover_hierarchy.py blood_gut --bio Lineage`
+
+The same fast CPU model also resolves structure inside a cell type. It places hepatocytes
+along the portal to central axis at about 0.99 within-one-zone accuracy, and that holds
+across donors and across two independent datasets (GSE158723 and GSE136103). See
+[docs/ZONATION.md](docs/ZONATION.md).
+
+Write-up: [docs/MODEL_FLOW.md](docs/MODEL_FLOW.md), with details in
+[docs/TWO_STAGE.md](docs/TWO_STAGE.md).
+
+## Why this benchmark exists
+
+The most careful recent accuracy comparison
+([Huang et al. 2024](https://academic.oup.com/bib/article/25/5/bbae392/7730135)) reports
+no runtime and no memory. The classic one that did
 ([Abdelaal et al. 2019](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1795-z))
-predates foundation models. This repo measures both, across three method tiers, and
-reports an **accuracy × runtime Pareto** view.
+predates foundation models. This repository measures all three, and reports accuracy
+against runtime as a trade-off rather than a ranking.
 
-See [docs/METHODS_SURVEY.md](docs/METHODS_SURVEY.md) for a cited, adversarially-verified
-survey of the method landscape that motivates the shortlist.
+[docs/METHODS_SURVEY.md](docs/METHODS_SURVEY.md) is a cited survey of the field, which is
+where the shortlist came from.
 
-## Design
-
-- **Subprocess isolation** — each method runs via `benchmark.runner` in its own
-  (optionally separate) environment; I/O is standardized (`h5ad` in → parquet
-  predictions + json metrics out). This sidesteps R/Python/jax/torch/TF conflicts.
-- **Uniform adapters** — every method implements `fit(ref, label)` / `predict(query)`
-  ([`benchmark/adapters/`](benchmark/adapters)).
-- **Honest device reporting** — CPU/MPS only here; GPU-native methods are timed on
-  Apple hardware (a no-CUDA laptop scenario). A cloud-GPU run is planned but deferred
-  (see [docs/AWS_GPU.md](docs/AWS_GPU.md)).
-
-## Method tiers
-
-- **Tier 1 — classical (CPU):** actinn-jax, original ACTINN, CellTypist, SingleR,
-  scmap, scPred, SVM, kNN. *(SVM, kNN, CellTypist, actinn-jax implemented; R methods
-  and original ACTINN to follow.)*
-- **Tier 2 — deep reference mapping:** scANVI, scArches, Symphony, Azimuth.
-- **Tier 3 — foundation models:** scGPT, scBERT, scDeepSort, TOSICA.
-
-## Quick start
+## Running it
 
 ```bash
-pip install -e .                       # core + Tier-1 python deps
-python -m benchmark.driver configs/smoke.yaml     # synthetic end-to-end smoke test
+pip install -e .
+python -m benchmark.driver configs/smoke.yaml
 ```
 
-Lung atlas run (needs the two h5ad files + a Cell Ontology OBO for lineage scoring):
+The smoke config runs end to end on synthetic data and takes a minute. It is the fastest
+way to check your install works.
+
+A real run needs the data files and, for lineage-aware scoring, a Cell Ontology file:
 
 ```bash
 curl -L -o /tmp/cl-basic.obo http://purl.obolibrary.org/obo/cl/cl-basic.obo
 python -m benchmark.driver configs/lung.yaml
 ```
 
-Results are written to `results/<name>/results.csv` (one tidy row per
-dataset × method × repeat).
+Results land in `results/<name>/results.csv`, one row per dataset, method and repeat.
+
+To reproduce the report: `configs/paper.yaml`, then `configs/paper_baselines.yaml`,
+`configs/paper_brain.yaml` and `configs/paper_brain_cluster.yaml`.
+
+## How it is built
+
+Each method runs in a separate process, and where necessary a separate environment, so
+that R, PyTorch, TensorFlow and JAX never have to agree on dependency versions. A method
+reads `h5ad` and writes parquet predictions plus a json of metrics.
+
+Every method implements the same two calls, `fit(ref, label)` and `predict(query)`, in
+[benchmark/adapters/](benchmark/adapters).
+
+Timing is reported for the hardware it actually ran on, which is Apple Silicon CPU and
+MPS. Methods designed for CUDA GPUs are timed on a laptop with no CUDA, which is a real
+scenario for many labs but is not the hardware their authors assume. A cloud GPU run is
+planned ([docs/AWS_GPU.md](docs/AWS_GPU.md)).
 
 ## Adding a method
 
-Subclass `AnnotationMethod`, implement `fit`/`predict`, and `@register` it
-(see [`benchmark/adapters/svm_adapter.py`](benchmark/adapters/svm_adapter.py)).
-Heavier methods get their own environment under [`envs/`](envs).
+Subclass `AnnotationMethod`, write `fit` and `predict`, and add `@register`. See
+[benchmark/adapters/svm_adapter.py](benchmark/adapters/svm_adapter.py) for the shortest
+example. Methods with awkward dependencies get their own environment under
+[envs/](envs).
 
-## Results
+## Methods tested
 
-- **[docs/RESULTS.md](docs/RESULTS.md)** — final Tier-1 numbers on lung (krasnow CV +
-  HCLA→krasnow cross-atlas) and PBMC/immune (pbmc3k), mean of 3 repeats.
-- **[docs/RESULTS_actinn_orig.md](docs/RESULTS_actinn_orig.md)** — actinn-jax vs the
-  original TensorFlow ACTINN (3.3× faster, 3.5× less memory single-run).
-- **[docs/METHODS_SURVEY.md](docs/METHODS_SURVEY.md)** — cited methods landscape.
-- **[docs/TWO_STAGE.md](docs/TWO_STAGE.md)** — scPRINT (broad) shaping a fast CPU classifier: a scPRINT-discovered coarse→fine hierarchy beats flat (macro-F1 0.71 vs 0.68), pure-CPU inference.
-- **[docs/UPDATE_BROAD_REFERENCE.md](docs/UPDATE_BROAD_REFERENCE.md)** — how to rebuild the
-  census-wide reference: one driver, four stages, and a verification gate that
-  scores the rebuilt model before you keep it.
-- **[docs/PANHUMAN_DISTILL.md](docs/PANHUMAN_DISTILL.md)** — distilling Pan-human Azimuth
-  into an actinn-jax reference. On a withheld liver study the 324-class distilled model
-  scores 0.406 ontology concordance against 0.338 for the census-built reference and 0.408
-  for its teacher, at 6–9× the teacher's throughput — built from unlabelled data, no GPU.
+Classical, on CPU: actinn-jax, the original TensorFlow ACTINN, CellTypist, SingleR,
+scmap-cluster, SVM, kNN, scTOP, and a tuned linear pipeline.
 
-Tier-1 (classical) complete; deep + foundation tiers next. See the full
-[benchmark plan](https://github.com/iandriver/actinn-jax/blob/main/BENCHMARK_PLAN.md).
+Reference mapping with deep models: scANVI, scArches, ProtoCloud.
+
+Foundation model: scPRINT.
+
+That is the thirteen in the report. A fourteenth reference, distilled from Pan-human
+Azimuth, is evaluated separately in
+[docs/PANHUMAN_DISTILL.md](docs/PANHUMAN_DISTILL.md).
+
+## Reports
+
+- [docs/PAPER.md](docs/PAPER.md), the full comparison
+- [docs/OPENPROBLEMS.md](docs/OPENPROBLEMS.md), the external benchmark
+- [docs/MODEL_FLOW.md](docs/MODEL_FLOW.md), the two-stage method
+- [docs/TWO_STAGE.md](docs/TWO_STAGE.md), a scPRINT-derived hierarchy beats a flat
+  classifier, macro-F1 0.71 against 0.68, with CPU-only inference
+- [docs/ZONATION.md](docs/ZONATION.md), hepatocyte zonation
+- [docs/RESULTS.md](docs/RESULTS.md), lung and PBMC numbers, mean of 3 repeats
+- [docs/RESULTS_actinn_orig.md](docs/RESULTS_actinn_orig.md), actinn-jax against the
+  original TensorFlow ACTINN: 3.3 times faster, 3.5 times less memory
+- [docs/METHODS_SURVEY.md](docs/METHODS_SURVEY.md), the field
+- [docs/REFINE.md](docs/REFINE.md), what narrowing a broad reference does and does not fix
+- [docs/HLICA_LIVER.md](docs/HLICA_LIVER.md), building a focused liver reference
+- [docs/PANHUMAN_DISTILL.md](docs/PANHUMAN_DISTILL.md), distilling Pan-human Azimuth into
+  an actinn-jax reference. On a withheld liver study the 324-class distilled model scores
+  0.406 ontology concordance, against 0.338 for the census-built reference and 0.408 for
+  the teacher it copied, at 6 to 9 times the teacher's throughput. Built from unlabelled
+  data, no GPU.
+- [docs/UPDATE_BROAD_REFERENCE.md](docs/UPDATE_BROAD_REFERENCE.md), rebuilding the
+  census-wide reference, including the check that scores a rebuilt model before you keep
+  it
 
 ## License
 
