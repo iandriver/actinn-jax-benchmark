@@ -48,8 +48,12 @@ STEM = {"full": "manuscript", "brief": "manuscript_brief",
 src = (ROOT / "docs" / SOURCE).read_text()
 
 # ---- author block (confirmed 2026-08-01; not a placeholder) ----
-TITLE = ("A benchmark of cell-type annotation methods for single-cell data: "
-         "cost, not accuracy, distinguishes them")
+# The title is read from the source document's H1 rather than repeated here. It used to be
+# a literal, which meant retitling the paper silently left the built PDF on the old title.
+_h1 = re.search(r"^# +(.+)$", src, re.M)
+if _h1 is None:
+    raise SystemExit(f"docs/{SOURCE}: no H1 to take the title from")
+TITLE = _h1.group(1).strip()
 if VARIANT == "supp":
     TITLE = "Supplementary material"
 # "Independent Researcher" is the standard bioRxiv affiliation for unaffiliated authors,
