@@ -1,13 +1,13 @@
-# Large-reference vs. narrowed-reference: how bad is it, and can it be fixed at runtime?
+# Narrowing a large reference at runtime: how much it helps, and what it cannot fix
 
-**Question:** the shipped `broad_human_v1` reference covers ~800 cell types across the
-whole body. Any one dataset realistically contains a few dozen. Does the crowd of
-irrelevant types hurt fine-grained accuracy, and if so, can we narrow the reference to
-just the types present in a *specific* query — automatically, without ground truth, and
-without ever throwing away a type that's genuinely there?
+The shipped `broad_human_v1` reference covers about 800 cell types across the whole body,
+while any one dataset realistically contains a few dozen. Two questions follow. Does the
+crowd of irrelevant types hurt fine-grained accuracy, and can the reference be narrowed to
+the types present in a specific query automatically, without ground truth, and without ever
+discarding a type that is genuinely there?
 
-**Setup:** the shipped `broad_human_v1` model (798 types, 28 coarse groups) against two
-real, ground-truth queries: the Krasnow lung atlas (65,662 cells, 46 true types) and a
+The setup is the shipped `broad_human_v1` model (798 types, 28 coarse groups) against two
+real ground-truth queries: the Krasnow lung atlas (65,662 cells, 46 true types) and a
 CELLxGENE liver pull with zonation labels (5,566 cells, 12 true types). Scripts:
 `benchmark/explore/refine_experiment.py`, `tune_refine_threshold.py`. Full numbers:
 `docs/results_refine.csv`, `docs/results_refine_threshold_sweep.csv`.
@@ -19,33 +19,35 @@ CELLxGENE liver pull with zonation labels (5,566 cells, 12 true types). Scripts:
 | lung (46 types) | **0.13** | 0.52 |
 | liver (12 types) | **0.29** | 0.46 |
 
-Exact-name/CL accuracy is low; ontology-concordant (same lineage, e.g. a macrophage
-subtype for a macrophage) is much better — most of the "error" is fine-grained sibling
-confusion, not wild misclassification. See the [timing notebook](../../actinn-jax/examples/annotate_with_timing.ipynb)
-and [liver zonation notebook](../../actinn-jax/examples/liver_zonation.ipynb) for that
+Exact name and CL accuracy is low, while ontology-concordant accuracy, which credits a
+macrophage subtype called for a macrophage, is much better. Most of the error is
+fine-grained sibling confusion rather than wild misclassification. The
+[timing notebook](../../actinn-jax/examples/annotate_with_timing.ipynb) and
+[liver zonation notebook](../../actinn-jax/examples/liver_zonation.ipynb) show that
 distinction in context.
 
-## What's actually causing it? Two separate problems, not one
+## Two separate problems, not one
 
-Breaking the baseline error down by pipeline stage (only over cells whose true type is
-in the 798-type vocabulary — 100% for both queries):
+Breaking the baseline error down by pipeline stage, over only those cells whose true type
+is in the 798-type vocabulary, which is 100% for both queries:
 
 | query | coarse-routing accuracy | fine accuracy *given correct coarse group* |
 |---|---|---|
 | lung | 0.63 | 0.21 |
 | liver | 0.62 | 0.46 |
 
-**~37-38% of cells never reach the right coarse group at all** — a 28-way routing
-decision that is itself imperfect, because each coarse classifier is trained on the same
-sparse per-type data (~15-40 cells/type at this reference's scale). No amount of
-fine-level narrowing can recover a cell that was routed to the wrong bucket in the first
-place; that's a training-data/model-capacity problem, not a candidate-set problem.
+About 37 to 38% of cells never reach the right coarse group at all. That is a 28-way
+routing decision which is itself imperfect, because each coarse classifier is trained on
+the same sparse per-type data, roughly 15 to 40 cells per type at this reference's scale.
+No amount of fine-level narrowing can recover a cell routed to the wrong bucket in the
+first place; that is a training-data and model-capacity problem rather than a
+candidate-set problem.
 
-**Even within the correct group, fine accuracy is only 0.21-0.46.** This is the part
-narrowing *can* address — too many biologically similar sibling types compete in one
+Even within the correct group, fine accuracy is only 0.21 to 0.46. This is the part
+narrowing can address, where too many biologically similar sibling types compete in one
 softmax, each with only a handful of training cells.
 
-## How much can narrowing help? (ceiling, using ground truth)
+## The ceiling, measured with ground truth
 
 | query | method | exact-CL | ontology | classes used |
 |---|---|---|---|---|
@@ -56,41 +58,43 @@ softmax, each with only a handful of training cells.
 | liver | **oracle-mask** | 0.398 | 0.470 | 12 |
 | liver | **oracle-retrain** | **0.453** | **0.505** | 12 |
 
-Two things stand out:
+Three things stand out.
 
-1. **Masking alone recovers real accuracy** (0.13→0.30 lung, 0.29→0.40 liver) just by
-   removing implausible competitors from the softmax — no retraining, no extra data.
-2. **Retraining does meaningfully better than masking** (0.30→0.52 lung, 0.40→0.45
-   liver). Masking restricts a *frozen* classifier's candidate set; retraining reshapes
-   the decision boundary itself using only the relevant classes — a materially different
-   (and better) function, not just a restricted view of the old one. The coarse
-   classifier also becomes an easier few-way (not 28-way) problem when retrained.
-3. **Curiously, oracle-masking's *ontology*-concordance on lung is slightly *worse* than
-   baseline** (0.447 vs 0.524) despite exact-match improving. Forcing the model to choose
-   among only the 46 true types removes the option to hedge onto a generic ancestor label
-   (e.g. plain "macrophage") that would have counted as ontology-correct — masking trades
-   some hedged-but-lineage-correct calls for specific-but-wrong ones. Worth knowing if you
-   care about ontology-level correctness more than exact labels.
+1. Masking alone recovers real accuracy, from 0.13 to 0.30 on lung and 0.29 to 0.40 on
+   liver, just by removing implausible competitors from the softmax, with no retraining and
+   no extra data.
+2. Retraining does meaningfully better than masking, from 0.30 to 0.52 on lung and 0.40 to
+   0.45 on liver. Masking restricts a frozen classifier's candidate set, while retraining
+   reshapes the decision boundary itself using only the relevant classes, which is a
+   materially different and better function rather than a restricted view of the old one.
+   The coarse classifier also becomes an easier few-way problem instead of a 28-way one
+   when retrained.
+3. Oracle-masking's ontology concordance on lung is slightly worse than baseline, 0.447
+   against 0.524, even though exact match improves. Forcing the model to choose among only
+   the 46 true types removes the option to hedge onto a generic ancestor label such as
+   plain "macrophage", which would have counted as ontology-correct. Masking therefore
+   trades some hedged-but-lineage-correct calls for specific-but-wrong ones, which is worth
+   knowing if ontology-level correctness matters more than exact labels.
 
-## Is there a reliable way to do this without ground truth?
+## Can this be done without ground truth?
 
-We shipped `actinn_jax.refine_to_query(model, adata)`: it reads the model's *own*
-predictions on your query (probability mass per class, argmax win-counts, confidence) and
-masks out classes with no supporting evidence — no ground truth, no retraining, no extra
-data, using the same mask-and-renormalize mechanism validated above.
+`actinn_jax.refine_to_query(model, adata)` reads the model's own predictions on the query,
+meaning probability mass per class, argmax win counts and confidence, and masks out classes
+with no supporting evidence. No ground truth, no retraining, no extra data, using the same
+mask-and-renormalize mechanism validated above.
 
-**Recall (not dropping real types) works well.** On lung it recovered 44/46 true types
-(missed 2); on liver it recovered 9/12 (missed `B cell`, `natural killer cell`,
-`erythroid lineage cell`). We checked those three misses directly: the model's own
-fine classifier assigns them **literally zero argmax wins** across 500+500+66 real cells
-of those exact types — the evidence a detector could act on simply isn't there. No
-threshold can recover a class the underlying classifier never once favors; that's a
-retraining problem (see oracle-retrain above), not a detection-threshold problem.
+Recall, meaning not dropping real types, works well. On lung it recovered 44 of 46 true
+types and on liver 9 of 12, missing `B cell`, `natural killer cell` and `erythroid lineage
+cell`. We checked those three misses directly: the model's own fine classifier assigns them
+zero argmax wins across 500, 500 and 66 real cells of those exact types, so the evidence a
+detector could act on is not there. No threshold can recover a class the underlying
+classifier never once favors, which makes it a retraining problem rather than a
+detection-threshold problem.
 
-**Precision (not admitting absent types) does not work well**, and this is the important,
-honest finding. We swept six detection rules — absolute mass/count thresholds, per-group
-relative thresholds, confidence floors, and a per-group cumulative-coverage ("elbow")
-rule:
+Precision, meaning not admitting absent types, does not work well, and that is the
+important finding. We swept six detection rules: absolute mass and count thresholds,
+per-group relative thresholds, confidence floors, and a per-group cumulative-coverage
+"elbow" rule.
 
 | query | rule | classes kept (of 798) | precision vs. oracle | recall vs. oracle | resulting exact-CL |
 |---|---|---|---|---|---|
@@ -99,30 +103,33 @@ rule:
 | liver | current default | 200 | 0.04 | 0.75 | 0.286 (≈ baseline) |
 | liver | tightest tested (top1_frac≥1%, conf≥0.5) | 39 | 0.21 | 0.67 | 0.290 |
 
-**Every rule we tried left accuracy essentially unchanged from baseline** — even the
-tightest one, which cut kept-classes by 3-5× and roughly doubled precision. Only the
-*oracle* mask (precision = 1.0, the exact true set) produced the real gain shown above.
-Why: the handful of classes doing the actual damage are not random noise with low,
-prunable confidence — they are the model's genuinely-confusable siblings of real types,
-and they carry the *same* mass/confidence signature as real rare types, because the same
-underlying classifier that's confused about telling them apart also can't be used to
-detect that confusion. A detector built from a classifier's own output inherits that
-classifier's blind spots. Diffuse, no-evidence classes prune away easily (that's most of
-the reduction we do see) but they were never the source of the error to begin with.
+Every rule we tried left accuracy essentially unchanged from baseline, even the tightest,
+which cut kept classes by a factor of 3 to 5 and roughly doubled precision. Only the oracle
+mask, at precision 1.0 on the exact true set, produced the real gain shown above.
+
+The reason is that the handful of classes doing the damage are not random noise with low,
+prunable confidence. They are the model's genuinely confusable siblings of real types, and
+they carry the same mass and confidence signature as real rare types, because the same
+underlying classifier that cannot tell them apart also cannot be used to detect that
+confusion. A detector built from a classifier's own output inherits that classifier's blind
+spots. Diffuse, no-evidence classes prune away easily, which is most of the reduction we do
+see, but they were never the source of the error.
 
 ## Bottom line
 
-- `refine_to_query` is safe to use by default: in every test here it never made
-  accuracy *worse*, it protects real types well (high recall), and it's free (no retrain,
-  no extra data, sub-second). Use it as a light, no-downside pruning pass.
-- It is **not** a fix for the large-reference accuracy gap. Don't expect it to close the
-  0.13→0.52 (lung) or 0.29→0.45 (liver) gap — that requires retraining.
-- **The reliable way to get that gain today is retraining on a narrower, focused
-  reference** — `examples/build_reference.py` in actinn-jax, using your own labeled data
-  or a hand-picked subset of the census-wide reference for your tissue/expected types.
-  That's a real, validated win, not a heuristic.
-- The other lever, not explored here: more cells per type in the underlying reference.
-  The census-wide pull deliberately capped ~15-40 cells/type to keep the reference small;
-  the coarse-routing accuracy (0.62-0.63) and within-group fine accuracy (0.21-0.46) are
-  both very plausibly data-starved, not just crowded. A future rebuild with a higher
-  per-type cap (fewer total types, or a bigger reference) is the natural next experiment.
+- `refine_to_query` is safe to use by default. In every test here it never made accuracy
+  worse, it protects real types well through high recall, and it is free, needing no
+  retrain, no extra data and under a second. Use it as a light pruning pass with no
+  downside.
+- It is not a fix for the large-reference accuracy gap. It will not close the gap from 0.13
+  to 0.52 on lung or 0.29 to 0.45 on liver, which requires retraining.
+- The reliable way to get that gain today is retraining on a narrower, focused reference,
+  using `examples/build_reference.py` in actinn-jax with your own labeled data or a
+  hand-picked subset of the census-wide reference for your tissue and expected types. That
+  is a validated win rather than a heuristic.
+- One lever is not explored here: more cells per type in the underlying reference. The
+  census-wide pull deliberately capped each type at 15 to 40 cells to keep the reference
+  small, and both the coarse-routing accuracy of 0.62 to 0.63 and the within-group fine
+  accuracy of 0.21 to 0.46 are plausibly data-starved rather than merely crowded. A rebuild
+  with a higher per-type cap, whether through fewer total types or a bigger reference, is
+  the natural next experiment.
