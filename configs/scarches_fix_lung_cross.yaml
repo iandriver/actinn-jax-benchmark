@@ -1,6 +1,8 @@
-# scArches configuration check on the split where the native classifier head fails:
-# HLCA -> krasnow, the same cross-dataset split as configs/paper.yaml. ArchMap reports
-# scANVI's native head at 0.18 macro-F1 on the HLCA; the paper run scored 0.178 here.
+# scArches configuration check on HLCA -> krasnow, the same cross-dataset split as
+# configs/paper.yaml. This split was chosen on the expectation that its 0.178 macro-F1
+# reflected the native classifier head. It does not: only 20 of 46 query labels exist in
+# the reference, so half the query cells cannot be predicted by any method and macro-F1
+# is dominated by that. See docs/SCARCHES_CONFIG.md.
 label: cell_type
 repeats: 3
 output: results/scarches_fix_lung_cross

@@ -28,8 +28,9 @@ weakest of the three on every atlas, and on the HLCA it collapses: 0.18 macro-F1
 0.97. The head this benchmark was reading.
 
 The benchmark's own `lung_cross` split is HLCA to krasnow, and scArches scored 0.354
-accuracy with 0.178 macro-F1 there. A macro-F1 of 0.18 on the HLCA, arrived at
-independently, is not a coincidence worth defending.
+accuracy with 0.178 macro-F1 there. That resemblance is what prompted this check, and it
+turned out to mean nothing: see the lung_cross section below. Two macro-F1 values near
+0.18 on unrelated evaluations are not evidence of a shared cause.
 
 ## What changed
 
@@ -42,11 +43,12 @@ probability. This is the transfer scArches itself ships in `scarches.utils.knn`,
 one the HLCA paper and ArchMap both use. The implementation is checked against that
 function directly: identical labels, and probabilities agreeing to 2.2e-16.
 
-The probability has a second use. ArchMap defines its Euclidean uncertainty as 1 minus this
-quantity and labels a cell `unknown` above 0.5, reasoning that below a half no label is a
-stronger prediction than its alternatives. That is the same operating point as actinn-jax's
-`min_prob=0.5`, reached from a different mechanism, so the abstention results in
-[`PAPER.md`](PAPER.md) §3.6 now compare like with like.
+ArchMap defines its Euclidean uncertainty as 1 minus this probability and labels a cell
+`unknown` above 0.5, reasoning that below a half no label is a stronger prediction than its
+alternatives. actinn-jax's `min_prob=0.5` is the same number on a different quantity, a
+softmax output rather than a share of neighbour weight. Equal thresholds on quantities that
+are not on a common scale are not matched coverage or matched calibration, and nothing here
+licenses reading one method's abstention against the other's at a shared cutoff.
 
 **A batch covariate.** The reference model is set up with one, picked from the first usable
 column of `batch`, `dataset`, `STUDY`, `study`, `donor_id`, `sample` or `assay`. The order
@@ -87,15 +89,63 @@ pbmc3k, 8 types, three repeats, Apple MPS:
 
 The rebuilt `scarches-native` reproduces the published macro-F1 to 0.001, which is what
 makes the third row readable: the refactor did not move the old path, so the 4.7-point
-macro-F1 gain belongs to the corrections. Accuracy moves 0.9 points. A gain that lands on
-macro-F1 and not on accuracy is a gain on the rare classes, which is where ArchMap's figure
-says the native head loses.
+macro-F1 gain belongs to the four changes together. It does not say which one earned it.
+All four moved at once, so this is a comparison of two configurations, not an ablation, and
+no claim about the label-transfer head on its own is supported by it. Accuracy moves 0.9
+points. A gain that lands on macro-F1 and not on accuracy is a gain on the rare classes.
 
 Fit time triples and predict time doubles. That is the honest price of the configuration
 that works, and it is paid in the column where scArches was already slowest.
 
 Config: [`configs/scarches_fix_pbmc.yaml`](../configs/scarches_fix_pbmc.yaml). Results:
 [`results/scarches_fix_pbmc/results.csv`](../results/scarches_fix_pbmc/results.csv).
+
+## lung_cross, where the premise for this check failed
+
+The split that prompted the whole check does not move. Three repeats each:
+
+| | accuracy | macro-F1 | ontology | fit (s) | predict (s) |
+|---------------------------|------:|------:|------:|------:|------:|
+| paper run, as published | 0.355 | 0.179 | 0.754 | 92 | 57 |
+| `scarches-native`, rebuilt | 0.353 | 0.179 | 0.758 | 104 | 86 |
+| `scarches`, corrected | 0.359 | 0.182 | 0.761 | 656 | 219 |
+
+The reason is the label space, not the classifier. HLCA and krasnow share 20 of the 46
+labels in the query, so 50.3% of query cells carry a label that no method can predict and
+accuracy is capped at 0.497 before a cell is classified. Restricted to the 20 reachable
+classes, macro-F1 is 0.758 corrected and 0.747 native, with 17 to 18 of 20 classes scoring
+above zero. Nothing was collapsing.
+
+ArchMap's 0.18 comes from an 80-20 split inside one atlas, where every label is reachable
+by construction. The two numbers are not measuring the same thing. `PAPER.md` already
+treats this split's exact-match score as a vocabulary artifact and excludes it from the
+accuracy mean, which is the correct handling and was so before this check.
+
+One observation that does survive, and is about the weighted kNN rather than about
+lung_cross: it returns a mean probability of 0.967, with 99.3% of query cells above
+ArchMap's 0.5 cutoff, while 64% of its labels are wrong. On a cross-dataset query that
+cutoff abstains on 0.7% of cells. ArchMap validates the Euclidean uncertainty within an
+atlas and does not claim it for this regime, so this is a limit of transfer, not a defect.
+
+## The shared-vocabulary splits
+
+These are the splits where the test means something, each corrected against native on the
+identical inputs and the same code path, three repeats:
+
+| split | types | accuracy gain | macro-F1 gain |
+|------------------|------:|------:|------:|
+| pbmc | 8 | +0.009 | +0.047 |
+| lung_intra | 46 | +0.011 | +0.011 |
+| liver_intra | 38 | +0.021 | +0.020 |
+
+On lung_intra the native variant reproduces the published run to 0.0004 on both metrics,
+the third independent time the control has matched (after pbmc and lung_cross). The liver
+splits are rebuilt from a 38-type HLiCA against the paper's 36, so they carry an internal
+comparison only; see `make_bench_datasets.py` for what is and is not established about
+that input. Config: [`configs/scarches_fix_rest.yaml`](../configs/scarches_fix_rest.yaml).
+
+The direction is consistent across every shared-vocabulary split. The size is not, and
+with four factors changed together there is nothing here that attributes it.
 
 ## What this does not change
 

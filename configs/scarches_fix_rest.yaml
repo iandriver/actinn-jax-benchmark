@@ -1,8 +1,10 @@
 # scArches configuration check on the shared-vocabulary splits. lung_intra reproduces
-# the paper's split exactly (10,803 cells). The liver splits do not: HLiCA has gained
-# two cell types since the paper run (38 against 36), so each rebuilt split carries
-# 300 more cells. The corrected-vs-native comparison is unaffected, since both run on
-# the identical rebuilt inputs; the published liver row is not a valid cross-check.
+# the paper's split exactly (10,803 cells). The liver splits do not: the rebuilt splits
+# carry 38 cell types and 300 more cells per split than the paper run's 36. Why the
+# historical input had 36 is unresolved; both published HLiCA versions have 38, and the
+# counts alone do not establish what the paper read. The corrected-vs-native comparison
+# is unaffected, since both run on the identical rebuilt inputs; the published liver row
+# is not a valid cross-check.
 label: cell_type
 repeats: 3
 output: results/scarches_fix_rest
