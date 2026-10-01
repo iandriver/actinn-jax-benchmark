@@ -49,7 +49,11 @@ stronger prediction than its alternatives. That is the same operating point as a
 [`PAPER.md`](PAPER.md) §3.6 now compare like with like.
 
 **A batch covariate.** The reference model is set up with one, picked from the first usable
-column of `batch`, `donor_id`, `STUDY`, `dataset`, `sample` or `assay`. Without it the
+column of `batch`, `dataset`, `STUDY`, `study`, `donor_id`, `sample` or `assay`. The order
+takes the coarsest technical source first, because an integrated atlas is integrated across
+datasets rather than donors and that is the key its own builders used. It also keeps the
+levels populated: the HLCA subsampled to 300 cells per label has 14 datasets but 107 donors,
+leaving about 134 cells per donor to learn a batch embedding from. Without it the
 surgery has nothing to extend: scArches works by adding embeddings for the query's batches
 while the shared weights stay frozen, so a model with no batch covariate has nowhere to put
 them. Query batches are prefixed so they are always unseen categories, which is the

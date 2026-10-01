@@ -21,9 +21,13 @@ UNKNOWN = "Unknown"
 ARCHES_ARCH = dict(use_layer_norm="both", use_batch_norm="none", encode_covariates=True,
                    dropout_rate=0.2, n_layers=2, n_latent=30)
 
-# obs columns to try as the batch covariate, most to least specific. CELLxGENE objects
-# carry donor_id and assay; HLiCA carries STUDY.
-BATCH_CANDIDATES = ("batch", "donor_id", "STUDY", "dataset", "sample", "assay")
+# obs columns to try as the batch covariate, coarsest technical source first. An
+# integrated atlas is integrated across datasets, not donors, and that is the batch key
+# its own builders use; donor and sample come next for single-study references that have
+# no dataset column. Preferring the coarse key also keeps the levels well populated: the
+# HLCA subsampled to 300 cells per label has 14 datasets but 107 donors, which is about
+# 134 cells per donor to learn a batch embedding from.
+BATCH_CANDIDATES = ("batch", "dataset", "STUDY", "study", "donor_id", "sample", "assay")
 
 
 def _accelerator():
