@@ -1,0 +1,33 @@
+# scArches configuration check on the shared-vocabulary splits. lung_intra reproduces
+# the paper's split exactly (10,803 cells). The liver splits do not: HLiCA has gained
+# two cell types since the paper run (38 against 36), so each rebuilt split carries
+# 300 more cells. The corrected-vs-native comparison is unaffected, since both run on
+# the identical rebuilt inputs; the published liver row is not a valid cross-check.
+label: cell_type
+repeats: 3
+output: results/scarches_fix_rest
+save_predictions: true
+ontology_obo: /tmp/cl-basic.obo
+
+datasets:
+  # source: Travaglini et al. 2020, doi:10.1038/s41586-020-2922-4
+  - name: lung_intra
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 300
+    test_frac: 0.25
+  # source: HLiCA, Edgar et al. 2026, doi:10.64898/2026.06.30.735539
+  - name: liver_intra
+    type: intra
+    path: /Volumes/IanSSD/hlica/liver_intra.h5ad
+    test_frac: 0.25
+  - name: liver_cross
+    type: cross
+    ref_path: /Volumes/IanSSD/hlica/liver_ref_xstudy.h5ad
+    query_path: /Volumes/IanSSD/hlica/liver_query_xstudy.h5ad
+
+methods:
+  - name: scarches
+    python: .venv-scvi/bin/python
+  - name: scarches-native
+    python: .venv-scvi/bin/python

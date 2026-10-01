@@ -7,12 +7,24 @@ cell_type_ontology_term_id in obs) to IanSSD:
   - liver_query_xstudy.h5ad  : Andrews_2022 only (cross-study query)
 
 Backed read + row-slice keeps peak memory low despite the 5.3 GB source.
+
+The source is worth naming explicitly, because it has changed under this script. The
+paper matrix (run 2026-08-16) was built from an HLiCA all-cells file with 36 cell types,
+giving 5400/5400/3396. Every copy CELLxGENE serves now has 38, giving 5700/5700/3696, and
+that holds for both published versions (2026-07-20 and 2026-09-25), so the paper's exact
+input is not recoverable from the collection. Check the counts against the run you are
+comparing to before reading anything into a difference. Override SRC and SUFFIX to build
+from a second source alongside the current one rather than over it:
+
+    HLICA_SRC=.../other.h5ad HLICA_SUFFIX=_alt python make_bench_datasets.py
 """
+import os
 import warnings; warnings.filterwarnings("ignore")
 import numpy as np, scanpy as sc
 
-SRC = "/Volumes/IanSSD/hlica/all_cells.h5ad"
-OUT = "/Volumes/IanSSD/hlica"
+SRC = os.environ.get("HLICA_SRC", "/Volumes/IanSSD/hlica/all_cells.h5ad")
+OUT = os.environ.get("HLICA_OUT", "/Volumes/IanSSD/hlica")
+SUFFIX = os.environ.get("HLICA_SUFFIX", "")
 PER_TYPE = 150
 rng = np.random.default_rng(0)
 
@@ -43,7 +55,7 @@ def dump(mask, path, per=PER_TYPE):
 
 
 allmask = np.ones(a.n_obs, dtype=bool)
-dump(allmask, f"{OUT}/liver_intra.h5ad")
-dump((obs.STUDY != "Andrews_2022").to_numpy(), f"{OUT}/liver_ref_xstudy.h5ad")
-dump((obs.STUDY == "Andrews_2022").to_numpy(), f"{OUT}/liver_query_xstudy.h5ad")
+dump(allmask, f"{OUT}/liver_intra{SUFFIX}.h5ad")
+dump((obs.STUDY != "Andrews_2022").to_numpy(), f"{OUT}/liver_ref_xstudy{SUFFIX}.h5ad")
+dump((obs.STUDY == "Andrews_2022").to_numpy(), f"{OUT}/liver_query_xstudy{SUFFIX}.h5ad")
 print("BENCH_DATASETS_DONE", flush=True)
