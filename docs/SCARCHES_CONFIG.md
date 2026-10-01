@@ -132,20 +132,26 @@ atlas and does not claim it for this regime, so this is a limit of transfer, not
 These are the splits where the test means something, each corrected against native on the
 identical inputs and the same code path, three repeats:
 
-| split | types | accuracy gain | macro-F1 gain |
-|------------------|------:|------:|------:|
-| pbmc | 8 | +0.009 | +0.047 |
-| lung_intra | 46 | +0.011 | +0.011 |
-| liver_intra | 38 | +0.021 | +0.020 |
+| split | types | accuracy | | macro-F1 | | cost |
+| | | native | corrected | native | corrected | |
+|-------------|------:|------:|------:|------:|------:|------:|
+| pbmc | 8 | 0.933 | **0.942** | 0.887 | **0.934** | 3.2x |
+| lung_intra | 46 | 0.907 | **0.918** | 0.915 | **0.926** | 3.5x |
+| liver_intra | 38 | 0.786 | **0.809** | 0.786 | **0.808** | 3.7x |
+| liver_cross | 38 | 0.650 | **0.673** | 0.570 | **0.585** | 3.5x |
+
+Mean gain over the four: 0.017 accuracy and 0.024 macro-F1, for about 3.5 times the
+fit-plus-predict time. Every split moves the same way on both metrics. The size does not
+follow anything visible: pbmc gains eight times more macro-F1 than lung_intra while gaining
+less accuracy, and the two liver splits gain most on accuracy. With four factors changed
+together, none of that is attributed, and this is not an ablation.
 
 On lung_intra the native variant reproduces the published run to 0.0004 on both metrics,
 the third independent time the control has matched (after pbmc and lung_cross). The liver
 splits are rebuilt from a 38-type HLiCA against the paper's 36, so they carry an internal
 comparison only; see `make_bench_datasets.py` for what is and is not established about
-that input. Config: [`configs/scarches_fix_rest.yaml`](../configs/scarches_fix_rest.yaml).
-
-The direction is consistent across every shared-vocabulary split. The size is not, and
-with four factors changed together there is nothing here that attributes it.
+that input. Config: [`configs/scarches_fix_rest.yaml`](../configs/scarches_fix_rest.yaml),
+results [`results/scarches_fix_rest/results.csv`](../results/scarches_fix_rest/results.csv).
 
 ## What this does not change
 
