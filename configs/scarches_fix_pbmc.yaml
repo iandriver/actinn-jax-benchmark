@@ -1,0 +1,17 @@
+# scArches configuration check: corrected setup vs. the stock-defaults setup the
+# first version of this benchmark used. pbmc3k only; the other five datasets of
+# configs/paper.yaml are not on disk.
+label: cell_type
+repeats: 3
+output: results/scarches_fix_pbmc
+
+datasets:
+  - name: pbmc
+    type: builtin
+    builtin: pbmc3k
+
+methods:
+  - name: scarches
+    python: .venv-scvi/bin/python
+  - name: scarches-native
+    python: .venv-scvi/bin/python

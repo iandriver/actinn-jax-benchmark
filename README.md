@@ -150,6 +150,8 @@ Azimuth, is evaluated separately in
 - [docs/RESULTS_actinn_orig.md](docs/RESULTS_actinn_orig.md), actinn-jax against the
   original TensorFlow ACTINN: 3.3 times faster, 3.5 times less memory
 - [docs/METHODS_SURVEY.md](docs/METHODS_SURVEY.md), the field
+- [docs/SCARCHES_CONFIG.md](docs/SCARCHES_CONFIG.md), how scArches is configured here
+  and why the first configuration understated it by 4.7 points of macro-F1
 - [docs/REFINE.md](docs/REFINE.md), what narrowing a broad reference does and does not fix
 - [docs/HLICA_LIVER.md](docs/HLICA_LIVER.md), building a focused liver reference
 - [docs/PANHUMAN_DISTILL.md](docs/PANHUMAN_DISTILL.md), distilling Pan-human Azimuth into
