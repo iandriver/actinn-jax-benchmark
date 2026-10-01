@@ -1,0 +1,22 @@
+# scArches configuration check on the high-cardinality split: IBDverse blood + gut,
+# 86 labels. Rebuilt by benchmark/explore/make_blood_gut_dataset.py, which reproduces
+# the paper matrix's 10,255 cells over 86 labels exactly (7,692 / 2,563 at test_frac
+# 0.25). The drawn cells differ from the paper's, since the original seed is unknown.
+# No Cell Ontology ids in this source, so no ontology score.
+label: cell_type
+repeats: 3
+output: results/scarches_fix_blood_gut
+save_predictions: true
+
+datasets:
+  # source: IBDverse, Alegbe et al. 2026, doi:10.1038/s41586-026-10627-z
+  - name: blood_gut_intra
+    type: intra
+    path: /Volumes/IanSSD/hlica/blood_gut_intra.h5ad
+    test_frac: 0.25
+
+methods:
+  - name: scarches
+    python: .venv-scvi/bin/python
+  - name: scarches-native
+    python: .venv-scvi/bin/python

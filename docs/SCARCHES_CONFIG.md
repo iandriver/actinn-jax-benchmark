@@ -81,17 +81,17 @@ measurable in one run instead of across two states of the repository.
 
 pbmc3k, 8 types, three repeats, Apple MPS:
 
-| | accuracy | macro-F1 | kappa | fit (s) | predict (s) | peak mem (MB) |
-|---------------------------|------:|------:|------:|------:|------:|------:|
-| paper run, as published | 0.940 | 0.888 | 0.918 | 12.5 | 2.4 | 1057 |
-| `scarches-native`, rebuilt | 0.932 | 0.887 | 0.908 | 22.0 | 5.8 | 849 |
-| `scarches`, corrected | 0.942 | **0.934** | 0.921 | 74.1 | 13.6 | 778 |
+| | accuracy | macro-F1 | kappa | fit (s) | predict (s) |
+|---------------------------|------:|------:|------:|------:|------:|
+| paper run, as published | 0.940 | 0.888 | 0.918 | 12.5 | 2.4 |
+| `scarches-native`, rebuilt | 0.932 | 0.885 | 0.908 | 20.2 | 4.1 |
+| `scarches`, corrected | 0.944 | **0.930** | 0.924 | 69.2 | 12.6 |
 
-The rebuilt `scarches-native` reproduces the published macro-F1 to 0.001, which is what
-makes the third row readable: the refactor did not move the old path, so the 4.7-point
+The rebuilt `scarches-native` reproduces the published macro-F1 to 0.003, which is what
+makes the third row readable: the refactor did not move the old path, so the 4.5-point
 macro-F1 gain belongs to the four changes together. It does not say which one earned it.
 All four moved at once, so this is a comparison of two configurations, not an ablation, and
-no claim about the label-transfer head on its own is supported by it. Accuracy moves 0.9
+no claim about the label-transfer head on its own is supported by it. Accuracy moves 1.2
 points. A gain that lands on macro-F1 and not on accuracy is a gain on the rare classes.
 
 Fit time triples and predict time doubles. That is the honest price of the configuration
@@ -134,24 +134,30 @@ identical inputs and the same code path, three repeats:
 
 | split | types | accuracy | | macro-F1 | | cost |
 | | | native | corrected | native | corrected | |
-|-------------|------:|------:|------:|------:|------:|------:|
-| pbmc | 8 | 0.933 | **0.942** | 0.887 | **0.934** | 3.2x |
+|-------------------|------:|------:|------:|------:|------:|------:|
+| pbmc | 8 | 0.933 | **0.944** | 0.885 | **0.930** | 3.4x |
 | lung_intra | 46 | 0.907 | **0.918** | 0.915 | **0.926** | 3.5x |
 | liver_intra | 38 | 0.786 | **0.809** | 0.786 | **0.808** | 3.7x |
+| blood_gut_intra | 86 | 0.877 | **0.886** | 0.877 | **0.886** | 3.0x |
 | liver_cross | 38 | 0.650 | **0.673** | 0.570 | **0.585** | 3.5x |
 
-Mean gain over the four: 0.017 accuracy and 0.024 macro-F1, for about 3.5 times the
+Mean gain over the five: 0.016 accuracy and 0.020 macro-F1, for about 3.4 times the
 fit-plus-predict time. Every split moves the same way on both metrics. The size does not
-follow anything visible: pbmc gains eight times more macro-F1 than lung_intra while gaining
-less accuracy, and the two liver splits gain most on accuracy. With four factors changed
-together, none of that is attributed, and this is not an ablation.
+follow anything visible: pbmc gains four times more macro-F1 than lung_intra while gaining
+less accuracy, the liver splits gain most on accuracy, and the 86-label split gains least
+of all, which is the opposite of what a rare-class story predicts. With four factors
+changed together, none of that is attributed, and this is not an ablation.
 
-On lung_intra the native variant reproduces the published run to 0.0004 on both metrics,
-the third independent time the control has matched (after pbmc and lung_cross). The liver
-splits are rebuilt from a 38-type HLiCA against the paper's 36, so they carry an internal
-comparison only; see `make_bench_datasets.py` for what is and is not established about
-that input. Config: [`configs/scarches_fix_rest.yaml`](../configs/scarches_fix_rest.yaml),
-results [`results/scarches_fix_rest/results.csv`](../results/scarches_fix_rest/results.csv).
+Across all six splits the native variant reproduces the published scArches row to within
+0.008 accuracy and 0.014 macro-F1, so the old path is intact and the deltas belong to the
+configuration. Four of the six rebuilt inputs reproduce the paper's split sizes to the
+cell: pbmc, lung_intra, lung_cross and blood_gut_intra. The two liver splits do not, being
+built from a 38-type HLiCA against the paper's 36, so they carry an internal comparison
+only; see `make_bench_datasets.py` for what is and is not established about that input.
+
+Configs: [`scarches_fix_rest.yaml`](../configs/scarches_fix_rest.yaml),
+[`scarches_fix_blood_gut.yaml`](../configs/scarches_fix_blood_gut.yaml). Results under
+`results/scarches_fix_*`, with per-repeat predictions for every split.
 
 ## What this does not change
 

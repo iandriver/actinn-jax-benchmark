@@ -4,6 +4,7 @@
 label: cell_type
 repeats: 3
 output: results/scarches_fix_pbmc
+save_predictions: true
 
 datasets:
   - name: pbmc
