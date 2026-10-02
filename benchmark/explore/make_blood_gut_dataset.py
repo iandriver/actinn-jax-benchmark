@@ -26,9 +26,10 @@ import warnings; warnings.filterwarnings("ignore")
 import numpy as np, scanpy as sc
 
 # Source: IBDverse multi-tissue atlas (Alegbe et al. 2026, doi 10.1038/s41586-026-10627-z),
-# distributed via ibdverse.info. 15.13 GB, 1,852,681 x 33,538. Obtained by the project owner
-# rather than by a scripted fetch, so no download command is recorded here; check the portal
-# if this file is missing.
+# distributed via ibdverse.info. 15.13 GB, 1,852,681 x 33,538, Ensembl var_names, integer
+# counts in .X, no raw and no Cell Ontology ids. There is no scripted fetch: download it
+# from the portal, which the project owner reports takes about 20 minutes. The file is not
+# kept on disk between runs, since the derived split is 0.30 GB against its 15.13 GB.
 SRC = os.environ.get("IBDVERSE_SRC",
                      os.path.expanduser("~/Downloads/multi_tissue-atlas.h5ad"))
 OUT = os.environ.get("IBDVERSE_OUT", "/Volumes/IanSSD/hlica/blood_gut_intra.h5ad")
