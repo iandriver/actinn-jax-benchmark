@@ -22,6 +22,11 @@ import os
 import warnings; warnings.filterwarnings("ignore")
 import numpy as np, scanpy as sc
 
+# Redownload the source with:
+#   curl -fL -o /Volumes/IanSSD/hlica/all_cells.h5ad \
+#     https://datasets.cellxgene.cziscience.com/537e75ec-90e5-479d-84e9-d3f8793a3414.h5ad
+# That is HLiCA all-cells, CELLxGENE collection 059202e1-1f1b-483f-9151-f3a25a380c39,
+# dataset ef3055e1-0cad-40a3-961d-7110a323dc4f, version of 2026-09-25, 5.73 GB.
 SRC = os.environ.get("HLICA_SRC", "/Volumes/IanSSD/hlica/all_cells.h5ad")
 OUT = os.environ.get("HLICA_OUT", "/Volumes/IanSSD/hlica")
 SUFFIX = os.environ.get("HLICA_SUFFIX", "")

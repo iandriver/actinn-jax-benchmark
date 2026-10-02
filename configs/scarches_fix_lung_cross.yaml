@@ -3,6 +3,13 @@
 # reflected the native classifier head. It does not: only 20 of 46 query labels exist in
 # the reference, so half the query cells cannot be predicted by any method and macro-F1
 # is dominated by that. See docs/SCARCHES_CONFIG.md.
+# Source files, if missing, redownload with:
+#   curl -fL -o ~/Downloads/Sikkema_HLCA.h5ad \
+#     https://datasets.cellxgene.cziscience.com/688185ad-11c2-4172-a53a-f4f1f4076860.h5ad
+#   curl -fL -o ~/Downloads/krasnow_lung_atlas_10x.h5ad \
+#     https://datasets.cellxgene.cziscience.com/f5568ea3-c249-4e4e-91f8-46abc30a5612.h5ad
+# HLCA core (584,944 cells, 5.87 GB) and Krasnow 10X (65,662 cells, 0.60 GB). Both
+# reproduce this config's split sizes exactly: 14,390 / 13,550 and 10,803.
 label: cell_type
 repeats: 3
 output: results/scarches_fix_lung_cross
