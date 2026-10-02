@@ -8,12 +8,16 @@ cell_type_ontology_term_id in obs) to IanSSD:
 
 Backed read + row-slice keeps peak memory low despite the 5.3 GB source.
 
-The source is worth naming explicitly, because it has changed under this script. The
-paper matrix (run 2026-08-16) was built from an HLiCA all-cells file with 36 cell types,
-giving 5400/5400/3396. Every copy CELLxGENE serves now has 38, giving 5700/5700/3696, and
-that holds for both published versions (2026-07-20 and 2026-09-25), so the paper's exact
-input is not recoverable from the collection. Check the counts against the run you are
-comparing to before reading anything into a difference. Override SRC and SUFFIX to build
+The source is worth naming explicitly, because the splits it produces have changed. The
+paper matrix (run 2026-08-16) recorded 5400/5400/3396 cells. This script, unchanged since
+its only commit, now produces 5700/5700/3696 from either published HLiCA version
+(2026-07-20 and 2026-09-25), both of which carry 38 cell types. What the historical run
+read is UNRESOLVED. The counts are consistent with a 36-type sample, and so is the
+"36-type" description in configs/scaling_memory_hlica.yaml, but neither establishes what
+the raw file contained, which labels were excluded, or which cells were drawn: the
+historical input, its hashes and its cell ids are not on this machine, and the original
+panel saved no per-cell predictions to recover them from. Treat it as unresolved sample
+and source provenance, and check the counts against the run you are comparing to. Override SRC and SUFFIX to build
 from a second source alongside the current one rather than over it:
 
     HLICA_SRC=.../other.h5ad HLICA_SUFFIX=_alt python make_bench_datasets.py

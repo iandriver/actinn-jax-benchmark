@@ -1,0 +1,28 @@
+# Q2, the bounded matched-baseline queue requested by codex (shared:msg:20261002T005809Z-7e1e2e).
+# actinn-jax and linear-anova-pca on exactly the cohorts the revised/original scArches runs
+# used, three repeats each: 18 runs. Verified before launch that the driver's split of these
+# files reproduces the scArches query cell ids, labels and gene counts exactly on all three.
+# This is a matched comparison against two central baselines, not an 11-method ranking.
+label: cell_type
+repeats: 3
+output: results/q2_matched_baselines
+save_predictions: true
+ontology_obo: /tmp/cl-basic.obo
+
+datasets:
+  - name: liver_intra
+    type: intra
+    path: /Volumes/IanSSD/hlica/liver_intra.h5ad
+    test_frac: 0.25
+  - name: liver_cross
+    type: cross
+    ref_path: /Volumes/IanSSD/hlica/liver_ref_xstudy.h5ad
+    query_path: /Volumes/IanSSD/hlica/liver_query_xstudy.h5ad
+  - name: blood_gut_intra
+    type: intra
+    path: /Volumes/IanSSD/hlica/blood_gut_intra.h5ad
+    test_frac: 0.25
+
+methods:
+  - name: actinn-jax
+  - name: linear-anova-pca
