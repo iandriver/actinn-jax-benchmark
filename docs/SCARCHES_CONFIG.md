@@ -141,8 +141,22 @@ identical inputs and the same code path, three repeats:
 | blood_gut_intra | 86 | 0.877 | **0.886** | 0.877 | **0.886** | 3.0x |
 | liver_cross | 38 | 0.650 | **0.673** | 0.570 | **0.585** | 3.5x |
 
-Mean gain over the five: 0.016 accuracy and 0.020 macro-F1, for about 3.4 times the
-fit-plus-predict time. Every split moves the same way on both metrics. The size does not
+The two brain splits were added later and complete the panel:
+
+| split | types | accuracy | | macro-F1 | | cost |
+| | | native | corrected | native | corrected | |
+|---------------------|------:|------:|------:|------:|------:|------:|
+| brain_intra | 24 | 0.990 | **0.992** | 0.990 | **0.992** | 3.3x |
+| brain_cluster_intra | 151 | 0.819 | **0.860** | 0.817 | **0.860** | 5.9x |
+
+The 151-cluster split is the largest gain anywhere in the panel, 0.041 accuracy and 0.043
+macro-F1, and it carries a consequence beyond scArches: the published panel's best on that
+split is SingleR at 0.845, and the corrected configuration scores 0.860. Which method leads
+the hardest split in this benchmark depends on how scArches is configured.
+
+Mean gain over the five non-brain shared-vocabulary splits: 0.016 accuracy and 0.020
+macro-F1, for about 3.4 times the fit-plus-predict time. Over all seven shared-vocabulary
+splits including brain: 0.017 and 0.021. Every split moves the same way on both metrics. The size does not
 follow anything visible: pbmc gains four times more macro-F1 than lung_intra while gaining
 less accuracy, the liver splits gain most on accuracy, and the 86-label split gains least
 of all, which is the opposite of what a rare-class story predicts. With four factors

@@ -1,0 +1,28 @@
+# Q3-B: the matched baselines on the three cohorts Q2 did not cover, completing the
+# comparison across all six non-brain splits. Verified before launch that the driver's
+# split of each input reproduces the saved scArches query cell ids, labels and gene counts.
+label: cell_type
+repeats: 3
+output: results/q3_baselines_rest
+save_predictions: true
+ontology_obo: /tmp/cl-basic.obo
+
+datasets:
+  - name: pbmc
+    type: builtin
+    builtin: pbmc3k
+  - name: lung_intra
+    type: intra
+    path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    subsample_per_label: 300
+    test_frac: 0.25
+  - name: lung_cross
+    type: cross
+    ref_path: ~/Downloads/Sikkema_HLCA.h5ad
+    query_path: ~/Downloads/krasnow_lung_atlas_10x.h5ad
+    ref_subsample_per_label: 300
+    query_subsample_per_label: 400
+
+methods:
+  - name: actinn-jax
+  - name: linear-anova-pca

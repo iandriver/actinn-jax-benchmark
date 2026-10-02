@@ -1,0 +1,25 @@
+# Q3-A1: brain Subclass (24 types), the split the revised scArches configuration never
+# covered. Four methods on identical inputs, three repeats: 12 runs. The cohort reproduces
+# the published split exactly (5,170 / 1,722), so inputs are matched by split size; the
+# original panel saved no per-cell predictions, so cell-identity verification is not
+# available for brain.
+# source: Allen Institute human MTG, Jorstad et al. 2023, doi:10.1126/science.ade9516
+label: Subclass
+repeats: 3
+output: results/q3_brain_subclass
+save_predictions: true
+ontology_obo: /tmp/cl-basic.obo
+
+datasets:
+  - name: brain_intra
+    type: intra
+    path: /Volumes/IanSSD/allen_mtg/brain_intra.h5ad
+    test_frac: 0.25
+
+methods:
+  - name: scarches
+    python: .venv-scvi/bin/python
+  - name: scarches-native
+    python: .venv-scvi/bin/python
+  - name: actinn-jax
+  - name: linear-anova-pca
