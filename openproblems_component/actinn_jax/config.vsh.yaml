@@ -18,6 +18,8 @@ links:
   documentation: https://github.com/iandriver/actinn-jax#readme
 info:
   preferred_normalization: log_cp10k
+  variants:
+    actinn_jax:
 arguments:
   - name: "--n_hvg"
     type: "integer"
@@ -32,13 +34,7 @@ engines:
     setup:
       - type: python
         packages:
-          - jax
-          - jaxlib
-          - optax
-          - scikit-learn
-      - type: docker
-        run: |
-          pip install git+https://github.com/iandriver/actinn-jax.git
+          - actinn-jax
 runners:
   - type: executable
   - type: nextflow

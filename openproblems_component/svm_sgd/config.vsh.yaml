@@ -17,6 +17,8 @@ links:
   documentation: https://github.com/iandriver/actinn-jax-benchmark#readme
 info:
   preferred_normalization: log_cp10k
+  variants:
+    svm_sgd:
 arguments:
   - name: "--n_hvg"
     type: "integer"

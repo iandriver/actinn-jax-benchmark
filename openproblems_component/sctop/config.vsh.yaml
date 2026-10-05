@@ -13,11 +13,16 @@ description: |
   Note: scTOP is rank-based and therefore sensitive to the long tail of near-all-zero
   genes, where ranks are dominated by ties at zero and the per-type bases go degenerate.
   Genes must be expressed in at least `min_expr_frac` of reference cells.
+references:
+  doi:
+    - 10.1242/dev.201873
 links:
   repository: https://github.com/Emergent-Behaviors-in-Biology/scTOP
   documentation: https://github.com/Emergent-Behaviors-in-Biology/scTOP#readme
 info:
   preferred_normalization: log_cp10k
+  variants:
+    sctop:
 arguments:
   - name: "--n_hvg"
     type: "integer"

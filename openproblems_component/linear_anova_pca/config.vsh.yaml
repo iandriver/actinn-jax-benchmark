@@ -21,6 +21,8 @@ links:
   documentation: https://github.com/iandriver/actinn-jax-benchmark#readme
 info:
   preferred_normalization: log_cp10k
+  variants:
+    linear_anova_pca:
 arguments:
   - name: "--n_hvg"
     type: "integer"

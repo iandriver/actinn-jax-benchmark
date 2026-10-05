@@ -20,6 +20,8 @@ links:
   documentation: https://github.com/Teichlab/celltypist#readme
 info:
   preferred_normalization: log_cp10k
+  variants:
+    celltypist:
 arguments:
   - name: "--n_hvg"
     type: "integer"
