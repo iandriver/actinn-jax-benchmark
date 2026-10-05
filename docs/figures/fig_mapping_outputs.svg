@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="523.268719pt" height="286.056pt" viewBox="0 0 523.268719 286.056" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-10-02T12:41:32.512950</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.0, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 286.056 
+L 523.268719 286.056 
+L 523.268719 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 13.2264 169.106976 
+L 94.0806 169.106976 
+Q 98.0982 169.106976 98.0982 164.76048 
+L 98.0982 123.468768 
+Q 98.0982 119.122272 94.0806 119.122272 
+L 13.2264 119.122272 
+Q 9.2088 119.122272 9.2088 123.468768 
+L 9.2088 164.76048 
+Q 9.2088 169.106976 13.2264 169.106976 
+z
+" clip-path="url(#p67de84e592)" style="fill: #f3f3f3; stroke: #858585; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 118.6884 113.689152 
+L 289.9386 113.689152 
+Q 293.9562 113.689152 293.9562 109.342656 
+L 293.9562 40.885344 
+Q 293.9562 36.538848 289.9386 36.538848 
+L 118.6884 36.538848 
+Q 114.6708 36.538848 114.6708 40.885344 
+L 114.6708 109.342656 
+Q 114.6708 113.689152 118.6884 113.689152 
+z
+" clip-path="url(#p67de84e592)" style="fill: #e6f0f8; stroke: #858585; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 319.5684 113.689152 
+L 495.8406 113.689152 
+Q 499.8582 113.689152 499.8582 109.342656 
+L 499.8582 40.885344 
+Q 499.8582 36.538848 495.8406 36.538848 
+L 319.5684 36.538848 
+Q 315.5508 36.538848 315.5508 40.885344 
+L 315.5508 109.342656 
+Q 315.5508 113.689152 319.5684 113.689152 
+z
+" clip-path="url(#p67de84e592)" style="fill: #e6f0f8; stroke: #858585; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 118.6884 244.084032 
+L 289.9386 244.084032 
+Q 293.9562 244.084032 293.9562 239.737536 
+L 293.9562 160.413984 
+Q 293.9562 156.067488 289.9386 156.067488 
+L 118.6884 156.067488 
+Q 114.6708 156.067488 114.6708 160.413984 
+L 114.6708 239.737536 
+Q 114.6708 244.084032 118.6884 244.084032 
+z
+" clip-path="url(#p67de84e592)" style="fill: #e7f4ee; stroke: #858585; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 319.5684 244.084032 
+L 495.8406 244.084032 
+Q 499.8582 244.084032 499.8582 239.737536 
+L 499.8582 160.413984 
+Q 499.8582 156.067488 495.8406 156.067488 
+L 319.5684 156.067488 
+Q 315.5508 156.067488 315.5508 160.413984 
+L 315.5508 239.737536 
+Q 315.5508 244.084032 319.5684 244.084032 
+z
+" clip-path="url(#p67de84e592)" style="fill: #e7f4ee; stroke: #858585; stroke-width: 0.8; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_1">
+    <text style="font-weight: 700; font-size: 15px; font-family: 'DejaVu Sans'; text-anchor: start" x="9.711" y="23.49936" transform="rotate(-0 9.711 23.49936)">Reference-based annotation and integrated atlas mapping</text>
+   </g>
+   <g id="text_2">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #202020" transform="translate(36.937797 140.370542)">Query</text>
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'; fill: #202020" transform="translate(23.985297 153.57355)">expression</text>
+   </g>
+   <g id="patch_7">
+    <path d="M 98.073679 141.090063 
+Q 105.630686 110.431367 112.839847 81.183876 
+" style="fill: none; stroke: #555555; stroke-width: 1.3; stroke-linecap: round"/>
+    <path d="M 109.940668 84.588984 
+L 112.839847 81.183876 
+L 113.824426 85.546285 
+" style="fill: none; stroke: #555555; stroke-width: 1.3; stroke-linecap: round"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 98.138415 144.953501 
+Q 105.630876 171.550731 112.72924 196.748966 
+" style="fill: none; stroke: #555555; stroke-width: 1.3; stroke-linecap: round"/>
+    <path d="M 113.569724 192.35652 
+L 112.72924 196.748966 
+L 109.719573 193.441111 
+" style="fill: none; stroke: #555555; stroke-width: 1.3; stroke-linecap: round"/>
+   </g>
+   <g id="text_3">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #202020" transform="translate(156.792094 66.649781)">Saved label classifier</text>
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #202020" transform="translate(140.695453 77.452242)">ACTINN-JAX / linear baseline</text>
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #202020" transform="translate(127.999125 88.254703)">Frozen prediction for later queries</text>
+   </g>
+   <g id="patch_9">
+    <path d="M 296.961185 75.114 
+Q 304.2497 75.114 310.084771 75.114 
+" style="fill: none; stroke: #555555; stroke-width: 1.3; stroke-linecap: round"/>
+    <path d="M 306.084771 73.114 
+L 310.084771 75.114 
+L 306.084771 77.114 
+" style="fill: none; stroke: #555555; stroke-width: 1.3; stroke-linecap: round"/>
+   </g>
+   <g id="text_4">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #202020" transform="translate(348.673641 66.649781)">Cell labels and confidence</text>
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #202020" transform="translate(328.815984 77.452242)">Evaluate label accuracy, coverage,</text>
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #202020" transform="translate(367.409109 88.254703)">time and memory</text>
+   </g>
+   <g id="text_5">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #202020" transform="translate(132.332484 191.611541)">Atlas model + query adaptation</text>
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #202020" transform="translate(138.610688 202.414002)">ArchMap / scArches workflow</text>
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #202020" transform="translate(124.800609 213.216463)">Pretrained reference can be reused</text>
+   </g>
+   <g id="patch_10">
+    <path d="M 296.961185 200.07576 
+Q 304.2497 200.07576 310.084771 200.07576 
+" style="fill: none; stroke: #555555; stroke-width: 1.3; stroke-linecap: round"/>
+    <path d="M 306.084771 198.07576 
+L 310.084771 200.07576 
+L 306.084771 202.07576 
+" style="fill: none; stroke: #555555; stroke-width: 1.3; stroke-linecap: round"/>
+   </g>
+   <g id="text_6">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #202020" transform="translate(345.122156 191.611541)">Shared embedding + labels</text>
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #202020" transform="translate(336.54825 202.414002)">Also evaluate batch mixing and</text>
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; fill: #202020" transform="translate(355.737937 213.216463)">biological conservation</text>
+   </g>
+   <g id="text_7">
+    <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #404040" x="12.222" y="272.336256" transform="rotate(-0 12.222 272.336256)">This study compares annotation outputs. An ArchMap platform or integration comparison remains unmeasured.</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p67de84e592">
+   <rect x="7.2" y="7.2" width="502.2" height="271.656"/>
+  </clipPath>
+ </defs>
+</svg>

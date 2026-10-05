@@ -6,8 +6,9 @@ import numpy as np, pandas as pd
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-REPO = "/Users/iandriver/Downloads/actinn-jax-benchmark"
-FIG = f"{REPO}/docs/figures"; os.makedirs(FIG, exist_ok=True)
+REPO = os.environ.get("ACTINN_BENCHMARK_ROOT", "/Users/iandriver/Downloads/actinn-jax-benchmark")
+ONLY_FACETS = "--only-pareto-facets" in sys.argv
+FIG = os.environ.get("ACTINN_FIGURE_DIR", f"{REPO}/docs/figures"); os.makedirs(FIG, exist_ok=True)
 plt.rcParams.update({"figure.dpi": 140, "font.size": 10, "axes.spines.top": False,
                      "axes.spines.right": False})
 
@@ -36,6 +37,12 @@ for extra in ("results_brain_subclass_panel.csv", "results_brain_cluster_panel.c
         b = pd.read_csv(q); frames.append(b[b.accuracy.notna()])
 df = pd.concat(frames, ignore_index=True)
 df["method"] = df["method"].astype(str)
+# Display cross-dataset lung through its mapped ontology labels, never raw names.
+df = df[df.accuracy.notna()].copy()
+lung = df.dataset.eq("lung_cross")
+assert df.loc[lung, "ontology_concordance"].notna().all()
+df.loc[lung, "accuracy"] = df.loc[lung, "ontology_concordance"]
+df.loc[lung, "macro_f1"] = np.nan
 
 METRICS = ["accuracy", "macro_f1", "ontology_concordance", "fit_s", "predict_s", "peak_mem_mb"]
 agg = df.groupby(["dataset", "method"])[[m for m in METRICS if m in df]].mean().reset_index()
@@ -60,8 +67,8 @@ def heatmap(metric, fname, title):
     ax.set_title(title); fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
     fig.tight_layout(); fig.savefig(f"{FIG}/{fname}", bbox_inches="tight"); plt.close(fig)
 
-if "accuracy" in agg: heatmap("accuracy", "fig_accuracy_heatmap.png", "Accuracy (mean over repeats)")
-if "macro_f1" in agg: heatmap("macro_f1", "fig_macrof1_heatmap.png", "Macro-F1 (mean over repeats)")
+if not ONLY_FACETS and "accuracy" in agg: heatmap("accuracy", "fig_accuracy_heatmap.png", "Label accuracy (lung across datasets: CL concordance)")
+if not ONLY_FACETS and "macro_f1" in agg: heatmap("macro_f1", "fig_macrof1_heatmap.png", "Macro-F1 (shared-vocabulary tasks)")
 
 
 # ---- Fig 2: Pareto (accuracy vs total wall time) on a representative dataset ----
@@ -114,7 +121,7 @@ def pareto(dsname):
     fig.tight_layout(); fig.savefig(f"{FIG}/fig_pareto_{dsname}.png", bbox_inches="tight"); plt.close(fig)
 
 for ds in ["liver_intra", "lung_intra"]:
-    if ds in datasets: pareto(ds)
+    if not ONLY_FACETS and ds in datasets: pareto(ds)
 
 
 # ---- Fig 1: every split at once, ranked, with the range each method spans ----
@@ -183,7 +190,7 @@ def cost_accuracy_ranges(exclude=("lung_cross",)):
 
 TITLE = {"pbmc": "pbmc — 8 types", "liver_intra": "liver — 36 types",
          "liver_cross": "liver cross-study — 34", "lung_intra": "lung — 46 types",
-         "lung_cross": "lung cross-dataset — 46†", "blood_gut_intra": "blood+gut — 86 types",
+         "lung_cross": "lung cross-dataset · CL concordance†", "blood_gut_intra": "blood+gut — 86 types",
          "brain_intra": "brain subclass — 24", "brain_cluster_intra": "brain cluster — 151"}
 PANELS = ["pbmc", "liver_intra", "lung_intra", "brain_intra", "blood_gut_intra",
           "brain_cluster_intra", "liver_cross", "lung_cross"]
@@ -213,6 +220,7 @@ def pareto_facets():
                         mew=1.5 if big else 0.5, zorder=3 if big else 2)
         ax.set_xscale("log"); ax.grid(alpha=0.22, lw=0.6)
         ax.set_title(TITLE.get(ds, ds), fontsize=10, loc="left")
+        if ds == "lung_cross":ax.set_ylabel("CL concordance")
     for ax in axes.ravel()[len(panels):]:
         ax.set_visible(False)
     for ax in axes[:, 0]:
@@ -225,14 +233,15 @@ def pareto_facets():
                for m in COLOR if m in set(e.method)]
     fig.legend(handles=handles, loc="lower center", ncol=6, frameon=False, fontsize=9.4,
                bbox_to_anchor=(0.5, -0.055))
-    fig.suptitle("Accuracy against cost on every split — bars are the range over three repeats",
+    fig.suptitle("Annotation agreement against cost · lung across datasets uses CL concordance",
                  fontsize=13, y=0.99)
     fig.tight_layout()
     fig.savefig(f"{FIG}/fig_pareto_facets.png", bbox_inches="tight"); plt.close(fig)
 
 
-cost_accuracy_ranges()
+if not ONLY_FACETS:cost_accuracy_ranges()
 pareto_facets()
+if ONLY_FACETS:sys.exit(0)
 
 
 # ---- Fig 3: speed + memory bars (mean across datasets) ----

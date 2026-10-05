@@ -1,12 +1,7 @@
-"""Agreement between broad references as a confidence signal.
+"""Plot ontology concordance by agreement among three broad annotators.
 
-Three broad annotators over the same 3,396 withheld liver cells. The bars are ontology
-concordance within each agreement tier; the dashed lines are each model's score over the whole
-query. Every model roughly doubles on the cells where all three agree, which is the point: the
-partition is not picking out cells one model happens to get right, it is picking out cells that
-are unambiguous, and it can be computed on an unlabelled query.
-
-    .venv-protocloud/bin/python benchmark/explore/plot_consensus.py
+Pan-human Azimuth and its distilled student form a dependent pair. Bars describe
+the evaluated queries, not independent confirmation or calibrated reliability.
 """
 
 import argparse
@@ -74,18 +69,17 @@ def main():
     a = ap.parse_args()
 
     have = [(p, t) for p, t in (
-        (a.liver, "A  liver — 3,396 cells, 34 truth types"),
-        (a.lung, "B  lung — 65,662 cells, 46 truth types"),
-        (a.brain, "C  brain (MTG) — 156,285 cells, 18 truth types"))
+        (a.liver, "A  liver: 3,396 cells, 34 truth types"),
+        (a.lung, "B  lung: 65,662 cells, 46 truth types"),
+        (a.brain, "C  brain (MTG): 156,285 cells, 18 truth types"))
         if os.path.exists(p)]
     fig, axes = plt.subplots(1, len(have), figsize=(5.4 * len(have), 4.5), sharey=True)
     axes = np.atleast_1d(axes)
     for i, ((path, title), ax) in enumerate(zip(have, axes)):
         panel(ax, pd.read_csv(path), title, show_legend=(i == 0))
     axes[0].set_ylabel("ontology concordance", fontsize=9.6)
-    fig.suptitle("Where independent broad references agree, every one of them is right more "
-                 "often", fontsize=12.5, y=1.02)
-    fig.text(0.5, -0.045, "dashed lines: the same model over the whole query",
+    fig.suptitle("Agreement identifies subsets with higher ontology concordance", fontsize=12.5, y=1.02)
+    fig.text(0.5, -0.045, "dashed lines: whole-query concordance; Azimuth and its student are dependent",
              ha="center", fontsize=8, color="#555555")
     fig.tight_layout()
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)

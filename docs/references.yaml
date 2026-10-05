@@ -184,11 +184,11 @@ entries:
     text: "CZI Cell Science Program. CZ CELLxGENE Discover Census, LTS release 2025-11-08."
     url: https://chanzuckerberg.github.io/cellxgene-census/
     status: software
-  xkcd 927:
-    text: "Munroe R. Standards. *xkcd* 927."
-    url: https://xkcd.com/927/
-    status: software
   Alegbe 2026:
     text: "Alegbe T, Harris BT, Fachal L, et al. Cell-type-resolved genetic variation shapes inflammatory bowel disease risk (IBDverse). *Nature* (2026)."
     doi: 10.1038/s41586-026-10627-z
+    status: verified
+  Lotfollahi et al. 2026:
+    text: "Lotfollahi M, Bright C, Skorobogat R, et al. ArchMap is a web-based platform for reference-based analysis of single-cell datasets. *Nature Genetics* (2026)."
+    doi: 10.1038/s41588-026-02756-y
     status: verified

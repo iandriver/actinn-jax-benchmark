@@ -36,7 +36,7 @@ both the title and the first line of the abstract.
 """
 import re, pathlib, sys
 
-ROOT = pathlib.Path("/Users/iandriver/Downloads/actinn-jax-benchmark")
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 FIGDIR = ROOT / "docs" / "figures"
 # Two manuscripts share this pipeline: the full report and a condensed, journal-length
 # version. `python build_manuscript.py brief` builds the second.
@@ -237,6 +237,21 @@ def breakable_dois(text):
         lambda m: re.sub(r"([/.])", r"\1\\allowbreak{}", m.group(0)), part)
         for i, part in enumerate(parts))
 
+
+def breakable_code(text):
+    # Long saved-model identifiers should wrap without inventing hyphens inside them.
+    def wrap(m):
+        token = m.group(1)
+        if len(token) < 16 or not any(c in token for c in '_/.'):
+            return m.group(0)
+        escaped = token.replace('\\', r'\textbackslash{}')
+        for c in '%&#${}':
+            escaped = escaped.replace(c, '\\' + c)
+        escaped = escaped.replace('_', r'\_\allowbreak{}')
+        escaped = escaped.replace('/', r'/\allowbreak{}').replace('.', r'.\allowbreak{}')
+        return r'\texttt{' + escaped + '}'
+    return re.sub(r'(?<!`)`([^`\n]+)`(?!`)', wrap, text)
+
 FRONT = f"""---
 title: |
   {TITLE}
@@ -257,6 +272,8 @@ header-includes:
   - \\usepackage{{authblk}}
   - \\renewcommand\\Authands{{, }}
   - \\usepackage{{newunicodechar}}
+  - \\usepackage{{etoolbox}}
+  - \\AtBeginEnvironment{{longtable}}{{\\footnotesize}}
   - \\newunicodechar{{μ}}{{\\ensuremath{{\\mu}}}}
   - \\newunicodechar{{σ}}{{\\ensuremath{{\\sigma}}}}
   - \\newunicodechar{{≈}}{{\\ensuremath{{\\approx}}}}
@@ -273,8 +290,23 @@ header-includes:
 \\begin{{center}}\\small {AFFIL} \\\\ {CORR}\\end{{center}}
 """
 
+if not abstract:
+    FRONT = FRONT.replace("abstract: |\n  \n", "")
+
+# Keep each figure and caption together in the PDF; portable exports retain normal flow.
+pdf_body = body
+# Keep short metric tables with their captions and ontology footnotes.
+pdf_body = re.sub(
+    r"(\| split \| [^\n]+\n(?:\|[^\n]*\n)+\n\*\*Table [^\n]+\n\n†[^\n]+)",
+    lambda m: "```{=latex}\n\\begin{minipage}{\\linewidth}\n```\n\n" + m.group(1) + "\n\n```{=latex}\n\\end{minipage}\n```",
+    pdf_body)
+if VARIANT in {"full", "supp"}:
+    pdf_body = re.sub(
+        r"(!\[[^\]]*\]\([^\n]*\)\n\n\*\*Figure [^\n]*.*?)(?=\n\n|\Z)",
+        lambda m: "```{=latex}\n\\begin{minipage}{\\linewidth}\n```\n\n" + m.group(1) + "\n\n```{=latex}\n\\end{minipage}\n```",
+        pdf_body, flags=re.S)
 (ROOT / "manuscript" / f"{STEM}.md").write_text(
-    FRONT + "\n" + breakable_dois(body) + "\n" + breakable_dois(REFS))
+    FRONT + "\n" + breakable_code(breakable_dois(pdf_body)) + "\n" + breakable_dois(REFS))
 print(f"wrote manuscript/{STEM}.md (PDF via LaTeX)")
 
 # ---- portable variant for RTF / DOCX (Pages-editable): no raw LaTeX; the
@@ -292,5 +324,8 @@ abstract: |
 
 *{AFFIL}*  ·  *Correspondence: driver.ian@gmail.com*
 """
+if not abstract:
+    FRONT_PORTABLE = FRONT_PORTABLE.replace("abstract: |\n  \n", "")
+
 (ROOT / "manuscript" / f"{STEM}_portable.md").write_text(FRONT_PORTABLE + "\n" + body + "\n" + REFS)
 print(f"wrote manuscript/{STEM}_portable.md (RTF/DOCX)")
