@@ -599,10 +599,13 @@ label-projection task, using their 6 datasets, splits and metrics, and slotted i
 published v2.0.0 leaderboard.
 
 On the published benchmark protocol, actinn-jax places 3rd of 17 on mean accuracy
-(0.837) and 1st among all methods that complete every dataset. It beats its PCA-space `mlp`
-sibling, and posts the best accuracy of any completing method on the hardest dataset
-(tabula_sapiens, 160 types: 0.394 against mlp's 0.342). It is upper-mid on macro-F1 and not the
-top method overall. scANVI with scArches surgery, and xgboost [Chen & Guestrin 2016], score
+(0.837) and 1st among the leaderboard methods that complete every dataset. It beats its
+PCA-space `mlp` sibling, and posts the best accuracy of any completing leaderboard method on
+the hardest dataset (tabula_sapiens, 160 types: 0.394 against mlp's 0.342). Both rankings are
+over the 17 methods on the published v2.0.0 leaderboard. Methods evaluated against that
+leaderboard without being part of it are outside the comparison; scBoost [Edelman & Kang 2026]
+is one, and reports a higher tabula_sapiens accuracy than any leaderboard method. actinn-jax
+is upper-mid on macro-F1 and not the top method overall. scANVI with scArches surgery, and xgboost [Chen & Guestrin 2016], score
 higher on the datasets they finish, though both fail to complete tabula_sapiens, which is why
 they rank above actinn-jax only on a mean over the 5 easier datasets. The foundation models
 again land at the bottom (scgpt_zeroshot 0.639, uce 0.131, the latter roughly the random-labels
@@ -1193,6 +1196,22 @@ We did not evaluate ArchMap's hosted service, accessibility, collaboration featu
 integrated embedding quality. The local annotation comparison does not establish a
 platform-wide ranking or contradict its integration results. A test of integrated mapping
 would additionally require batch-mixing and biological-conservation measurements.
+
+An ensemble approach occupies the opposite end of the cost axis from the one measured here.
+scBoost [Edelman & Kang 2026] trains one gradient-boosted or MLP base learner per cell
+embedding, over five out-of-fold splits, and combines their probabilities through five
+meta-learners. Evaluated against the same six Open Problems datasets, it reports higher
+accuracy than the best leaderboard method on four of them, the largest margin on
+tabula_sapiens, and lower accuracy on gtex_v9. Its reported fit times are 7,847 s on
+tabula_sapiens and 2,772 s on gtex_v9, measured on hardware the report does not specify, and
+beginning after the embeddings exist: its input is precomputed representations in `obsm`,
+so generating the Scanorama, Harmony, scVI, Geosketch and PCA embeddings is additional and
+unmeasured. We did not run it. Its published code is a set of analysis scripts carrying no
+license and no package definition, and it requires five embedding pipelines upstream, which
+places it outside the single-command CPU protocol of §2.10. A comparison on equal terms would
+require measuring both methods end to end from counts on one machine, including embedding
+construction. That measurement would quantify what accuracy an ensemble buys per unit of
+compute, which the present panel does not answer.
 
 
 ## 5. Limitations

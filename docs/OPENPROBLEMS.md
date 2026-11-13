@@ -47,9 +47,11 @@ completed:
 |  | *random_labels (neg ctrl)* | 0.188 | 0.032 | 0.296 | 0.046 | 0.164 | 0.021 | 0.124 | 6 |
 
 scanvi_scarches and xgboost rank above actinn-jax only because they do not complete
-`tabula_sapiens` (160 labels), so their means are over 5 easier datasets. Among the methods
-that completed all 6, actinn-jax has the highest mean accuracy at 0.837, ahead of `mlp`
-(0.828), seurat (0.827), scanvi (0.826), logistic (0.814) and knn (0.793).
+`tabula_sapiens` (160 labels), so their means are over 5 easier datasets. Among the
+leaderboard methods that completed all 6, actinn-jax has the highest mean accuracy at 0.837,
+ahead of `mlp` (0.828), seurat (0.827), scanvi (0.826), logistic (0.814) and knn (0.793).
+This ranking is over the 17 methods on the published leaderboard; see
+[Methods evaluated off the leaderboard](#methods-evaluated-off-the-leaderboard).
 
 Macro-F1, mean over 6: scanvi_scarches 0.810 (n=5), xgboost 0.723 (n=5), logistic 0.691,
 scanvi 0.681, seurat 0.662, actinn-jax 0.656, mlp 0.648, knn 0.648, naive_bayes 0.613,
@@ -85,9 +87,9 @@ For the CPU tier measured like for like, see
 
 The two methods above actinn-jax on mean accuracy, scanvi_scarches and xgboost, do not
 complete tabula_sapiens (n=5, means over easier datasets) and cost 6 to 9 times the runtime
-at twice the memory. Among all-6 completers, actinn-jax leads. Its opt-in
-`standardize=True` moves it to 0.839 accuracy and 0.668 macro-F1, above `mlp` on both, for
-about 24% more fit time.
+at twice the memory. Among all-6 completers on the published leaderboard, actinn-jax leads.
+Its opt-in `standardize=True` moves it to 0.839 accuracy and 0.668 macro-F1, above `mlp` on
+both, for about 24% more fit time.
 
 ## Runtime and peak memory
 
@@ -194,7 +196,7 @@ where gap is scArches minus standardized:
   immune (0.76 points) and hypomap (0.35), and ties it on hypomap accuracy.
 - The structural trade is that scArches is 1 to 4 points better where it runs but fails on
   tabula_sapiens, which actinn-jax completes at 0.405. That is why actinn-jax tops the
-  all-6-completers ranking.
+  all-6-completers ranking among the leaderboard methods.
 - Standardization does not close the gap. On the 5 common datasets it barely moves
   actinn-jax, from 0.9253 to 0.9256; its gains land on tabula_sapiens, where scArches does
   not finish, and on gtex F1. The residual 1.3 accuracy and 3.7 F1 is a genuine VAE-latent
@@ -263,7 +265,8 @@ Four conclusions, of which the exception is the important one.
 3. Net over all 6, 5000 genes is slightly worse, by 0.5 points, because tabula_sapiens's
    collapse outweighs the others' gains. A blanket `n_hvg=5000` would trade a modest lift on
    easy references for a large loss on the hardest one, which is the dataset that gives
-   actinn-jax its all-6-completion standing. `n_hvg=1000` is the more robust default.
+   actinn-jax its all-6-completion standing on the leaderboard. `n_hvg=1000` is the more
+   robust default.
 4. Cost is modest and bounded. 5000 genes is about 2 to 2.5 times the fit time, still under
    4 minutes, at comparable and data-load-dominated peak memory of 3 to 24 GB, sometimes
    lower than at 1000.
@@ -393,9 +396,10 @@ never enters and the smoke test always does.
 2. **Robustness on the hardest task.** `tabula_sapiens`, with 160 fine cell types and a
    284-cell test batch, breaks the field: scanvi_scarches and xgboost do not complete it at
    all, and most others land at 0.15 to 0.38. actinn-jax's 0.394 is the best accuracy of any
-   method that completed it, against mlp's 0.342 and seurat's 0.377. It is one of the few
-   methods that runs to completion on every dataset, which is why it tops the
-   completed-all-6 ranking.
+   leaderboard method that completed it, against mlp's 0.342 and seurat's 0.377. It is one
+   of the few leaderboard methods that runs to completion on every dataset, which is why it
+   tops the completed-all-6 ranking among them. scBoost, which is not on the leaderboard,
+   reports a higher figure on this dataset.
 
 3. **Foundation models underperform on label projection.** scgpt_zeroshot (0.639, and only
    on the one dataset it ran) and uce (0.131, barely above the random-labels control at
@@ -416,13 +420,44 @@ never enters and the smoke test always does.
 ## Bottom line
 
 On a benchmark actinn-jax's authors did not design and cannot tune, run to the community's
-own protocol, actinn-jax places 3rd of 17 on accuracy and 1st among all methods that
-complete every dataset. It beats its PCA-space `mlp` sibling on both metrics and posts the
-best accuracy on the single hardest dataset. It is not the top method overall, since scANVI
-with scArches reference surgery and xgboost score higher on the datasets they finish, and it
+own protocol, actinn-jax places 3rd of 17 on accuracy and 1st among the leaderboard methods
+that complete every dataset. It beats its PCA-space `mlp` sibling on both metrics and posts
+the best accuracy on the single hardest dataset of any leaderboard method. It is not the top
+method overall, since scANVI with scArches reference surgery and xgboost score higher on the
+datasets they finish, and it
 is upper-mid rather than top on macro-F1. As a fast, dependency-light, CPU gene-space
 classifier, its standing on this external leaderboard is strong, and unlike our in-house
 benchmark it is entirely independent.
+
+## Methods evaluated off the leaderboard
+
+Every ranking above is over the 17 methods on the published v2.0.0 leaderboard. A method can
+be evaluated against the same six datasets without being part of that leaderboard, in which
+case it does not appear in these tables and the rankings do not account for it. actinn-jax is
+itself in that position: we ran the task and slotted the result in, rather than contributing a
+component that OP runs.
+
+scBoost (Edelman D, Kang H, Schäffer DE, Aksu ED, Berger B, *bioRxiv* 2026,
+doi:10.64898/2026.11.10.765730) is the case that matters here. It is a stacked ensemble: one
+XGBoost or MLP base learner per cell embedding, five out-of-fold splits, five meta-learners
+averaged at test time. It reports the same six datasets and claims higher accuracy than the
+best leaderboard method on four of them, by +1.1 on dkd, +1.9 on immune_cell_atlas, +0.5 on
+mouse_pancreas and +7.0 on tabula_sapiens, with no gain on hypomap and -3.4 on gtex_v9. The
+tabula_sapiens figure is the one that touches our result: +7.0 over seurat_transferdata's
+0.377 puts it above actinn-jax's 0.394 on the dataset where actinn-jax leads the leaderboard
+field.
+
+Checked on 2026-11-13: scBoost is absent from `openproblems-bio`, with no match in
+`task_label_projection/src/methods` and no code hit across the organization, so it is not on
+the live board.
+
+We have not run it, and these are its reported numbers rather than measured ones. Its code
+(`github.com/kanghelen/scBoost`, last pushed 2026-04-12) is a set of analysis scripts with no
+license and no package definition, and its input is precomputed embeddings in `obsm` rather
+than counts, so running it means building Scanorama, Harmony, scVI, Geosketch and PCA
+pipelines first. Its reported fit times, 7,847 s on tabula_sapiens and 2,772 s on gtex_v9,
+start after those embeddings exist and are on unspecified hardware, so they are not comparable
+to the 165 s per dataset measured here on `r7i.8xlarge`.
 
 *Datasets © CZ CELLxGENE / Open Problems, downloaded from the public `openproblems-data`
 S3 bucket. Leaderboard scores: OP run `2026-06-05_12-50-03`, `score_uns.yaml`.*
