@@ -393,5 +393,16 @@ integrated embedding quality. The local annotation comparison does not establish
 platform-wide ranking or contradict its integration results. A test of integrated mapping
 would additionally require batch-mixing and biological-conservation measurements.
 
+An ensemble occupies the opposite end of the cost axis. scBoost [Edelman & Kang 2026] trains
+one base learner per cell embedding and combines their out-of-fold probabilities through a
+meta-learner. On the same six Open Problems datasets it reports higher accuracy than the best
+leaderboard method on four, including the one where actinn-jax leads that field, and lower
+accuracy on one. Its reported fit times reach 7,847 s on a single dataset, on unspecified
+hardware and beginning after the embeddings exist, since its input is precomputed
+representations rather than counts. We did not run it: it requires five embedding pipelines
+upstream, which places it outside this study's single-command CPU protocol. A comparison on
+equal terms would measure both end to end from counts on one machine, including embedding
+construction.
+
 
 The study is limited to fixed partitions, unequal tuning effort and one hardware family for the in-house comparison. The panels use separately sampled cohorts; cell-level intervals do not account for donor dependence. Generalization requires independent studies.
